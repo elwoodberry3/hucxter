@@ -1,36 +1,313 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# =============================================================================
+# .gitignore — IAS Universal
+# I Automate Shit™ (IAS, LLC) · github.com/iautomateshit
+# Applies to: ias-build-001 through ias-build-015 (and beyond)
+# Platform: macOS Sonoma 14.7.1 · Apple M3 Pro · Node.js · Python · Vercel
+# =============================================================================
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# -----------------------------------------------------------------------------
+# macOS
+# -----------------------------------------------------------------------------
 .DS_Store
-*.pem
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+.AppleDB
+.AppleDesktop
+Icon\r
+Network Trash Folder
+Temporary Items
+.apdisk
+*.icloud
 
-# debug
+
+# -----------------------------------------------------------------------------
+# Node.js
+# -----------------------------------------------------------------------------
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+.yarn/
+!.yarn/releases
+!.yarn/plugins
 
-# local env files
-.env*.local
-.env
+# Build output
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.output/
+.svelte-kit/
 
-# vercel
-.vercel
+# Cache
+.npm/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.turbo/
+.rollup.cache/
 
-# typescript
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# TypeScript
 *.tsbuildinfo
-next-env.d.ts
+
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.Python
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+.conda/
+
+# Testing / coverage
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Jupyter
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+*.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+
+# -----------------------------------------------------------------------------
+# Environment & Secrets
+# NEVER commit API keys, tokens, or credentials
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.template
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+
+# Secret files
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+secrets.json
+secrets.yaml
+secrets.yml
+credentials.json
+service-account.json
+*-service-account.json
+gcp-credentials.json
+
+
+# -----------------------------------------------------------------------------
+# Vercel
+# -----------------------------------------------------------------------------
+.vercel
+.vercel/
+.vercel-build-output/
+.vercel-cache/
+
+
+# -----------------------------------------------------------------------------
+# n8n (self-hosted)
+# -----------------------------------------------------------------------------
+# Local n8n data directory if cloned into repo
+.n8n/
+n8n-data/
+
+# Exported workflow files containing credentials
+*-credentials.json
+n8n-credentials*.json
+n8n-backup*.json
+
+# n8n SQLite DB (local dev)
+database.sqlite
+database.sqlite-journal
+
+
+# -----------------------------------------------------------------------------
+# VS Code
+# -----------------------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+
+# -----------------------------------------------------------------------------
+# JetBrains (WebStorm, PyCharm, etc.)
+# -----------------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+
+# -----------------------------------------------------------------------------
+# Vim / Emacs / Nano
+# -----------------------------------------------------------------------------
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+.emacs.desktop
+.emacs.desktop.lock
+
+
+# -----------------------------------------------------------------------------
+# Testing & QA
+# -----------------------------------------------------------------------------
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+
+# Jest
+jest-coverage/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
+
+# -----------------------------------------------------------------------------
+# AI / LLM development artifacts
+# -----------------------------------------------------------------------------
+# Prompt test outputs (keep prompts, not raw responses)
+prompt-outputs/
+llm-responses/
+*.response.json
+
+# Vector DB local files
+chroma-db/
+*.faiss
+*.index
+pinecone-cache/
+
+# Fine-tuning datasets (keep schemas, not raw training data)
+training-data/
+fine-tune/
+*.jsonl
+
+
+# -----------------------------------------------------------------------------
+# Data & Documents (keep schemas and mock fixtures, not real data)
+# -----------------------------------------------------------------------------
+# Real documents (HIPAA, PII, financial)
+uploads/
+raw-data/
+production-data/
+*.xlsx
+*.csv
+!mock-data/*.csv
+!fixtures/*.csv
+!fixtures/*.json
+
+# PDF uploads (only keep mock fixtures)
+*.pdf
+!mock-docs/*.pdf
+!fixtures/*.pdf
+
+
+# -----------------------------------------------------------------------------
+# Misc / Tooling
+# -----------------------------------------------------------------------------
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+
+# OS thumbnails
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Archive files
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Package manager lock files — keep these committed
+# (Listed here as a reminder NOT to gitignore them)
+# package-lock.json   <- COMMIT THIS
+# yarn.lock           <- COMMIT THIS
+# pnpm-lock.yaml      <- COMMIT THIS
+# requirements.txt    <- COMMIT THIS
+
+
+# =============================================================================
+# END — IAS Universal .gitignore
+# Last updated: 2026-06 · v1.0
+# =============================================================================
