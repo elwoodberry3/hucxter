@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm lint)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm test:db)",
+      "Bash(pnpm build)",
+      "Bash(supabase start)",
+      "Bash(supabase status)",
+      "Bash(supabase db reset)",
+      "Bash(supabase migration new *)",
+      "Bash(supabase test db)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ],
+    "ask": [
+      "Bash(pnpm add *)",
+      "Bash(pnpm remove *)",
+      "Bash(supabase db push *)",
+      "Bash(supabase link *)",
+      "Bash(git push *)",
+      "Bash(vercel *)",
+      "Bash(eas *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(!./**/.env.example)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(rm -rf *)",
+      "Bash(supabase db reset --linked *)"
+    ]
+  }
+}

@@ -170,6 +170,27 @@ gcp-credentials.json
 
 
 # -----------------------------------------------------------------------------
+# HUCXSTER — Claude Code, Supabase, Expo
+# -----------------------------------------------------------------------------
+# Personal Claude Code overrides (team settings in .claude/settings.json ARE committed)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# Expo / React Native (continuous native generation — native dirs are build output)
+.expo/
+.expo-shared/
+apps/mobile/ios/
+apps/mobile/android/
+*.ipa
+*.apk
+*.aab
+
+
+# -----------------------------------------------------------------------------
 # n8n (self-hosted)
 # -----------------------------------------------------------------------------
 # Local n8n data directory if cloned into repo
