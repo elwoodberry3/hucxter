@@ -170,6 +170,24 @@ gcp-credentials.json
 
 
 # -----------------------------------------------------------------------------
+# Hucxter — Claude Code, Supabase, Playwright
+# -----------------------------------------------------------------------------
+# Personal Claude Code overrides (team settings in .claude/settings.json ARE committed)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+
+# -----------------------------------------------------------------------------
 # n8n (self-hosted)
 # -----------------------------------------------------------------------------
 # Local n8n data directory if cloned into repo
