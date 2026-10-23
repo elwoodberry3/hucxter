@@ -4,14 +4,15 @@
 
 | ID | Decision | Chair recommendation | Blocks |
 |---|---|---|---|
-| D-13 | iOS bundle ID / Android application ID (permanent once published to the stores) | `com.hucxter.app`: reverse-DNS of hucxter.com, a domain you hold, and it matches the brand | Brief 01 (app config) |
-| D-14 | Brand/domain spelling mismatch: brand **Hucxter**, primary domain **hucxster.app** | Register `hucxter.app` if it's available and make it primary, keeping hucxster.app as a redirect. Otherwise accept the mismatch knowingly. Include both spellings in the trademark search | Public beta, marketing |
-| D-15 | Full-bleed app icon master (1024 px or larger, square, no transparency, no pre-rounded corners) | Export from the Hx source file | Store submission |
-| D-16 | Approve revised pitch copy (`docs/pitch/hook-problem-solution.md`) | Approve. The original makes claims that aren't true yet | Investor use |
+| D-17 | **Phone-to-desktop upload handoff.** Sellers usually film on a phone. Should the desktop Sell page show a QR code that opens a single-purpose, upload-only web page on the seller's phone, with the video landing in the desktop draft? It runs in the phone's browser, not a native app | Yes. It removes the file-transfer step that will most likely sink listing completion, and costs about one brief | Brief 05 |
+| D-18 | **Message notifications outside the open tab.** Options: Chrome web push (works while Chrome runs), email (requires collecting an email address), SMS (per-message cost) | Web push plus an optional email, with SMS reserved for safety-critical events | Brief 07 |
+| D-19 | Browser support beyond Chrome for public beta (Edge, Safari, Firefox on desktop) | Chrome only for I-A; before I-B, smoke-test Edge and Safari (the main desktop browsers outside Chrome) | Phase I-B |
+| D-20 | Redirects: `hucxter.com` and `hucxster.app` → `hucxter.app` (301) | Yes. Configure at the DNS/edge level | Public beta |
+| D-21 | Vector (SVG) master of the Hx mark | Provide when available, for sharper favicons and the Phase IV app | Nice to have |
 | D-05 | Maximum video length and size; default discovery radius | Measure with QA testers; start short | Brief 05 |
 | D-06 | Phase I-B launch area | One dense area the team can reach in person | Phase I-B |
 | D-07 | Prohibited items list, terms, privacy policy, age policy, data retention | Counsel review | Public beta |
-| D-08 | SMS/phone-risk provider; analytics approach (ADR-0006) | Pick on cost and VoIP detection | Brief 03 |
+| D-08 | SMS/phone-risk provider, bot-challenge provider, analytics approach (ADR-0006) | Pick on cost and VoIP detection | Brief 03 |
 | D-09 | In-app payments/escrow | Not in Phase I; revisit in Phase II with dispute data | Phase II |
 | D-10 | Ad network placement (brief said Phase II) | Sponsored listings in Phase II, FairXchange in Phase III | Phase II plan |
 | D-11 | Phase I-B liquidity gate thresholds, set after 4 weeks of baseline | — | Phase II |
@@ -20,8 +21,13 @@
 
 | ID | Decision | Date | Record |
 |---|---|---|---|
-| D-01 | Name is **Hucxter** (code: `hucxter`). Domain `hucxster.app`; `hucxter.com` redirects permanently to it. App icon is the **Hx** mark | 2026-10-23 | CLAUDE.md § Brand |
-| D-02 | Phase I stack approved: Supabase + Next.js API/admin + Expo + Mux + Anthropic | 2026-10-23 | ADR-0001 Accepted |
-| D-03 | Apple HIG is the structural baseline for the whole platform and ecosystem | 2026-10-23 | ADR-0007; `hucxter-design-system` skill |
-| D-04 | Concept mockups are reference only. Final mockups come from the working MVP and are produced for investors once Phase I proves out | 2026-10-23 | CLAUDE.md; roadmap §4 |
-| D-12 | Hook/Problem/Solution copy received and reviewed; revision proposed (see D-16) | 2026-10-23 | `docs/pitch/` |
+| D-01 | Name is **Hucxter** (code: `hucxter`). Mark: **Hx** | 2026-10-23 | CLAUDE.md § Brand |
+| D-02 | Stack approved: Supabase + Next.js + Mux + Anthropic (Expo later removed by the desktop-first decision) | 2026-10-23 | ADR-0001 (amended) |
+| D-03 | Apple HIG is the structural baseline for the whole platform and ecosystem | 2026-10-23 | ADR-0007; `hucxter-design-system` |
+| D-04 | Concept mockups are reference only; final mockups come from the working MVP | 2026-10-23 | CLAUDE.md; roadmap §4 |
+| D-12 | Hook/Problem/Solution copy reviewed and revised | 2026-10-23 | `docs/pitch/` |
+| D-13 | iOS bundle ID will be `com.hucxter.app` when native iOS development begins (Phase V) | 2026-10-23 | ADR-0008 |
+| D-14 | Primary domain is **hucxter.app** (resolves the brand/domain spelling mismatch) | 2026-10-23 | CLAUDE.md § Brand |
+| D-15 | Full-bleed Hx icon master supplied; web icon set generated | 2026-10-23 | `assets/images/brand/` |
+| D-16 | Revised pitch copy approved | 2026-10-23 | `docs/pitch/hook-problem-solution.md` |
+| D-22 | **Platform sequence:** Phases I–III are desktop web (Chrome preferred) → Phase IV downloadable Chromium desktop app → Phase V native iOS | 2026-10-23 | ADR-0008 |

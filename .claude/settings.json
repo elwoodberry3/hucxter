@@ -6,6 +6,8 @@
       "Bash(pnpm test)",
       "Bash(pnpm test *)",
       "Bash(pnpm test:db)",
+      "Bash(pnpm test:e2e)",
+      "Bash(pnpm test:e2e *)",
       "Bash(pnpm build)",
       "Bash(supabase start)",
       "Bash(supabase status)",
@@ -24,8 +26,7 @@
       "Bash(supabase db push *)",
       "Bash(supabase link *)",
       "Bash(git push *)",
-      "Bash(vercel *)",
-      "Bash(eas *)"
+      "Bash(vercel *)"
     ],
     "deny": [
       "Read(./.env)",

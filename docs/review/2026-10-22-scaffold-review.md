@@ -3,7 +3,13 @@
 **Reviewer:** Advisory Board Chair · **Scope:** `elwoodberry3/hucxter@a596f41` (main) —
 `assets/docs/drafts/*`, `assets/docs/fairxchange.md`, `assets/docs/hyper-local-video-marketplace.md`,
 `assets/images/ui/hx.ui__1–12.png`, `.gitignore`.
-**Not reviewed:** `hook-problem-solution.md` (slides) — not present in the repo or attachments.
+**Not reviewed:** `hook-problem-solution.md` (slides). It wasn't present at review time; it was
+reviewed separately on 2026-10-23 (`docs/pitch/copy-review.md`).
+
+> **Later decisions (2026-10-23):** D-01–D-04, D-12–D-16, and the desktop-first platform sequence
+> (ADR-0008) supersede parts of this review: Expo is removed from the stack, mobile-specific findings
+> now apply to Phase V iOS, and the brand/domain mismatch is resolved by hucxter.app. Current state:
+> `docs/decisions/open-decisions.md`.
 
 Severity per governance Article XIII. Critical blocks release.
 

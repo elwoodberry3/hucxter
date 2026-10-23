@@ -2,11 +2,12 @@
 **Status:** Proposed · **Date:** 2026-10-22
 
 ## Context
-Short vertical videos must upload reliably from phones and play fast in a feed.
+Short videos must upload reliably from a desktop browser (files usually filmed on a phone and
+transferred) and play fast in a desktop feed.
 
 ## Decision
-Mux direct uploads (client → Mux), signed playback, webhooks drive media state. No original
-downloads exposed (phone GPS metadata). Encoding tier / resolution cap chosen to minimize cost in
+Mux direct uploads from the browser (Mux Uploader / UpChunk, chunked and resumable), signed playback, webhooks drive media state. Playback with Mux Player. No original
+downloads exposed (phone-recorded files carry GPS metadata). Encoding tier / resolution cap chosen to minimize cost in
 Phase I.
 
 ## Alternatives

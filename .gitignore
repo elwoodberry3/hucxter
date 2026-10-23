@@ -170,7 +170,7 @@ gcp-credentials.json
 
 
 # -----------------------------------------------------------------------------
-# HUCXTER — Claude Code, Supabase, Expo
+# Hucxter — Claude Code, Supabase, Playwright
 # -----------------------------------------------------------------------------
 # Personal Claude Code overrides (team settings in .claude/settings.json ARE committed)
 .claude/settings.local.json
@@ -180,14 +180,11 @@ CLAUDE.local.md
 supabase/.temp/
 supabase/.branches/
 
-# Expo / React Native (continuous native generation — native dirs are build output)
-.expo/
-.expo-shared/
-apps/mobile/ios/
-apps/mobile/android/
-*.ipa
-*.apk
-*.aab
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 
 # -----------------------------------------------------------------------------

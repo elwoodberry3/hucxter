@@ -19,11 +19,15 @@ description: PostGIS location, 100-mile radius, local feed queries, distance dis
    trilateration of a seller's home — do not ship them.
 4. **Area label** (e.g., "Downtown McKinney") comes from a coarse lookup, stored on the listing.
    Never reverse-geocode to a street address for display.
-5. **Viewer location** arrives per request, rounded client-side to 2 decimal places, and is not
-   stored as history. A profile may store one coarse home area (display point only).
+5. **Viewer location (desktop web)**: the primary source is the user's saved ZIP/area, resolved
+   server-side to a coarse point. Browser geolocation (`navigator.geolocation`) is optional and
+   user-initiated only ("Use my current location"); on desktop it's often IP/Wi-Fi based and can be
+   miles off, so show the resolved area name for the user to confirm. Round to 2 decimal places;
+   never store it as history. A profile stores one coarse home area (display point only).
 6. **Coordinates order**: PostGIS is `ST_MakePoint(lon, lat)`. Always wrap with
    `ST_SetSRID(..., 4326)::geography`. Validate lat ∈ [-90, 90], lon ∈ [-180, 180] in zod first.
-7. **Fallback**: if location permission is denied, ask for a ZIP / area; never guess from IP silently.
+7. **No silent location**: never infer location from IP without telling the user. If no area is set,
+   ask for a ZIP before showing the feed.
 8. **Pagination**: keyset on `(created_at, id)`, limit ≤ 50. No OFFSET.
 9. **Blocks**: every discovery query excludes listings from users the viewer blocked or who
    blocked the viewer.

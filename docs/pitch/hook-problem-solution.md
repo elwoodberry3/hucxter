@@ -1,6 +1,6 @@
 # Hucxter — Hook, Problem, Solution
 
-**Version:** v1 (revised 2026-10-23) · **Status:** Draft for Founder approval (D-16)
+**Version:** v1 (revised 2026-10-23) · **Status:** Approved by Founder 2026-10-23 (D-16)
 **Rules for this copy:** every sentence must be true on the day it's presented. Update the Status
 line at each milestone. Fill each [bracket] before use or delete the sentence.
 Original copy: `hook-problem-solution.v0-original.md`. Reasons for each change: `copy-review.md`.

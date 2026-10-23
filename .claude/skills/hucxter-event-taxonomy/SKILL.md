@@ -29,12 +29,16 @@ contextually, without a behavioral profile.
 Table `events` (append-only) or a vendor SDK behind `track()` — ADR-0006. Rules:
 - Event names `object_action` snake_case, versioned schema in `packages/contracts/events.ts`.
 - Allowed properties: ids, category_id, distance_bucket, price band, surface, session_id,
-  app version. **Never**: precise coordinates, phone, message text, raw search text from minors,
+  client (`web` in Phase I; later `desktop_app`, `ios`), app build, browser family + major version,
+  viewport bucket. **Never**: precise coordinates, phone, message text, raw search text from minors,
   health/religion/etc. sensitive inferences.
-- Phase I events: `app_opened`, `signup_completed`, `listing_draft_started`,
+- Phase I events: `session_started`, `signup_completed`, `listing_draft_started`,
   `listing_ai_draft_returned`, `listing_published`, `feed_viewed`, `listing_viewed`,
   `listing_saved`, `thread_started`, `message_sent`, `listing_marked_sold`,
-  `meetup_confirmed` (self-reported), `report_submitted`, `user_blocked`.
+  `meetup_confirmed` (self-reported), `report_submitted`, `user_blocked`, `video_upload_started`,
+  `video_upload_failed`, `notification_sent`, `notification_opened`, `reply_received`.
+- Desktop-risk metrics (ADR-0008): time from draft started to published, upload failure rate, time
+  to first seller reply, share of messages unread after 24 h.
 - Every event carries `consent_version`.
 
 ## 4. Consent & preferences record (build now)

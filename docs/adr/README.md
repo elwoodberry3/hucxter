@@ -7,10 +7,11 @@ Template: Status · Date · Context · Decision · Alternatives considered · Co
 
 | ADR | Title | Status |
 |---|---|---|
-| 0001 | Phase I stack | Accepted |
+| 0001 | Phase I stack | Accepted (amended by 0008) |
 | 0002 | Location privacy model | Proposed |
 | 0003 | Video pipeline (Mux) | Proposed |
 | 0004 | Background jobs on Postgres | Proposed |
 | 0005 | AI price guidance deferred | Proposed |
 | 0006 | Analytics events | Proposed |
 | 0007 | Apple HIG design baseline | Accepted |
+| 0008 | Platform sequence: desktop web → desktop app → iOS | Accepted |

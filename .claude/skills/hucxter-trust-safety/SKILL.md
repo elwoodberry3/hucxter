@@ -12,9 +12,25 @@ detection/removal. Do not use "zero-bot" in product copy.
 - Supabase Auth phone OTP. OTP send/verify rate-limited per phone, per device, per IP.
 - Phone line-type check (block VoIP/disposable where the provider supports it) — provider is an
   open decision; build behind an interface `PhoneRiskProvider` with a no-op default.
-- Session tokens in secure storage (Expo SecureStore). Refresh rotation on. Sign-out revokes.
-- Roles: `user`, `moderator`, `admin` in `app_roles` table; admin routes check role server-side.
-- Mobile app attestation (App Attest / Play Integrity) is Phase II; leave a hook in the auth flow.
+- Sessions: Supabase SSR auth with **httpOnly, Secure, SameSite=Lax** cookies scoped to the app
+  origin. No tokens in `localStorage`. Refresh rotation on. Sign-out revokes server-side. Show
+  active sessions under account settings, with "sign out everywhere."
+- Roles: `user`, `moderator`, `admin` in the `app_roles` table; `/admin` routes check the role
+  server-side on every request (middleware alone is not enough).
+- Bot resistance on the web: an invisible challenge (e.g., Cloudflare Turnstile; provider per
+  D-08) on OTP send and sign-up, behind the same provider interface. Device attestation comes with
+  the Phase IV desktop app and Phase V iOS app.
+
+## Web security baseline (Phase I)
+- **CSRF:** cookie-authenticated mutations must verify the `Origin` header against `APP_ORIGIN`
+  (server actions do this by default; route handlers must do it explicitly). No state change on GET.
+- **Headers:** strict Content-Security-Policy with nonces (allow only Mux, Supabase, and the
+  challenge provider), `frame-ancestors 'none'`, HSTS, `Referrer-Policy: strict-origin-when-cross-origin`,
+  and a `Permissions-Policy` that denies camera, microphone, and geolocation except on pages that
+  need them.
+- **XSS:** never `dangerouslySetInnerHTML` user content. Listing text and messages render as text;
+  links in messages are not auto-linked in Phase I.
+- **Uploads** go straight to Mux, never through our origin.
 
 ## Rate limits (Postgres-backed in Phase I; config values, Founder-approved)
 New-account limits are stricter for the first N days: listings/day, new conversations/day,
@@ -29,12 +45,12 @@ messages/minute. Exceeding returns 429 with a retry-after; repeated hits flag th
   show the recipient an inline safety notice; do not silently drop messages. Log a signal.
 - Message bodies are never logged or sent to analytics.
 
-## App Store requirements (Phase I, not optional)
-App Review Guideline 1.2 requires UGC apps to filter objectionable content, offer reporting with
-timely responses, let users block abusive users, and publish contact information. Guideline
-5.1.1(v) requires in-app account deletion when the app supports account creation. Deletion
-removes or anonymizes profile, listings, media (Mux delete job), and messages per the retention
-policy (D-07), and revokes sessions.
+## Account deletion & UGC basics (Phase I, built now so the iOS app inherits them)
+Users can delete their account from settings. Deletion removes or anonymizes profile, listings,
+media (Mux delete job), and messages per the retention policy (D-07), and revokes all sessions.
+Content filtering, reporting with timely responses, blocking, and a published support contact are
+all Phase I features. They are good marketplace practice now and are required by Apple's App Review
+Guidelines (1.2, 5.1.1(v)) for the Phase V iOS app.
 
 ## Reports, blocks, moderation
 - Report reasons enum: prohibited item, scam, harassment, stolen goods suspicion, counterfeit,

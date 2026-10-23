@@ -32,3 +32,9 @@ materials and any public comparative claims before use.
 - Replace the concept mockups with screenshots of the working app once Phase I-A runs (D-04).
 - Add a problem-evidence slide: seller and buyer interviews from the QA team and beta area, plus
   sourced market-size figures. Don't use unsourced statistics.
+
+## Update 2026-10-23: approved, and checked against the desktop-first decision
+The Founder approved v1 (D-16). It needs no wording change for the desktop-first platform sequence
+(ADR-0008): nothing in it promises a phone app. Keep it that way. Don't add "download the app" or
+app-store language until Phase IV/V exists. If investors ask about mobile, the answer is the platform
+sequence: prove the model on desktop web first, then a desktop app, then native iOS.
