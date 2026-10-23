@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "postgresql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:postgres@localhost:5432/hucxster_dev"
+      ]
+    },
+    "supabase-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server",
+        "--project-ref",
+        "hucxster-dev-ref"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./src",
+        "./prisma"
+      ]
+    }
+  }
+}
