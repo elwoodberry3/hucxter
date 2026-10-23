@@ -1,6 +1,6 @@
 ---
-name: hucxster-db-migrations
-description: Safe Supabase/Postgres schema change workflow for HUCXSTER — writing migrations, RLS policies, seeds, and database tests. Use whenever a task adds or alters tables, columns, indexes, functions, policies, or seed data.
+name: hucxter-db-migrations
+description: Safe Supabase/Postgres schema change workflow for HUCXTER — writing migrations, RLS policies, seeds, and database tests. Use whenever a task adds or alters tables, columns, indexes, functions, policies, or seed data.
 ---
 
 # Database migrations & RLS

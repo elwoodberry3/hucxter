@@ -1,6 +1,6 @@
 ---
-name: hucxster-trust-safety
-description: Authentication, bot resistance, rate limits, messaging safety, reporting/blocking, prohibited items, meetup safety, and moderation for HUCXSTER. Use when touching sign-up/login, sessions, messaging, reports, blocks, admin tools, or anything abuse-related.
+name: hucxter-trust-safety
+description: Authentication, bot resistance, rate limits, messaging safety, reporting/blocking, prohibited items, meetup safety, and moderation for HUCXTER. Use when touching sign-up/login, sessions, messaging, reports, blocks, admin tools, or anything abuse-related.
 ---
 
 # Trust & safety (replaces "zero-bot security")
@@ -28,6 +28,13 @@ messages/minute. Exceeding returns 429 with a retry-after; repeated hits flag th
   "pay deposit", external links/phone numbers in first message, shipping requests). Phase I action:
   show the recipient an inline safety notice; do not silently drop messages. Log a signal.
 - Message bodies are never logged or sent to analytics.
+
+## App Store requirements (Phase I, not optional)
+App Review Guideline 1.2 requires UGC apps to filter objectionable content, offer reporting with
+timely responses, let users block abusive users, and publish contact information. Guideline
+5.1.1(v) requires in-app account deletion when the app supports account creation. Deletion
+removes or anonymizes profile, listings, media (Mux delete job), and messages per the retention
+policy (D-07), and revokes sessions.
 
 ## Reports, blocks, moderation
 - Report reasons enum: prohibited item, scam, harassment, stolen goods suspicion, counterfeit,

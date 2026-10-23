@@ -1,6 +1,6 @@
 ---
-name: hucxster-event-taxonomy
-description: Analytics event schema, marketplace liquidity metrics, consent records, category taxonomy, and the typed feed-item envelope that keeps HUCXSTER ready for the FairXchange ad network. Use when adding tracking, building the feed API response, touching categories, or anything ads/monetization-adjacent.
+name: hucxter-event-taxonomy
+description: Analytics event schema, marketplace liquidity metrics, consent records, category taxonomy, and the typed feed-item envelope that keeps HUCXTER ready for the FairXchange ad network. Use when adding tracking, building the feed API response, touching categories, or anything ads/monetization-adjacent.
 ---
 
 # Events, feed envelope & ad-readiness

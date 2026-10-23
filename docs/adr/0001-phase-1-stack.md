@@ -1,5 +1,5 @@
 # ADR-0001: Phase I stack
-**Status:** Proposed · **Date:** 2026-10-22
+**Status:** Accepted (Founder, D-02, 2026-10-23) · **Proposed:** 2026-10-22
 
 ## Context
 Small team, mobile-first video capture, geospatial queries, Phase I audience is an internal QA team.

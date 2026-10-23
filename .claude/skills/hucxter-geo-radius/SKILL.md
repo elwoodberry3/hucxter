@@ -1,6 +1,6 @@
 ---
-name: hucxster-geo-radius
-description: PostGIS location, 100-mile radius, local feed queries, distance display, and location privacy for HUCXSTER. Use when writing migrations, feed/search APIs, or any code that stores, queries, or displays a location.
+name: hucxter-geo-radius
+description: PostGIS location, 100-mile radius, local feed queries, distance display, and location privacy for HUCXTER. Use when writing migrations, feed/search APIs, or any code that stores, queries, or displays a location.
 ---
 
 # Geo radius & location privacy

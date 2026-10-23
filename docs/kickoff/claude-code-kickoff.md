@@ -1,7 +1,8 @@
 # Claude Code Kickoff — How to Initiate the Build
 
 ## Step 0 — Founder setup (you, ~1 hour, no Claude Code)
-1. Approve or amend **D-01** (name) and **D-02 / ADR-0001** (stack). Change ADR status to Accepted.
+1. ~~Approve D-01 and D-02~~ — done 2026-10-23. Decide **D-13** (bundle ID) before Brief 01 so
+   the app config is right from the first commit.
 2. Merge this branch so `CLAUDE.md`, `.mcp.json`, `.claude/` and `docs/` are on `main`.
 3. Install: Node LTS, pnpm, Supabase CLI, Docker Desktop (for local Supabase), Claude Code,
    Expo Go or a dev build on your phone.
@@ -9,7 +10,7 @@
    Anthropic API key, Vercel. Do **not** create production projects yet.
 5. In your shell profile (not the repo): `export SUPABASE_DEV_PROJECT_REF=<dev ref>`.
 6. Open the repo in Claude Code: `claude`. Approve the `supabase-dev` MCP server when prompted.
-   Run `/context` to confirm CLAUDE.md loaded and `/skills` (or the `/` menu) to see the six skills.
+   Run `/context` to confirm CLAUDE.md loaded and `/skills` (or the `/` menu) to see the seven skills.
 
 ## How to run each brief
 - One brief per fresh session (`/clear` between briefs).
@@ -25,9 +26,10 @@
 **Objective.** Create the monorepo skeleton, tooling, CI, and local database so every later brief
 has lint/typecheck/test gates and a reproducible local environment. No product features.
 
-**Existing context (verified 2026-10-22).** Repo contains only `README.md`, `.gitignore`,
-`CLAUDE.md`, `.mcp.json`, `.claude/` (settings, 6 skills, 1 agent), `docs/`, and `assets/`
-(design images, superseded drafts). No `package.json`, no app code. Stack per ADR-0001 (Accepted).
+**Existing context (verified 2026-10-23).** Repo contains only `README.md`, `.gitignore`,
+`CLAUDE.md`, `.mcp.json`, `.claude/` (settings, 7 skills, 1 agent), `docs/`, and `assets/`
+(design references, superseded drafts). No `package.json`, no app code. Stack per ADR-0001 (Accepted). UI per ADR-0007 / `hucxter-design-system` (placeholder screens
+still use system styles and semantic tokens).
 
 **Scope.** May create: root `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, lint/format
 config, `apps/web`, `apps/mobile`, `packages/contracts`, `supabase/` (via `supabase init`),
@@ -38,7 +40,9 @@ section if a command name differs).
 **Functional requirements.**
 1. `apps/web`: Next.js (current stable, App Router, TypeScript strict). `GET /api/health` returns
    `{ status: "ok", version, commit }`. `/admin` placeholder page.
-2. `apps/mobile`: Expo (current stable SDK, TypeScript, Expo Router). Home placeholder screen
+2. `apps/mobile`: Expo (current stable SDK, TypeScript, Expo Router). App name "Hucxter",
+   slug `hucxter`, bundle ID / package from D-13 (read from `app.config.ts`, not hard-coded
+   elsewhere), icon from the Hx master (D-15; use a placeholder until it lands). Home placeholder screen
    that calls `/api/health` via `EXPO_PUBLIC_API_URL` and shows the result.
 3. `packages/contracts`: zod + exported `HealthResponse` schema used by both apps.
 4. `supabase/`: initialized; first migration enables `postgis`; `supabase/tests/` with one pgTAP
@@ -73,7 +77,7 @@ simulator), say so explicitly — do not claim it passed.
 ## Brief 02 — Schema v1 + geo  *(paste after Brief 01 merges)*
 
 **Objective.** Create the Phase I data model with RLS, location privacy, and tests.
-Load skills `hucxster-db-migrations`, `hucxster-geo-radius`, `hucxster-event-taxonomy`.
+Load skills `hucxter-db-migrations`, `hucxter-geo-radius`, `hucxter-event-taxonomy`.
 
 **Scope.** `supabase/migrations/`, `supabase/seed.sql`, `supabase/tests/`, `packages/contracts/`.
 No API routes or UI.
@@ -104,7 +108,7 @@ PR and `supabase db reset`. Do not run `supabase db push`.
 
 | # | Brief | Objective | Key acceptance |
 |---|---|---|---|
-| 03 | Auth & profiles | Phone OTP sign-in, 18+ confirmation, profile + coarse area, roles, rate limits | Rate limits enforced; session in SecureStore; admin route denies non-admin |
+| 03 | Auth & profiles | Phone OTP sign-in, 18+ confirmation, profile + coarse area, roles, rate limits, in-app account deletion | Rate limits enforced; session in SecureStore; admin route denies non-admin; delete account removes data and revokes sessions |
 | 04 | Video pipeline | Mux direct upload, signed webhook, state machine, signed playback | Signature rejection + idempotency tests; non-owner can't attach media |
 | 05 | Listing creation + AI draft | Camera → upload → AI draft → seller edits → publish; prohibited-item check | Injection & prohibited fixtures pass; nothing publishes without confirm |
 | 06 | Local feed + detail | Typed feed envelope, `feed_local`, bucketed distance, save | Only `listing` items emitted; no coordinates in responses |

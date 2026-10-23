@@ -1,6 +1,6 @@
-# HUCXSTER Phased Build Strategy
+# HUCXTER Phased Build Strategy
 
-**Status:** Proposed by Advisory Chair, 2026-10-22 · **Requires:** Founder approval (see §6)
+**Status:** Proposed by Advisory Chair, 2026-10-22 · updated 2026-10-23 with D-01–D-04 · **Requires:** Founder approval (see §6)
 
 ## 1. Executive recommendation
 Build the marketplace first, prove liquidity in one area, then layer creators, then ads.
@@ -27,7 +27,7 @@ that doesn't exist until liquidity does.
 ## 2. Phases
 
 ### Phase 0 — Foundation (now)
-Founder decisions D-01–D-08; repo scaffold; CI; schema v1; auth. Briefs 01–03.
+Remaining Founder decisions (D-05–D-08); repo scaffold; CI; schema v1; auth. Briefs 01–03.
 **Exit:** `pnpm lint/typecheck/test` and DB tests green in CI; phone sign-in works on a device.
 
 ### Phase I-A — Closed alpha (internal QA buyer/seller team)
@@ -41,6 +41,7 @@ The core loop only:
 | Local feed (radius ≤ 100 mi, recency), listing detail, save | Ranking models, Explore/Trending, search ranking |
 | Item-linked messaging, safety notices, safe-exchange spot suggestions | Voice/video calls |
 | Report, block, admin moderation console, audit log | Automated video moderation at scale |
+| In-app account deletion (App Store 5.1.1(v)) and published support contact (1.2) | |
 | Events + liquidity scorecard in admin | Desktop/macOS apps (ui 3, 7, 12) |
 
 **QA test protocol:** testers act as real buyers/sellers with real items in one area; scripted
@@ -93,15 +94,18 @@ in the new area. Never launch a new area with an empty feed.
 - **Payments (D-09):** Seat 01 wants in-app payment/escrow early for trust; Seat 06 says it adds
   regulatory and build cost before demand is proven. Chair: no payments in Phase I; revisit in II
   with dispute data.
-- **Visual identity (D-03):** Seat 03 says the HIG-clean mockups risk a generic brand; Seat 02
-  wants familiar, low-friction UI. Chair: HIG for structure/accessibility, plus a distinctive brand
-  layer (type, color, motion, voice) — choose one direction, not both.
+- **Visual identity (D-03) — resolved 2026-10-23:** Apple HIG is the structural baseline for the
+  whole platform (ADR-0007). Seat 03's brand-distinctiveness concern carries forward: distinctiveness
+  comes from the Hx mark, color, voice, and community — not from breaking platform conventions.
 - **Ad timing:** Founder brief says Phase II; Seat 05 says after density. Chair: §1 split.
 
-## 4. Screens to design next (replace H3/H4 gaps)
+## 4. Phase I screens to build (per D-04, built directly in the MVP, HIG baseline)
 Record/upload listing · AI draft review & edit · Local feed (video, price, distance bucket, area) ·
 Listing detail · Item-linked thread with safety notice · Meetup spot picker · Report/block ·
-Sign-up/phone OTP/area · My listings · Admin moderation queue.
+Sign-up/phone OTP/area · My listings · Admin moderation console (web).
+
+The concept mockups in `assets/images/ui/` guide layout and tone only. Investor visuals are
+captured from the working MVP after Phase I-A, using seeded demo data that is labeled as demo.
 
 ## 5. Risks & dependencies
 Supply cold start (mitigation: in-person seller recruiting) · video cost per listing (track from
@@ -111,5 +115,6 @@ terms, privacy policy, prohibited items, age policy, retention · vendor account
 Anthropic, SMS provider, Apple/Google developer).
 
 ## 6. Founder decisions required
-See `docs/decisions/open-decisions.md`. Blocking Brief 01: D-01, D-02. Blocking public beta: D-05,
+See `docs/decisions/open-decisions.md`. D-01–D-04 and D-12 resolved 2026-10-23. Blocking Brief 01:
+D-13 (bundle ID). Blocking public beta: D-05,
 D-06, D-07, D-08.

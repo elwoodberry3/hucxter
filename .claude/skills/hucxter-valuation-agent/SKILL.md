@@ -1,6 +1,6 @@
 ---
-name: hucxster-valuation-agent
-description: AI listing assistant for HUCXSTER — drafting titles, categories, tags, condition notes from video frames, and any price guidance. Use when building or changing AI prompts, model calls, tool schemas, or valuation/negotiation features.
+name: hucxter-valuation-agent
+description: AI listing assistant for HUCXTER — drafting titles, categories, tags, condition notes from video frames, and any price guidance. Use when building or changing AI prompts, model calls, tool schemas, or valuation/negotiation features.
 ---
 
 # AI listing assistant & valuation
@@ -35,7 +35,7 @@ video. Copy shown to users says "AI draft — check before posting."
 - Limits: per-user daily draft cap, request timeout, max frames, max tokens. Log model, latency,
   token usage, and cost per call (no image data, no PII) to `ai_calls`.
 - Category must map to an existing `categories.id`; unknown → `null`, not a new category.
-- Prohibited-item check runs on the draft (see `hucxster-trust-safety`); a hit blocks publish and
+- Prohibited-item check runs on the draft (see `hucxter-trust-safety`); a hit blocks publish and
   routes to review rather than silently editing the listing.
 
 ## Evals (required before enabling for testers)

@@ -1,6 +1,6 @@
 ---
-name: hucxster-video-pipeline
-description: Short-form listing video capture, upload, transcoding, playback, and lifecycle for HUCXSTER using Mux. Use when touching video upload, webhooks, media states, players, thumbnails, or media deletion.
+name: hucxter-video-pipeline
+description: Short-form listing video capture, upload, transcoding, playback, and lifecycle for HUCXTER using Mux. Use when touching video upload, webhooks, media states, players, thumbnails, or media deletion.
 ---
 
 # Video pipeline (Mux, ADR-0003 — Proposed)
@@ -26,7 +26,7 @@ do not rely on memory. Record what you verified in the PR description.
 - **Strip location metadata risk**: phone videos carry GPS metadata. Do not enable master access or
   original downloads; serve only transcoded renditions. Never read metadata into our DB.
 - Thumbnails come from Mux image URLs (signed). Poster frame chosen by seller; default 1s.
-- Captions/frames passed to AI go through `hucxster-valuation-agent` rules (untrusted input).
+- Captions/frames passed to AI go through `hucxter-valuation-agent` rules (untrusted input).
 - Feed autoplay: muted by default, respects Reduce Motion and Low Data Mode; preload only the
   next item. Measure startup time and rebuffering before setting budgets (no invented targets).
 

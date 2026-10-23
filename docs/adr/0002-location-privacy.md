@@ -15,4 +15,4 @@ Random jitter per request (leaks through averaging); exact distance (unsafe); ZI
 
 ## Consequences
 ~1 km edge error at the radius boundary; neighbouring listings share a display point (acceptable).
-See `.claude/skills/hucxster-geo-radius/`.
+See `.claude/skills/hucxter-geo-radius/`.
