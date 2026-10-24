@@ -1,0 +1,145 @@
+/*
+ * Hucxter design tokens (hucxter-design-system skill). Components use tokens only, never raw hex.
+ * Light/dark follow prefers-color-scheme; [data-theme] on <html> overrides it.
+ * Tuned: --hx-label-secondary light is 65% (not 60%) so it meets 4.5:1 on --hx-bg.
+ */
+:root {
+  color-scheme: light;
+  --hx-brand: #545072;
+  --hx-accent: #6457af;
+  --hx-accent-subtle: #eeeafb;
+  --hx-bg: #f5f4f2;
+  --hx-bg-elevated: #ffffff;
+  --hx-label: #1c1b22;
+  --hx-label-secondary: rgb(28 27 34 / 65%);
+  --hx-label-tertiary: rgb(28 27 34 / 35%);
+  --hx-separator: rgb(0 0 0 / 10%);
+  --hx-destructive: #c8372c;
+  --hx-success: #257a4a;
+  --hx-on-accent: #ffffff;
+  --hx-on-brand: #ffffff;
+  --hx-fill-hover: rgb(0 0 0 / 5%);
+  --hx-toolbar-bg: rgb(255 255 255 / 80%);
+  --hx-shadow-card: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 4%);
+
+  --hx-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* HIG text-style roles (macOS sizes) in rem so browser zoom and text size work. */
+  --hx-text-large-title: 1.625rem;
+  --hx-text-title-1: 1.375rem;
+  --hx-text-title-2: 1.0625rem;
+  --hx-text-title-3: 0.9375rem;
+  --hx-text-headline: 0.9375rem;
+  --hx-text-body: 0.9375rem;
+  --hx-text-callout: 0.9375rem;
+  --hx-text-subheadline: 0.875rem;
+  --hx-text-footnote: 0.8125rem;
+  --hx-text-caption: 0.75rem;
+
+  /* 8px grid, 4px for tight internals. */
+  --hx-space-1: 0.25rem;
+  --hx-space-2: 0.5rem;
+  --hx-space-3: 0.75rem;
+  --hx-space-4: 1rem;
+  --hx-space-6: 1.5rem;
+  --hx-space-8: 2rem;
+
+  --hx-radius-card: 12px;
+  --hx-radius-control: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --hx-accent: #aa9cec;
+    --hx-accent-subtle: #2b2745;
+    --hx-bg: #16151c;
+    --hx-bg-elevated: #211f2a;
+    --hx-label: #f4f3f8;
+    --hx-label-secondary: rgb(244 243 248 / 65%);
+    --hx-label-tertiary: rgb(244 243 248 / 40%);
+    --hx-separator: rgb(255 255 255 / 12%);
+    --hx-destructive: #ff6b5e;
+    --hx-success: #4cc38a;
+    --hx-on-accent: #16151c;
+    --hx-fill-hover: rgb(255 255 255 / 7%);
+    --hx-toolbar-bg: rgb(33 31 42 / 80%);
+    --hx-shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 20%);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --hx-accent: #aa9cec;
+  --hx-accent-subtle: #2b2745;
+  --hx-bg: #16151c;
+  --hx-bg-elevated: #211f2a;
+  --hx-label: #f4f3f8;
+  --hx-label-secondary: rgb(244 243 248 / 65%);
+  --hx-label-tertiary: rgb(244 243 248 / 40%);
+  --hx-separator: rgb(255 255 255 / 12%);
+  --hx-destructive: #ff6b5e;
+  --hx-success: #4cc38a;
+  --hx-on-accent: #16151c;
+  --hx-fill-hover: rgb(255 255 255 / 7%);
+  --hx-toolbar-bg: rgb(33 31 42 / 80%);
+  --hx-shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 20%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--hx-bg);
+  color: var(--hx-label);
+  font-family: var(--hx-font);
+  font-size: var(--hx-text-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--hx-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--hx-accent);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

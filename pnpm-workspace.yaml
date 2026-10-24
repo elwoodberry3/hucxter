@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  # Its postinstall only re-downloads a native binary that pnpm already installs as an optional dependency.
+  unrs-resolver: false
+
+peerDependencyRules:
+  allowedVersions:
+    # eslint-config-next 16.4 supports ESLint 10, but these plugins have not widened their peer
+    # range yet. Verified in Brief 01 that their rules load and report on ESLint 10. Remove when they do.
+    eslint-plugin-import>eslint: '10'
+    eslint-plugin-jsx-a11y>eslint: '10'
+    eslint-plugin-react>eslint: '10'
