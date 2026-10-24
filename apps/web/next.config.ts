@@ -18,7 +18,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@hucxter/contracts'],
   headers() {
-    return Promise.resolve([{ source: '/:path*', headers: securityHeaders }]);
+    return Promise.resolve([
+      { source: '/:path*', headers: securityHeaders },
+      // API responses are never documents; deny everything if one is ever rendered.
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: "default-src 'none'; frame-ancestors 'none'" },
+        ],
+      },
+    ]);
   },
 };
 

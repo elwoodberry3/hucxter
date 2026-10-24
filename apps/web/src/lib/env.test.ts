@@ -18,6 +18,19 @@ describe('serverConfig', () => {
     ).toThrow();
   });
 
+  it('rejects values that are not a bare origin', () => {
+    for (const APP_ORIGIN of [
+      'https://user:pass@hucxter.app',
+      'https://hucxter.app/path',
+      'https://hucxter.app?x=1',
+    ]) {
+      expect(() => serverConfig({ APP_ORIGIN }), APP_ORIGIN).toThrow(/origin/);
+    }
+    expect(serverConfig({ APP_ORIGIN: 'https://hucxter.app/' }).appOrigin.origin).toBe(
+      'https://hucxter.app',
+    );
+  });
+
   it('prefers GIT_COMMIT_SHA, then VERCEL_GIT_COMMIT_SHA, then "unknown"', () => {
     expect(serverConfig({ GIT_COMMIT_SHA: 'a', VERCEL_GIT_COMMIT_SHA: 'b' }).commit).toBe('a');
     expect(serverConfig({ GIT_COMMIT_SHA: '', VERCEL_GIT_COMMIT_SHA: 'b' }).commit).toBe('b');

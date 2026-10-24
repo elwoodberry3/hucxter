@@ -44,7 +44,7 @@ pnpm --filter @hucxter/web exec playwright install chromium
 | Command          | What it does                                                                        |
 | ---------------- | ----------------------------------------------------------------------------------- |
 | `pnpm dev`       | Next.js dev server for `apps/web`                                                   |
-| `pnpm build`     | Production build of every workspace (needs `APP_ORIGIN` set)                        |
+| `pnpm build`     | Production build of every workspace (`APP_ORIGIN` must be set when it runs)         |
 | `pnpm lint`      | ESLint in every workspace (warnings fail)                                           |
 | `pnpm typecheck` | `tsc --noEmit` in every workspace                                                   |
 | `pnpm test`      | Vitest unit tests                                                                   |

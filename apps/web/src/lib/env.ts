@@ -7,7 +7,14 @@ const optional = <T extends z.ZodType>(schema: T) =>
 
 const ServerEnv = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  APP_ORIGIN: optional(z.url({ protocol: /^https?$/ })),
+  // A bare origin (scheme + host + port): later CSRF checks compare request Origin headers to it.
+  APP_ORIGIN: optional(
+    z
+      .url({ protocol: /^https?$/ })
+      .refine((value) => new URL(value).origin === value.replace(/\/$/, ''), {
+        message: 'APP_ORIGIN must be an origin, without credentials, path, query or fragment',
+      }),
+  ),
   GIT_COMMIT_SHA: optional(z.string()),
   VERCEL_GIT_COMMIT_SHA: optional(z.string()),
 });

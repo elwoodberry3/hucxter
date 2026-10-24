@@ -36,6 +36,17 @@ test.describe('security headers', () => {
     expect(nonce(first)).not.toBe(nonce(second));
   });
 
+  test('dotted page paths still get the page CSP', async ({ request }) => {
+    const csp = (await request.get('/u/john.doe')).headers()['content-security-policy'] ?? '';
+    expect(csp).toMatch(/script-src 'self' 'nonce-/);
+  });
+
+  test('API routes get a deny-all CSP', async ({ request }) => {
+    expect((await request.get('/api/health')).headers()['content-security-policy']).toBe(
+      "default-src 'none'; frame-ancestors 'none'",
+    );
+  });
+
   test('the page runs under the CSP with no violations', async ({ page }) => {
     const violations: string[] = [];
     page.on('console', (message) => {

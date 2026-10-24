@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
   const csp = contentSecurityPolicy({
     nonce,
     isDev: process.env.NODE_ENV === 'development',
-    upgradeInsecure: process.env.APP_ORIGIN?.startsWith('https://') ?? false,
+    upgradeInsecure: isHttpsOrigin(process.env.APP_ORIGIN),
   });
 
   // Next.js reads the nonce from the request's CSP header and applies it to its own scripts.
@@ -19,15 +19,24 @@ export function proxy(request: NextRequest) {
   return response;
 }
 
+function isHttpsOrigin(value: string | undefined): boolean {
+  if (value === undefined) return false;
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export const config = {
   matcher: [
     {
-      // HTML documents only: skip API routes, build assets, and files with an extension.
-      source: '/((?!api/|_next/static|_next/image|.*\\.[a-z0-9]+$).*)',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
+      // Pages only: skip API routes (static CSP in next.config.ts), build output, and known static
+      // asset types. Dotted page paths (e.g. /u/john.doe) still get the CSP.
+      source:
+        '/((?!api/|_next/static|_next/image|.*\\.(?:ico|png|jpe?g|gif|svg|webp|avif|webmanifest|txt|xml|css|js|map|woff2?)$).*)',
+      // RSC router prefetches are not documents. Browser document prefetches are not skipped.
+      missing: [{ type: 'header', key: 'next-router-prefetch' }],
     },
   ],
 };
