@@ -13,10 +13,10 @@ describe('contentSecurityPolicy', () => {
     expect(csp).not.toContain('unsafe-inline');
   });
 
-  it('allows eval only in development', () => {
-    expect(contentSecurityPolicy({ nonce: 'n', isDev: true, upgradeInsecure: false })).toContain(
-      "'unsafe-eval'",
-    );
+  it('relaxes eval and inline styles only in development', () => {
+    const csp = contentSecurityPolicy({ nonce: 'n', isDev: true, upgradeInsecure: false });
+    expect(csp).toContain("'unsafe-eval'");
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
   });
 
   it('creates distinct 128-bit base64 nonces', () => {

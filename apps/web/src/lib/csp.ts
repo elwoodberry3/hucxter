@@ -15,7 +15,8 @@ export function contentSecurityPolicy({
     "default-src 'self'",
     // React's dev tooling needs eval; production never gets it.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    `style-src 'self' 'nonce-${nonce}'`,
+    // The dev error overlay injects inline styles; browsers ignore 'unsafe-inline' next to a nonce.
+    isDev ? "style-src 'self' 'unsafe-inline'" : `style-src 'self' 'nonce-${nonce}'`,
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "connect-src 'self'",
