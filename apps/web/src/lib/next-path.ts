@@ -9,6 +9,16 @@ const MAX_LENGTH = 512;
 const UNSAFE_CHARS = /[\u0000-\u001f\u007f\\]/;
 const AUTH_PATHS = new Set(['/sign-in', '/sign-up']);
 
+function normalizedPathname(pathname: string): string {
+  let decoded = pathname;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    // Keep the raw pathname; the caller already rejected undecodable input.
+  }
+  return decoded.toLowerCase().replace(/\/+$/, '') || '/';
+}
+
 function looksUnsafe(path: string): boolean {
   return !path.startsWith('/') || path.startsWith('//') || UNSAFE_CHARS.test(path);
 }
@@ -40,7 +50,7 @@ export function safeNextPath(raw: unknown): string | null {
 
   const path = `${url.pathname}${url.search}${url.hash}`;
   // Dot segments can normalize into `//host` (e.g. "/.//evil.example").
-  if (looksUnsafe(path) || AUTH_PATHS.has(url.pathname)) return null;
+  if (looksUnsafe(path) || AUTH_PATHS.has(normalizedPathname(url.pathname))) return null;
   return path;
 }
 

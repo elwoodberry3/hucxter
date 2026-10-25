@@ -43,6 +43,10 @@ describe('safeNextPath', () => {
     'https:evil.example',
     '/sign-in',
     '/sign-up?next=/sell',
+    '/sign-in/',
+    '/%73ign-in',
+    '/SIGN-IN',
+    '/sign-in%2F',
     '',
   ])('rejects %j', (input) => {
     expect(safeNextPath(input)).toBeNull();

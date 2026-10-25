@@ -58,7 +58,7 @@ export default async function HomePage() {
           listings={[]}
           invitation={{
             title: `Giving something away? Be the first ${near}`,
-            body: 'Free items move fast locally. Post it and a neighbor can pick it up.',
+            body: 'Post something you’re giving away and a neighbor can pick it up.',
             sellLabel: 'Give something away',
             browse: { label: `Browse ${free.name}`, href: `/c/${free.slug}` },
             heroKey: free.heroKey,

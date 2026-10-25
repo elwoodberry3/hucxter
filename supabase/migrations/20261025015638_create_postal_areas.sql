@@ -49,11 +49,11 @@ $$;
 
 -- Nearest active ZIP to a browser-supplied location ("Use my current location").
 -- Coordinates are rounded to 2 decimals (~1 km) before use and never stored. Returns no row if
--- nothing is within p_max_m (default 40 km). Security definer so callers never read `point`.
+-- nothing is within 40 km. Security definer so callers never read `point`; the search distance is
+-- fixed (not a parameter) so callers can't binary-search it to recover centroids.
 create or replace function public.postal_area_nearest(
   p_lat double precision,
-  p_lon double precision,
-  p_max_m double precision default 40000
+  p_lon double precision
 )
 returns table (zip text, area_label text, state text)
 language plpgsql
@@ -75,13 +75,13 @@ begin
     select pa.zip, pa.area_label, pa.state
     from public.postal_areas pa
     where pa.is_active
-      and extensions.st_dwithin(pa.point, v_point, least(greatest(p_max_m, 0), 160934))
+      and extensions.st_dwithin(pa.point, v_point, 40000)
     order by extensions.st_distance(pa.point, v_point), pa.zip
     limit 1;
 end;
 $$;
 
 revoke all on function public.postal_area_lookup(text) from public;
-revoke all on function public.postal_area_nearest(double precision, double precision, double precision) from public;
+revoke all on function public.postal_area_nearest(double precision, double precision) from public;
 grant execute on function public.postal_area_lookup(text) to anon, authenticated, service_role;
-grant execute on function public.postal_area_nearest(double precision, double precision, double precision) to anon, authenticated, service_role;
+grant execute on function public.postal_area_nearest(double precision, double precision) to anon, authenticated, service_role;

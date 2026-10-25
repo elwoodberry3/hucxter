@@ -77,8 +77,9 @@ create trigger categories_set_updated_at
 
 alter table public.categories enable row level security;
 
--- Browsers never write (single write path through apps/web server code with the service role).
-revoke insert, update, delete, truncate on public.categories from anon, authenticated;
+-- Browsers only read (single write path through apps/web server code with the service role).
+revoke all on public.categories from anon, authenticated;
+grant select on public.categories to anon, authenticated;
 
 create policy categories_public_read_active
   on public.categories

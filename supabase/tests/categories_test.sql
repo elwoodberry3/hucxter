@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(18);
 
 -- Shape and security
 select has_table('public', 'categories', 'categories table exists');
@@ -88,6 +88,12 @@ select throws_ok(
   '42501',
   null,
   'anon cannot delete categories'
+);
+select throws_ok(
+  $$truncate public.categories cascade$$,
+  '42501',
+  null,
+  'anon cannot truncate categories'
 );
 reset role;
 

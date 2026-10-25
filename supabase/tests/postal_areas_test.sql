@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(16);
 
 select has_table('public', 'postal_areas', 'postal_areas table exists');
 select ok(
@@ -34,6 +34,11 @@ select is(
 select is_empty(
   $$select * from public.postal_area_nearest(40.7128, -74.0060)$$,
   'postal_area_nearest returns nothing far outside the region'
+);
+select is(
+  (select pronargs::int from pg_proc where oid = 'public.postal_area_nearest'::regproc),
+  2,
+  'postal_area_nearest takes only lat/lon (search distance is fixed, not caller-controlled)'
 );
 select throws_ok(
   $$select * from public.postal_area_nearest(91, 0)$$,

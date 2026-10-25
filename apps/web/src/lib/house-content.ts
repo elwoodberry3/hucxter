@@ -21,7 +21,7 @@ export const HERO_SLIDES: readonly HeroSlide[] = [
     id: 'holiday-finds',
     eyebrow: 'Seasonal',
     title: 'Holiday finds near you',
-    body: 'Gifts, decor, and party gear from people in your area. Pick it up this week.',
+    body: 'Selling gifts, decor, or party gear? List it for neighbors who are shopping local this season.',
     cta: { label: 'Browse Home & Living', href: '/c/home' },
     art: 'holiday',
     window: { start: '2026-10-15', end: '2027-01-05' },
