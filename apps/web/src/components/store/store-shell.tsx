@@ -1,5 +1,6 @@
 import type { Taxonomy } from '@hucxter/contracts';
 import type { ReactNode } from 'react';
+import { SignInSheetProvider } from '@/components/auth/sign-in-sheet';
 import { CategoryBar } from './category-bar';
 import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
@@ -18,7 +19,7 @@ export function StoreShell({
   children: ReactNode;
 }) {
   return (
-    <>
+    <SignInSheetProvider>
       <a href="#main" className={styles.skipLink}>
         Skip to content
       </a>
@@ -31,6 +32,6 @@ export function StoreShell({
         {children}
       </main>
       <SiteFooter taxonomy={taxonomy} locationLabel={locationLabel} />
-    </>
+    </SignInSheetProvider>
   );
 }

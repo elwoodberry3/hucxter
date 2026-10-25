@@ -1,13 +1,13 @@
 'use client';
 
 import type { GatedAction } from '@hucxter/contracts';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { authHref } from '@/lib/next-path';
+import { useSignInSheet } from '@/components/auth/sign-in-sheet';
 
-/** An action that needs an account. Guests are sent to sign in and returned here afterwards. */
+/** An action that needs an account. For guests it opens the sign-in sheet. */
 export function GatedActionButton({
+  action,
+  prompt,
   children,
   className,
 }: {
@@ -16,10 +16,17 @@ export function GatedActionButton({
   children: ReactNode;
   className?: string | undefined;
 }) {
-  const pathname = usePathname();
+  const openSheet = useSignInSheet();
   return (
-    <Link href={authHref(pathname)} className={className}>
+    <button
+      type="button"
+      className={className}
+      aria-haspopup="dialog"
+      onClick={() => {
+        openSheet({ action, prompt });
+      }}
+    >
       {children}
-    </Link>
+    </button>
   );
 }
