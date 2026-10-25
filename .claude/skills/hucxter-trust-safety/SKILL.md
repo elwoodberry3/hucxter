@@ -8,8 +8,20 @@ description: Authentication, bot resistance, rate limits, messaging safety, repo
 "Zero bots" is not achievable or provable. The goal is **layered bot resistance** and fast
 detection/removal. Do not use "zero-bot" in product copy.
 
-## Identity & access (Phase I)
-- Supabase Auth phone OTP. OTP send/verify rate-limited per phone, per device, per IP.
+## Identity & access (Phase I, ADR-0010)
+- **Sign up / sign in** with one of: **email one-time code** (no passwords), **Facebook**
+  (built-in Supabase provider, `public_profile` + `email`), or **TikTok** (Supabase custom OAuth2
+  provider `custom:tiktok`; TikTok returns no email, so the user must add and confirm one).
+  Accounts link by verified email.
+- **Verification before any action** (message, save, sell, report): confirmed email + **phone
+  verified by SMS code** (one active account per phone) + 18+ confirmation + home ZIP. Guests and
+  unverified members can browse only.
+- **No guest interactions.** Every gated action routes to sign-in with a safe, same-origin `next`
+  path (reject absolute URLs and `//` to prevent open redirects).
+- OTP send/verify rate-limited per phone, per email, per device, per IP.
+- OAuth: use PKCE and the state parameter; request minimal scopes; store only provider user ID,
+  display name, avatar, and email; never post to the user's social accounts; honor provider
+  data-deletion requests.
 - Phone line-type check (block VoIP/disposable where the provider supports it) — provider is an
   open decision; build behind an interface `PhoneRiskProvider` with a no-op default.
 - Sessions: Supabase SSR auth with **httpOnly, Secure, SameSite=Lax** cookies scoped to the app

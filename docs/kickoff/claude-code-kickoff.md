@@ -24,7 +24,7 @@ Phase I is a **desktop web app in Chrome** (ADR-0008). There's no mobile or nati
 
 ---
 
-## Brief 01 — Repository foundation + web shell  *(paste into Claude Code)*
+## Brief 01 — Repository foundation + web shell  ✅ *Merged 2026-10-24 (PR #2)*
 
 **Objective.** Create the monorepo skeleton, tooling, CI, local database, and an empty Hucxter
 desktop web shell, so every later brief has lint, typecheck, and test gates and a reproducible local
@@ -96,62 +96,160 @@ open risks.
 
 ---
 
-## Brief 02 — Schema v1 + geo  *(paste after Brief 01 merges)*
+## Brief 02 — Storefront layout + category taxonomy  *(paste into Claude Code)*
 
-**Objective.** Create the Phase I data model with RLS, location privacy, and tests.
-Load the skills `hucxter-db-migrations`, `hucxter-geo-radius`, and `hucxter-event-taxonomy`.
+**Objective.** Replace the Brief 01 sidebar shell with the Hucxter storefront the Founder approved
+in grooming (ADR-0009): a full, vibrant, honest storefront that guests can browse with no data in
+the system, and with every action gated behind sign-in. Add the category taxonomy as database data
+that drives navigation and filters. No real authentication, listings, or video yet.
 
-**Scope.** `supabase/migrations/`, `supabase/seed.sql`, `supabase/tests/`, `packages/contracts/`.
-No API routes or UI.
+**Existing context (verified 2026-10-24 on `main` @ e08266e).**
+- `apps/web` has a `(shell)` route group with a left sidebar (`components/sidebar-nav.tsx`,
+  `nav-items.ts`, `app-shell.tsx`, `shell.module.css`) and placeholder pages.
+- Also present: per-request nonce CSP in `src/proxy.ts`, an env check in `src/lib/env.ts`,
+  Playwright e2e (shell, a11y, headers), and `packages/contracts` with `HealthResponse`.
+- Supabase has one migration (PostGIS) and a pgTAP test.
+- Read first: `CLAUDE.md`, ADR-0009, `docs/specs/storefront-ia.md`,
+  `docs/specs/category-taxonomy.md`, and the skills `hucxter-design-system`, `hucxter-geo-radius`
+  (guest location rule 7), `hucxter-event-taxonomy`, `hucxter-db-migrations`, and
+  `hucxter-trust-safety` (open-redirect rule).
 
-**Functional requirements — tables.**
-- `profiles` (user_id, display_name, home_postal_code, home_display_point, home_area_label,
-  age_confirmed_at)
-- `app_roles`
-- `postal_areas` (ZIP → coarse centroid + area label; seed the Phase I-B region from US Census
-  ZCTA data, which is public domain, and note the source and vintage in the migration)
-- `categories` (seeded tree)
-- `listings` (seller_id, title, description, price_cents, condition enum, category_id, status enum
-  draft/active/reserved/sold/removed, precise_point, display_point, area_label, primary_media_id,
-  deleted_at)
-- `listing_media` (status enum per the video skill)
-- `threads` (listing_id, buyer_id, seller_id; unique listing + buyer)
-- `messages`
-- `blocks`, `reports`, `moderation_cases`, `audit_log`
-- `safe_exchange_spots` (seeded for the test area)
-- `events`, `user_consents`, `ai_calls`, `rate_limit_counters`
-- `notification_preferences` (channels per D-18; default web only)
+**Scope.**
+- May modify: `apps/web/**`, `packages/contracts/**`, and `supabase/migrations|seed.sql|tests`.
+- May append: `README.md` and CLAUDE.md's "Repository state" section.
+- Must not modify: `assets/`, `docs/adr/`, `docs/specs/`, `.claude/`.
+- Must not add: real auth providers, listings/media/messaging tables, ads, analytics vendors, or
+  mobile tooling.
 
-Also add a function `feed_local(...)` that implements `reference/feed-query.sql`.
+**Functional requirements.**
+1. **Remove the app sidebar** and the duplicate search. Implement the global header, category bar,
+   mega menu, account control (guest **Sign in**; the member menu is a stub until Brief 03), and
+   big footer per `storefront-ia.md` §1, §2, and §6.
+2. **Taxonomy as data:**
+   - Migration creating `categories` (id, slug unique, parent_id, name, sort, is_active, hero_key,
+     attributes jsonb, timestamps), with RLS on and public select of active rows only.
+   - `seed.sql` loads the 14 departments and their subcategories from `category-taxonomy.md`.
+     Motor vehicles are excluded (D-24 default).
+   - `packages/contracts/taxonomy.ts` holds zod schemas for categories and the attribute-filter
+     schema.
+   - The app reads categories server-side and caches them; no hard-coded nav arrays.
+3. **Home `/`**:
+   - Hero carousel: max 3 house slides, no autoplay by default, pause control, reduced-motion
+     safe.
+   - Shop-by-category card grid (all departments).
+   - "Near you" rails that render **designed invitation cards** when empty.
+   - Promo strip.
+   - One in-feed slot rendered via the typed feed envelope as a house promo labeled
+     **"Promoted by Hucxter"** (D-30).
+   - Art: in-repo SVG/CSS placeholders only (D-28).
+4. **Category index** `/c/[dept]` and `/c/[dept]/[sub]`:
+   - Subcategory chips, breadcrumb, hero banner.
+   - Left filter panel: common filters + the department's attribute filters, with state in the
+     URL query.
+   - Sort select and results grid component.
+   - Designed empty state (no listings exist yet).
+   - Unknown slug returns 404.
+5. **Search** `/search?q=` uses the same results layout and empty state, with the query echoed
+   safely.
+6. **Product page template:**
+   - Build the `/l/[id]` layout per `storefront-ia.md` §5: video column, detail column, "Is this
+     still available?", status badge (Available / Pending: someone's on the way / Sold), seller
+     card, Meet safely panel.
+   - `/l/[id]` returns 404 for now (no listings table).
+   - Render the template at **`/dev/templates/listing`** with a typed demo fixture visibly labeled
+     **"Demo"**. This route must 404 when `APP_ENV=production` (add `APP_ENV` to the env schema),
+     with a test proving it.
+7. **Guest location:**
+   - Location chip + popover: ZIP entry with validation, radius select (1–100 mi), "Use my current
+     location" (browser geolocation, user-initiated).
+   - Default from Vercel IP headers when present, else `DEFAULT_AREA_ZIP`. Shown as "Near
+     {City} {ZIP}?" until confirmed.
+   - Stored in a first-party cookie (ZIP + radius only).
+   - Add the `postal_areas` table plus seed data for the North Texas test region from US Census
+     ZCTA data (public domain; note source and vintage). This is used to turn a ZIP into an area
+     label.
+8. **Sign-in gating (UI only):**
+   - `/sign-in` and `/sign-up` pages, plus a **sign-in sheet** offering **Continue with email ·
+     Continue with Facebook · Continue with TikTok**. The buttons are present but show "Available
+     in the next release" until Brief 03, and are covered by tests.
+   - Gated routes (`/sell`, `/messages`, `/saved`, `/listings`, `/profile`, `/settings`) redirect
+     to `/sign-in?next=…`. Gated actions on pages open the sheet.
+   - `next` must be a same-origin relative path; reject anything else.
+9. **"Coming soon" page** for footer links to pages that don't exist yet. No dead 404 links in
+   header, footer, or mega menu.
 
-**Security requirements.** RLS enabled on every table, with select policies only for what browsers
-may read. `precise_point` and phone fields are revoked from `anon` and `authenticated`. `feed_local`
-is `security definer` with a fixed `search_path` and returns no precise coordinates. Messages and
-threads are readable only by their two participants, which Realtime relies on.
+**Technical requirements.**
+- Server Components by default. Client components only for mega menu, carousel, location popover,
+  sign-in sheet, and filter panel interactions.
+- Everything keyboard-operable per the design skill (mega menu arrow keys, Esc, focus return).
+- CSP stays strict: no inline styles in production, images from `'self'` only.
+- Typed feed envelope (`listing` | `creator_post` | `sponsored`) in `packages/contracts/feed.ts`;
+  the home page renders through it.
+- Analytics: add the `track()` contract and event types from the event skill (no vendor; log to
+  console in dev, no-op in test). Emit `category_viewed`, `mega_menu_opened`, `hero_clicked`,
+  `location_changed` (ZIP only), `filter_applied`, `sign_in_prompted`.
+- Copy honesty: no inventory-size claims, no fake counts, ratings, or listings outside the
+  `/dev` fixture.
 
-**Acceptance criteria.** `supabase db reset` succeeds from zero. pgTAP tests cover:
-- a listing at 99 mi is included and one at 101 mi is excluded
-- the radius clamps at 160,934 m
-- blocks exclude in both directions
-- keyset pagination is stable
-- `precise_point` isn't selectable by `authenticated`
-- RLS denies cross-user reads of threads and messages
-- a ZIP lookup returns a coarse point and label
+**Security requirements.**
+- No open redirects (unit-test `next` handling with absolute URLs, `//host`, encoded variants).
+- The location cookie is ZIP + radius only: `SameSite=Lax`, `Secure` in production.
+- IP-derived data is never logged or sent to analytics beyond the ZIP.
+- `/dev/*` returns 404 in production.
+- The `categories` and `postal_areas` RLS allows public read of active rows only, with no writes
+  from anon or authenticated users.
 
-**Validation / output / rollback.** Show the `supabase test db` output. Local only; rollback is
-reverting the PR and running `supabase db reset`. Don't run `supabase db push`.
+**Implementation sequence (one commit each).**
+1. Inspect the repo and report findings.
+2. Taxonomy migration + seed + pgTAP tests + contracts.
+3. `postal_areas` migration + seed + lookup function + tests.
+4. Header, category bar, mega menu, account control, footer. Remove the sidebar.
+5. Home page sections + feed envelope.
+6. Category index + search layout + filter panel (URL state) + empty states.
+7. Product template + `/dev/templates/listing` + production 404 test.
+8. Location chip/popover + cookie + IP default.
+9. Sign-in/sign-up pages + sheet + route gating + `next` validation.
+10. Coming-soon page.
+11. Update e2e (replace sidebar tests), a11y, and screenshots.
+12. README + CLAUDE.md Repository state.
+
+**Acceptance criteria.**
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e` and
+  `supabase db reset && supabase test db` pass.
+- No sidebar anywhere.
+- As a guest at 1440×900 the home page shows a hero, all 14 category cards, rails with invitation
+  cards, the promo strip, the "Promoted by Hucxter" slot, and the full footer. Nothing looks broken
+  or blank.
+- Mega menu works by mouse and keyboard.
+- Every category and subcategory URL renders with filters and an empty state.
+- Filters round-trip through the URL.
+- Every gated route and action leads to sign-in and back via `next`.
+- `/dev/templates/listing` renders locally and 404s with `APP_ENV=production`.
+- axe: zero serious or critical violations on home, a category, a subcategory, search, sign-in,
+  coming-soon, and the template page, in light and dark mode.
+- CSP violation test still passes.
+
+**Validation.** Show every command's output. Provide Playwright screenshots (CI artifact): home
+1440 light/dark, home 1280, mega menu open, category index, product template, sign-in sheet. If
+something can't run, say so; never claim a pass without output.
+
+**Expected output.** Branch `brief-02-storefront`. PR to `main` (don't merge) containing:
+changed-file list, screenshots, test output, `trust-safety-reviewer` findings (redirects, cookies,
+`/dev` gating, RLS), open risks, and follow-ups.
+
+**Rollback.** Revert the PR. The migrations are additive (new tables only); locally, run
+`supabase db reset`. Nothing remote is touched.
 
 ---
 
-## Briefs 03–08 (condensed; the Chair will expand each into a full brief when its turn comes)
+## Briefs 03–09 (resequenced 2026-10-24; the Chair expands each when its turn comes)
 
 | # | Brief | Objective | Key acceptance |
 |---|---|---|---|
-| 03 | Auth, sessions & profiles | Phone OTP + bot challenge, SSR cookie sessions, CSRF origin checks, 18+ confirmation, ZIP area, roles, rate limits, sessions list, account deletion | Cookies httpOnly/Secure/SameSite; CSRF test rejects cross-origin POST; admin route denies non-admin; deleting an account removes data and revokes sessions |
-| 04 | Video pipeline | Mux direct upload from the browser (resumable), signed webhook, state machine, Mux Player signed playback | Signature rejection + idempotency tests; non-owner can't attach media; a large-file upload resumes after a network drop |
-| 05 | Sell flow + AI draft | Drag-and-drop upload (+ phone handoff if D-17 is approved) → AI draft → seller edits → publish; prohibited-item check | Injection and prohibited fixtures pass; nothing publishes without confirmation; keyboard-only completion works |
-| 06 | Local feed + detail | Typed feed envelope, `feed_local`, video column + detail panel, keyboard shortcuts, save | Only `listing` items emitted; no coordinates in responses; muted autoplay; reduced-motion respected |
-| 07 | Messaging & safety | Item-linked threads with Realtime, scam notices, block/report, safe spots, notifications per D-18 | Blocked users fully invisible; message text never logged; a notification fires when the tab is closed (if web push is chosen) |
-| 08 | Admin + scorecard + alpha gate | Moderation queue, audit log, liquidity + desktop-fit scorecard, release checklist | trust-safety-reviewer: no blocking findings; all Phase I events flowing |
-
-Phase I-A alpha begins when Brief 08's gate passes and the Founder approves release.
+| 03 | Accounts & verification (ADR-0010) | Email one-time code + Facebook + **TikTok spike** (D-26); required phone SMS verification, 18+, home ZIP; profiles, roles, sessions list, sign out everywhere, account deletion; Turnstile on sign-up and OTP | Unverified users can't act; `next` returns users to the action; open-redirect and CSRF tests; provider data minimal; account deletion revokes sessions |
+| 04 | Marketplace schema + geo | Listings (status Available/Pending/Sold, attributes validated by category schema), media, threads, messages, blocks, reports, moderation, audit, events, consents; `feed_local`; wire home rails, category index, search, and `/l/[id]` to real data | Radius, privacy, block, and RLS pgTAP tests (the former Brief 02 criteria); no coordinates in responses |
+| 05 | Video pipeline | Mux direct upload (resumable), signed webhooks, state machine, Mux Player with CSP updates | Signature and idempotency tests; non-owner can't attach media |
+| 06 | Sell flow + AI draft | Upload (+ phone QR handoff if D-17 is approved) → AI draft → seller edits → publish; prohibited-item check | Injection and prohibited fixtures pass; nothing publishes without confirmation |
+| 07 | Messaging & listing status | "Is this still available?" one-tap thread; live chat (Realtime); Pending/Sold flow with confirmation prompt (D-27); safety notices; notifications (D-18) | Blocked users invisible; message text never logged; status history recorded |
+| 08 | Admin + scorecard | Moderation queue, audit log, liquidity + desktop-fit scorecard | Role-gated; every action audited |
+| 09 | Alpha gate | Release checklist, trust-safety review, QA abuse script | No blocking findings; Founder approves Phase I-A |

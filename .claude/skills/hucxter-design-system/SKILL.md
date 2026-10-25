@@ -1,6 +1,6 @@
 ---
 name: hucxter-design-system
-description: Hucxter desktop-web UI rules built on Apple's Human Interface Guidelines — layout, navigation, keyboard, typography, color tokens, icons, video feed, accessibility, and the Hx brand. Use before building or changing any page, component, or style in apps/web.
+description: Hucxter desktop-web UI rules built on Apple's Human Interface Guidelines — storefront header, category bar and mega menu, layout, keyboard, typography, color tokens, icons, video feed, accessibility, and the Hx brand. Use before building or changing any page, component, or style in apps/web.
 ---
 
 # Hucxter design system (ADR-0007 + ADR-0008)
@@ -11,28 +11,44 @@ UI, on both Mac and Windows. Where the HIG and web accessibility standards diffe
 (WCAG 2.2 AA is the floor). Check the current HIG at
 developer.apple.com/design/human-interface-guidelines when unsure; don't rely on memory.
 
-## Layout & navigation
-- **App shell** (mockups 1, 8, 9, 10): persistent left **sidebar** (Feed, Search, Sell, Messages,
-  Saved, My Listings, Profile; the Admin link only for moderators/admins) plus a top **toolbar**
-  (search field, Sell button, messages, notifications, account menu). The sidebar collapses to
-  icons below 1440 px wide.
-- **Viewport:** design at 1440×900, support down to 1280×720. Below that, show a "Hucxter works
-  best on a desktop browser" notice. No mobile layouts in Phase I.
-- **Feed** (mockup 9 pattern): a centered vertical video column (9:16) next to a detail panel
-  showing title, price, condition, distance bucket, area label, seller, and actions (Message, Save,
-  Share, Report). One item in focus at a time.
-- **Containers:** sheets/modals for short tasks (report, meetup spot, filters); popovers for menus
-  (mockup 6); a full page for the Sell flow. Every modal can be closed with Esc and returns focus to
-  the element that opened it.
-- **URLs:** every listing, profile, and thread has a shareable URL; browser back/forward always work.
+## Layout & navigation (ADR-0009 storefront: **no app sidebar**)
+Full spec: `docs/specs/storefront-ia.md`. Summary:
+- **Global header** (sticky): Hx logo → `/` · location chip ("Near Aubrey 75009") · one search
+  field · **+ Sell** · Messages · account control (guest: Sign in; member: avatar menu holding My
+  Listings, Saved, Messages, Profile, Settings, Help, Sign out, Admin for staff).
+- **Category bar** under the header: "All Categories ▾" mega menu (departments left, subcategory
+  columns right) + top departments + More. **Subcategory chip row** on category and product pages.
+- **No left app sidebar, and no second search box.** The only left rail is the **filter panel** on
+  category index and search results pages.
+- **Home (`/`) is the Feed (all categories):** hero carousel, shop-by-category cards, near-you
+  rails, house promos. It must never look empty, and listings are **never** fabricated. When there
+  are no listings, rails render designed invitation cards ("Be the first to list…").
+- **Category index:** breadcrumb, hero banner, filter panel, sortable results grid of listing cards,
+  designed empty state.
+- **Product page:** vertical video (left) + detail column (right) with the primary "Is this still
+  available?" action, status badge (Available / Pending: someone's on the way / Sold), seller card,
+  and a Meet safely panel.
+- **Big footer** on every page (Shop · Sell · Safety & Help · Company + legal row). Footer links for
+  pages that don't exist yet go to a "Coming soon" page, never a 404.
+- **Guests** can view home, category, search, and product pages. Every action opens a sign-in sheet
+  (email · Facebook · TikTok) and then returns to the same place.
+- **Viewport:** design at 1440×900, support down to 1280×720. Below that, show a non-blocking
+  "Hucxter works best on a desktop browser" banner. No mobile layouts in Phase I.
+- **Containers:** sheets/modals for short tasks (sign-in prompt, report, meetup spot, location);
+  popovers for menus (mega menu, account menu, location). Every modal or popover closes with Esc
+  and returns focus to its trigger.
+- **URLs:** every listing, category, filter state, profile, and thread has a shareable URL;
+  browser back/forward always work.
 - Out of Phase I scope, though they appear in mockups: cart/"Add to Bag", orders, official stores,
   star ratings, Creator Studio, menu-bar app, launcher/setup wizard (Phase IV desktop app).
+- **Copy honesty:** never claim scale we don't have ("millions of items"), never show fake
+  counts, ratings, or reviews.
 
 ## Keyboard (first-class on desktop)
 - Everything works without a mouse, with a visible focus ring (`:focus-visible`, at least 3:1
   contrast).
-- Feed shortcuts: ↑/↓ or J/K for next/previous item, Space to play/pause, M to mute, S to save,
-  Enter to open the listing. `?` shows the shortcut sheet. Shortcuts are disabled while typing in
+- Video shortcuts (product page and any vertical video view): Space to play/pause, M to mute,
+  S to save, ↑/↓ or J/K for next/previous item where a video sequence exists. `?` shows the shortcut sheet. Shortcuts are disabled while typing in
   inputs.
 - Logical tab order; skip-to-content link; arrow keys inside menus and lists.
 

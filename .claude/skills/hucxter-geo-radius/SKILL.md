@@ -26,8 +26,11 @@ description: PostGIS location, 100-mile radius, local feed queries, distance dis
    never store it as history. A profile stores one coarse home area (display point only).
 6. **Coordinates order**: PostGIS is `ST_MakePoint(lon, lat)`. Always wrap with
    `ST_SetSRID(..., 4326)::geography`. Validate lat ∈ [-90, 90], lon ∈ [-180, 180] in zod first.
-7. **No silent location**: never infer location from IP without telling the user. If no area is set,
-   ask for a ZIP before showing the feed.
+7. **Guest location (ADR-0009):** a guest's default area may come from **approximate IP location**
+   (on Vercel, the `x-vercel-ip-postal-code` / `-city` request headers; locally, `DEFAULT_AREA_ZIP`),
+   shown as a visible guess ("Near Aubrey 75009?") that's one click to change. Store only ZIP +
+   radius in a first-party cookie. Never store IP-derived coordinates, never send more than the ZIP
+   to analytics, and never present the guess as fact. Members use their saved home ZIP.
 8. **Pagination**: keyset on `(created_at, id)`, limit ≤ 50. No OFFSET.
 9. **Blocks**: every discovery query excludes listings from users the viewer blocked or who
    blocked the viewer.

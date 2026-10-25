@@ -36,7 +36,8 @@ The core loop only:
 
 | In | Out (later) |
 |---|---|
-| Phone sign-up, 18+ gate, profile with coarse home area (ZIP) | Follows, likes, comments, creator profiles |
+| Storefront: header, category bar + mega menu, home, category index with filters, product page, footer (ADR-0009) | Follows, likes, comments, creator profiles |
+| Sign-up with email, Facebook, or TikTok + required phone SMS verification, 18+ gate, home ZIP (ADR-0010). Guests browse only | Card/ID verification (Phase II) |
 | Upload short listing video (drag-and-drop/file picker); AI **draft** (title, category, tags, condition notes) | AI price guidance, negotiation, buyer "Real Talk" |
 | Price, condition, category, publish, edit, mark reserved/sold, delete | Payments, escrow, shipping (never) |
 | Local feed (radius ≤ 100 mi, recency) with keyboard navigation, listing detail, save | Ranking models, Explore/Trending, search ranking |
@@ -123,11 +124,15 @@ in I-B before deciding anything further.
   regulatory and build cost before demand is proven. Chair: no payments in Phase I; revisit in II.
 - **Ad timing (D-10):** see §1.
 
-## 4. Phase I screens to build (D-04: built directly in the MVP, HIG desktop baseline)
-App shell (sidebar + toolbar) · Sign-up / phone OTP / ZIP area · Local feed (video column + detail
-panel) · Listing detail page · Sell: upload → AI draft review → publish · My listings · Messages
-(thread list + item-linked thread with safety notice) · Meetup spot picker · Report/block sheets ·
-Account settings (sessions, notifications, delete account) · Admin moderation console.
+## 4. Phase I screens to build (D-04 + ADR-0009 storefront)
+Global header (location chip, search, Sell, Messages, account menu) · category bar + mega menu ·
+Home/Feed (hero, category cards, near-you rails, promo, "Promoted by Hucxter" slot) · Category
+index (filters, results, empty state) · Search results · Product page ("Is this still available?",
+Available/Pending/Sold) · Sign-in/sign-up (email · Facebook · TikTok) + phone verification · Sell:
+upload → AI draft → publish · My listings · Messages · Saved · Account settings (sessions,
+notifications, delete account) · Big footer · Admin moderation console.
+Full spec: `docs/specs/storefront-ia.md`. Build order: `docs/kickoff/claude-code-kickoff.md`
+(Briefs 02–09).
 
 The concept mockups in `assets/images/ui/` guide layout and tone only. Investor visuals will be
 captured from the working MVP after Phase I-A, using seeded demo data that's labeled as demo.
