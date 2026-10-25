@@ -30,6 +30,12 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
 - **Brief 01 merged (PR #2, 2026-10-24):** monorepo, CI, `apps/web` shell, security headers +
   nonce CSP (`src/proxy.ts`), `packages/contracts`, Supabase with PostGIS. The left-sidebar shell
   from Brief 01 is being **replaced** by the storefront layout (ADR-0009) in Brief 02.
+- **Brief 02 (branch `brief-02-storefront`):** storefront header, category bar + mega menu,
+  footer, home, category index/search with URL filters, product template at
+  `/dev/templates/listing` (404 when `APP_ENV=production`), guest location chip (ZIP + radius
+  cookie), sign-in pages/sheet (UI only), route gating with safe `next`. Data: `categories` and
+  `postal_areas` (Census 2020 ZCTA, North Texas) migrations + seed. `pnpm dev` and `pnpm test:e2e`
+  now need local Supabase running (`supabase start && supabase db reset`).
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages

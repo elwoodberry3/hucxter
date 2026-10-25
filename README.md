@@ -70,3 +70,29 @@ docs/                 ADRs, roadmap, briefs
 
 Each workspace documents its variables in `.env.example`. Only `NEXT_PUBLIC_*` values reach the
 browser, and none are secret. CI uses no production credentials.
+
+## Storefront (Brief 02): running locally
+
+The storefront reads categories and ZIP areas from the **local** Supabase database, so start it
+before `pnpm dev` or `pnpm test:e2e`:
+
+```sh
+supabase start && supabase db reset   # migrations + seed (taxonomy, North Texas ZIP areas)
+supabase status                       # copy API_URL and PUBLISHABLE_KEY into apps/web/.env.local
+pnpm dev
+```
+
+`apps/web/.env.local` needs `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` (the publishable key only,
+never the secret/service-role key), `APP_ENV=local`, and `DEFAULT_AREA_ZIP` (see
+`apps/web/.env.example`). `pnpm test:e2e` reads the Supabase values from `supabase status` itself.
+
+| Route                                            | Notes                                                                              |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `/`                                              | Home = Feed: hero, categories, near-you rails, house promos. No listings exist yet |
+| `/c/[dept]`, `/c/[dept]/[sub]`                   | Category index with filters in the URL                                             |
+| `/search?q=`                                     | Search results (same layout)                                                       |
+| `/sign-in`, `/sign-up`                           | UI only until Brief 03                                                             |
+| `/sell`, `/messages`, `/saved`, `/listings`, ... | Redirect guests to `/sign-in?next=…`                                               |
+| `/dev/templates/listing`                         | Product page template with a **Demo** fixture; 404 when `APP_ENV=production`       |
+
+Never add fake listings, counts, ratings, or scale claims. Demo data lives only under `/dev`.
