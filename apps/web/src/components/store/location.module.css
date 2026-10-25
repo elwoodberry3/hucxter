@@ -1,0 +1,149 @@
+.anchor {
+  position: relative;
+  flex: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-2);
+  max-width: 15rem;
+  min-height: 2.75rem;
+  padding: 0 var(--hx-space-2);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: none;
+  color: var(--hx-label);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--hx-fill-hover);
+}
+
+.chipText {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.chipLabel {
+  overflow: hidden;
+  font-size: var(--hx-text-subheadline);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipAction {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-caption);
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + var(--hx-space-2));
+  left: 0;
+  z-index: 50;
+  display: grid;
+  gap: var(--hx-space-3);
+  width: 20rem;
+  padding: var(--hx-space-4);
+  border: 1px solid var(--hx-separator);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-popover);
+}
+
+.popover[hidden] {
+  display: none;
+}
+
+.guess {
+  display: grid;
+  gap: var(--hx-space-2);
+  padding-bottom: var(--hx-space-3);
+  border-bottom: 1px solid var(--hx-separator);
+  font-size: var(--hx-text-subheadline);
+}
+
+.form {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.label {
+  font-size: var(--hx-text-subheadline);
+  font-weight: 600;
+}
+
+.input {
+  min-height: 2.5rem;
+  padding: 0 var(--hx-space-3);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--hx-destructive);
+}
+
+.primary,
+.secondary,
+.locate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hx-space-2);
+  min-height: 2.5rem;
+  padding: 0 var(--hx-space-3);
+  border-radius: var(--hx-radius-control);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  margin-top: var(--hx-space-1);
+  border: 0;
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+}
+
+.secondary,
+.locate {
+  border: 1px solid var(--hx-separator-strong);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+}
+
+.secondary:hover,
+.locate:hover {
+  background: var(--hx-fill-hover);
+}
+
+.primary:disabled,
+.secondary:disabled,
+.locate:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.error:empty {
+  display: none;
+}
+
+.error {
+  color: var(--hx-destructive);
+  font-size: var(--hx-text-subheadline);
+}
+
+.privacy {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+}
