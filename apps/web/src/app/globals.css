@@ -21,6 +21,21 @@
   --hx-fill-hover: rgb(0 0 0 / 5%);
   --hx-toolbar-bg: rgb(255 255 255 / 80%);
   --hx-shadow-card: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 4%);
+  --hx-shadow-popover: 0 8px 32px rgb(0 0 0 / 14%), 0 1px 3px rgb(0 0 0 / 8%);
+  /* Input and control outlines: at least 3:1 against their background (WCAG 1.4.11). */
+  --hx-separator-strong: rgb(0 0 0 / 46%);
+  --hx-warning-bg: #fff4d6;
+  --hx-warning-label: #6b4a00;
+
+  /* Placeholder art palette (D-28): soft fills and a contrasting ink for illustrations. */
+  --hx-art-1: #e9e4ff;
+  --hx-art-2: #dff3ea;
+  --hx-art-3: #ffe9d9;
+  --hx-art-4: #dcecff;
+  --hx-art-5: #fde2ef;
+  --hx-art-6: #fff3c4;
+  --hx-art-ink: #3d3866;
+  --hx-art-accent: #6457af;
 
   --hx-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
@@ -43,9 +58,15 @@
   --hx-space-4: 1rem;
   --hx-space-6: 1.5rem;
   --hx-space-8: 2rem;
+  --hx-space-10: 2.5rem;
+  --hx-space-12: 3rem;
+
+  --hx-page-max: 90rem;
+  --hx-page-gutter: 1.5rem;
 
   --hx-radius-card: 12px;
   --hx-radius-control: 8px;
+  --hx-radius-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -65,6 +86,18 @@
     --hx-fill-hover: rgb(255 255 255 / 7%);
     --hx-toolbar-bg: rgb(33 31 42 / 80%);
     --hx-shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 20%);
+    --hx-shadow-popover: 0 8px 32px rgb(0 0 0 / 50%), 0 1px 3px rgb(0 0 0 / 40%);
+    --hx-separator-strong: rgb(255 255 255 / 40%);
+    --hx-warning-bg: #3a2f10;
+    --hx-warning-label: #ffd978;
+    --hx-art-1: #2b2745;
+    --hx-art-2: #1d3329;
+    --hx-art-3: #3a2a1f;
+    --hx-art-4: #1d2a3d;
+    --hx-art-5: #3a2030;
+    --hx-art-6: #38321a;
+    --hx-art-ink: #e4defc;
+    --hx-art-accent: #aa9cec;
   }
 }
 
@@ -84,6 +117,18 @@
   --hx-fill-hover: rgb(255 255 255 / 7%);
   --hx-toolbar-bg: rgb(33 31 42 / 80%);
   --hx-shadow-card: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 16px rgb(0 0 0 / 20%);
+  --hx-shadow-popover: 0 8px 32px rgb(0 0 0 / 50%), 0 1px 3px rgb(0 0 0 / 40%);
+  --hx-separator-strong: rgb(255 255 255 / 40%);
+  --hx-warning-bg: #3a2f10;
+  --hx-warning-label: #ffd978;
+  --hx-art-1: #2b2745;
+  --hx-art-2: #1d3329;
+  --hx-art-3: #3a2a1f;
+  --hx-art-4: #1d2a3d;
+  --hx-art-5: #3a2030;
+  --hx-art-6: #38321a;
+  --hx-art-ink: #e4defc;
+  --hx-art-accent: #aa9cec;
 }
 
 *,
