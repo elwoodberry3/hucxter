@@ -1,0 +1,377 @@
+/* Home / Feed (storefront-ia §3). */
+
+.page {
+  display: grid;
+  gap: var(--hx-space-10);
+}
+
+.section {
+  display: grid;
+  gap: var(--hx-space-4);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--hx-space-4);
+}
+
+.sectionTitle {
+  font-size: var(--hx-text-title-1);
+  font-weight: 700;
+}
+
+.seeAll {
+  font-weight: 600;
+}
+
+/* Hero carousel */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--hx-radius-card) * 1.5);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.heroSlide {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  min-height: 20rem;
+}
+
+.heroSlide[hidden] {
+  display: none;
+}
+
+.heroCopy {
+  display: grid;
+  justify-items: start;
+  gap: var(--hx-space-3);
+  padding: var(--hx-space-10) var(--hx-space-10) var(--hx-space-12);
+}
+
+.heroEyebrow {
+  color: var(--hx-accent);
+  font-size: var(--hx-text-subheadline);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.heroTitle {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.heroBody {
+  max-width: 32rem;
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-title-2);
+}
+
+.heroCta,
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  height: 2.5rem;
+  padding: 0 var(--hx-space-4);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.heroCta {
+  margin-top: var(--hx-space-2);
+}
+
+.heroCta:hover,
+.primaryButton:hover {
+  filter: brightness(1.08);
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  height: 2.5rem;
+  padding: 0 var(--hx-space-4);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  color: var(--hx-label);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.secondaryButton:hover {
+  background: var(--hx-fill-hover);
+}
+
+.heroArt {
+  align-self: stretch;
+  padding: var(--hx-space-6);
+}
+
+.heroControls {
+  position: absolute;
+  bottom: var(--hx-space-4);
+  left: var(--hx-space-10);
+  display: flex;
+  align-items: center;
+  gap: var(--hx-space-2);
+}
+
+.heroButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  cursor: pointer;
+}
+
+.heroButton:hover {
+  background: var(--hx-fill-hover);
+}
+
+.heroDots {
+  display: flex;
+  gap: var(--hx-space-1);
+}
+
+.heroDot {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--hx-radius-pill);
+  background: none;
+  cursor: pointer;
+}
+
+.heroDot::before {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin: auto;
+  border: 1px solid var(--hx-label-secondary);
+  border-radius: 50%;
+  content: '';
+}
+
+.heroDot[aria-current='true']::before {
+  border-color: var(--hx-accent);
+  background: var(--hx-accent);
+}
+
+/* Category grid */
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--hx-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.categoryCard {
+  display: grid;
+  gap: var(--hx-space-2);
+  padding: var(--hx-space-2);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+  color: var(--hx-label);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.categoryCard:hover {
+  outline: 2px solid var(--hx-accent-subtle);
+}
+
+.categoryName {
+  padding: 0 var(--hx-space-1) var(--hx-space-1);
+  font-size: var(--hx-text-subheadline);
+}
+
+/* Rails */
+
+.rail {
+  display: grid;
+  gap: var(--hx-space-4);
+}
+
+.railList {
+  display: grid;
+  grid-auto-columns: 11rem;
+  grid-auto-flow: column;
+  gap: var(--hx-space-4);
+  margin: 0;
+  padding: 0 0 var(--hx-space-2);
+  overflow-x: auto;
+  list-style: none;
+}
+
+.invitation {
+  display: grid;
+  grid-template-columns: 14rem 1fr;
+  overflow: hidden;
+  border: 1px dashed var(--hx-separator-strong);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+}
+
+.invitationArt {
+  min-height: 9rem;
+}
+
+.invitationCopy {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--hx-space-2);
+  padding: var(--hx-space-6);
+}
+
+.invitationTitle {
+  font-size: var(--hx-text-title-2);
+  font-weight: 700;
+}
+
+.invitationBody {
+  color: var(--hx-label-secondary);
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hx-space-2);
+  margin-top: var(--hx-space-2);
+}
+
+.railGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hx-space-6);
+}
+
+.invitationCompact {
+  grid-template-columns: 1fr;
+  height: 100%;
+}
+
+.invitationCompact .invitationArt {
+  min-height: 7rem;
+}
+
+.invitationCompact .invitationCopy {
+  align-content: start;
+  padding: var(--hx-space-4);
+}
+
+/* House promo slot (feed envelope, "Promoted by Hucxter") */
+
+.promoSlot {
+  display: grid;
+  grid-template-columns: 16rem 1fr;
+  overflow: hidden;
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.promoSlotArt {
+  min-height: 10rem;
+}
+
+.promoSlotCopy {
+  display: grid;
+  justify-items: start;
+  gap: var(--hx-space-2);
+  padding: var(--hx-space-6);
+}
+
+.disclosure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hx-space-3);
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+  font-weight: 700;
+}
+
+.whyShown {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  font-weight: 400;
+}
+
+.promoSlotTitle {
+  font-size: var(--hx-text-title-2);
+  font-weight: 700;
+}
+
+.promoSlotBody {
+  color: var(--hx-label-secondary);
+}
+
+/* Promo strip */
+
+.promoStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hx-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.promoCard {
+  display: flex;
+  gap: var(--hx-space-4);
+  padding: var(--hx-space-6);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-accent-subtle);
+}
+
+.promoIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-accent);
+}
+
+.promoTitle {
+  font-size: var(--hx-text-headline);
+  font-weight: 700;
+}
+
+.promoBody {
+  margin: var(--hx-space-1) 0 var(--hx-space-2);
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+}
+
+.promoLink {
+  font-weight: 600;
+}

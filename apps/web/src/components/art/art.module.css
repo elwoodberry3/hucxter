@@ -1,0 +1,66 @@
+/* Placeholder art (D-28). Tones come from --hx-art-* tokens, light and dark. */
+
+.art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--hx-art-ink);
+}
+
+.card {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--hx-radius-card);
+}
+
+.banner {
+  width: 100%;
+  height: 100%;
+}
+
+.chip {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--hx-radius-control);
+}
+
+.blob {
+  position: absolute;
+  inset: 22% 18%;
+  border-radius: 50%;
+  background: var(--hx-bg-elevated);
+  opacity: 0.55;
+}
+
+.chip .blob {
+  display: none;
+}
+
+.icon {
+  position: relative;
+}
+
+.tone1 {
+  background: linear-gradient(135deg, var(--hx-art-1), var(--hx-art-4));
+}
+
+.tone2 {
+  background: linear-gradient(135deg, var(--hx-art-2), var(--hx-art-6));
+}
+
+.tone3 {
+  background: linear-gradient(135deg, var(--hx-art-3), var(--hx-art-6));
+}
+
+.tone4 {
+  background: linear-gradient(135deg, var(--hx-art-4), var(--hx-art-1));
+}
+
+.tone5 {
+  background: linear-gradient(135deg, var(--hx-art-5), var(--hx-art-1));
+}
+
+.tone6 {
+  background: linear-gradient(135deg, var(--hx-art-6), var(--hx-art-3));
+}

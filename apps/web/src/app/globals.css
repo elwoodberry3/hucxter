@@ -26,6 +26,9 @@
   --hx-separator-strong: rgb(0 0 0 / 46%);
   --hx-warning-bg: #fff4d6;
   --hx-warning-label: #6b4a00;
+  --hx-success-bg: #dff3e7;
+  --hx-success-label: #1d5e39;
+  --hx-fill-strong: rgb(0 0 0 / 8%);
 
   /* Placeholder art palette (D-28): soft fills and a contrasting ink for illustrations. */
   --hx-art-1: #e9e4ff;
@@ -90,6 +93,9 @@
     --hx-separator-strong: rgb(255 255 255 / 40%);
     --hx-warning-bg: #3a2f10;
     --hx-warning-label: #ffd978;
+    --hx-success-bg: #173326;
+    --hx-success-label: #7ddcae;
+    --hx-fill-strong: rgb(255 255 255 / 12%);
     --hx-art-1: #2b2745;
     --hx-art-2: #1d3329;
     --hx-art-3: #3a2a1f;
@@ -121,6 +127,9 @@
   --hx-separator-strong: rgb(255 255 255 / 40%);
   --hx-warning-bg: #3a2f10;
   --hx-warning-label: #ffd978;
+  --hx-success-bg: #173326;
+  --hx-success-label: #7ddcae;
+  --hx-fill-strong: rgb(255 255 255 / 12%);
   --hx-art-1: #2b2745;
   --hx-art-2: #1d3329;
   --hx-art-3: #3a2a1f;

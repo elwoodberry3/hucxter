@@ -1,0 +1,90 @@
+.card {
+  min-width: 0;
+}
+
+.cardLink {
+  display: grid;
+  gap: var(--hx-space-1);
+  color: var(--hx-label);
+  text-decoration: none;
+}
+
+.cardLink:hover .cardTitle {
+  text-decoration: underline;
+}
+
+.poster {
+  position: relative;
+  display: block;
+  aspect-ratio: 9 / 16;
+  margin-bottom: var(--hx-space-1);
+  overflow: hidden;
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-art-1);
+}
+
+.posterImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.demoTag {
+  position: absolute;
+  top: var(--hx-space-2);
+  left: var(--hx-space-2);
+  padding: 2px var(--hx-space-2);
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-warning-bg);
+  color: var(--hx-warning-label);
+  font-size: var(--hx-text-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.posterBadge {
+  position: absolute;
+  bottom: var(--hx-space-2);
+  left: var(--hx-space-2);
+}
+
+.cardPrice {
+  font-size: var(--hx-text-title-3);
+  font-weight: 700;
+}
+
+.cardTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardMeta {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--hx-space-2);
+  border-radius: var(--hx-radius-pill);
+  font-size: var(--hx-text-footnote);
+  font-weight: 600;
+}
+
+.badge_available {
+  background: var(--hx-success-bg);
+  color: var(--hx-success-label);
+}
+
+.badge_pending {
+  background: var(--hx-warning-bg);
+  color: var(--hx-warning-label);
+}
+
+.badge_sold {
+  background: var(--hx-fill-strong);
+  color: var(--hx-label);
+}
