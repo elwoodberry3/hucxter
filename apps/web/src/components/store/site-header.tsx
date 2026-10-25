@@ -3,16 +3,11 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { AccountControl } from './account-control';
 import { HxLogo } from './hx-logo';
+import { SearchField } from './search-field';
 import styles from './header.module.css';
 
 /** Global header (storefront-ia §1): logo, location, the one search field, Sell, Messages, account. */
-export function SiteHeader({
-  location,
-  query,
-}: {
-  location: ReactNode;
-  query?: string | undefined;
-}) {
+export function SiteHeader({ location }: { location: ReactNode }) {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -22,16 +17,7 @@ export function SiteHeader({
           <label htmlFor="site-search" className="visually-hidden">
             Search Hucxter
           </label>
-          <input
-            id="site-search"
-            name="q"
-            type="search"
-            placeholder="Search Hucxter"
-            autoComplete="off"
-            maxLength={100}
-            defaultValue={query}
-            className={styles.searchInput}
-          />
+          <SearchField />
           <button type="submit" className={styles.searchButton} aria-label="Search">
             <Search size={18} aria-hidden="true" />
           </button>

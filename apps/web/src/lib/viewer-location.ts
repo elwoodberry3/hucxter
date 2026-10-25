@@ -1,9 +1,10 @@
 import 'server-only';
+import type { RadiusMi } from '@hucxter/contracts';
 
 export interface ViewerLocation {
   zip: string;
   areaLabel: string;
-  radiusMi: number;
+  radiusMi: RadiusMi;
   /** True until the viewer confirms or changes it (an IP- or default-based guess). */
   isGuess: boolean;
 }
