@@ -36,7 +36,11 @@ Table `events` (append-only) or a vendor SDK behind `track()` — ADR-0006. Rule
   `listing_ai_draft_returned`, `listing_published`, `feed_viewed`, `listing_viewed`,
   `listing_saved`, `thread_started`, `message_sent`, `listing_marked_sold`,
   `meetup_confirmed` (self-reported), `report_submitted`, `user_blocked`, `video_upload_started`,
-  `video_upload_failed`, `notification_sent`, `notification_opened`, `reply_received`.
+  `video_upload_failed`, `notification_sent`, `notification_opened`, `reply_received`,
+  `category_viewed`, `mega_menu_opened`, `hero_clicked`, `location_changed` (ZIP only),
+  `filter_applied`, `sign_in_prompted` (with triggering `action`), `sign_in_started` (with
+  `method`: email | facebook | tiktok), `phone_verified`, `availability_asked`,
+  `listing_status_changed`.
 - Desktop-risk metrics (ADR-0008): time from draft started to published, upload failure rate, time
   to first seller reply, share of messages unread after 24 h.
 - Every event carries `consent_version`.

@@ -23,11 +23,17 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
 - Icons: `assets/images/brand/` (master + web favicon/manifest set). Don't use
   `assets/images/app-icon.png` (pre-rounded preview) as a product icon.
 - `com.hucxter.app` is reserved as the future iOS bundle ID (Phase V). Don't create iOS config now.
+- **Never fabricate marketplace activity:** no fake listings, counts, ratings, reviews, or scale
+  claims. Demo listings exist only outside production, behind an environment check, labeled "Demo".
 
 ## Repository state (update as it changes)
-- No application code exists yet. `assets/docs/drafts/` is superseded by this file and `.claude/`.
+- **Brief 01 merged (PR #2, 2026-10-24):** monorepo, CI, `apps/web` shell, security headers +
+  nonce CSP (`src/proxy.ts`), `packages/contracts`, Supabase with PostGIS. The left-sidebar shell
+  from Brief 01 is being **replaced** by the storefront layout (ADR-0009) in Brief 02.
+- Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
+- `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
-  exist and their general layout only. Desktop screens (1, 6, 8, 9, 10) are the closest guide;
+  exist and their general layout only. The storefront header and mega menu follow ADR-0009. Desktop screens (1, 6, 8, 9, 10) are the closest guide;
   phone screens (4, 5) show content only; menu-bar app and launcher (3, 7, 12) belong to the
   Phase IV desktop app. Don't copy their text, data, features, or pixel values. The built MVP is
   the real design source.
@@ -83,7 +89,8 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
 ## Design direction (D-03, ADR-0007)
 Apple's Human Interface Guidelines are the structural baseline for every Hucxter surface. For
 Phase I that means HIG desktop (macOS) patterns rendered in the browser. Before building or changing
-any UI, load the `hucxter-design-system` skill. Short version: sidebar + toolbar layout, system
+any UI, load the `hucxter-design-system` skill. Short version: storefront header + category bar
+(no app sidebar; filter rail only on category/search pages), system
 fonts, semantic light/dark tokens, full keyboard navigation with visible focus, WCAG 2.2 AA.
 Brand comes through the Hx mark, color tokens, and voice, not custom navigation or decoration.
 

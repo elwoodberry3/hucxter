@@ -1,5 +1,5 @@
 # ADR-0007: Apple HIG as the platform design baseline
-**Status:** Accepted (Founder, D-03) · **Date:** 2026-10-23
+**Status:** Accepted (Founder, D-03) · **Date:** 2026-10-23 · Layout amended by ADR-0009 (storefront header, no app sidebar)
 
 ## Context
 The superseded draft CLAUDE.md required a neubrutalist style (hard 3–4 px borders, offset black
