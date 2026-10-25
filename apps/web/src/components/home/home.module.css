@@ -375,3 +375,29 @@
 .promoLink {
   font-weight: 600;
 }
+
+/* Coming soon */
+
+.comingSoon {
+  display: grid;
+  justify-items: center;
+  gap: var(--hx-space-3);
+  max-width: 40rem;
+  margin: var(--hx-space-8) auto 0;
+  padding: var(--hx-space-10) var(--hx-space-8);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+  text-align: center;
+}
+
+.comingSoonIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: var(--hx-accent-subtle);
+  color: var(--hx-accent);
+}
