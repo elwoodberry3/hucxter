@@ -92,6 +92,7 @@ build/
 
 # Virtual environments
 .env/
+.env.example
 .venv/
 env/
 venv/
