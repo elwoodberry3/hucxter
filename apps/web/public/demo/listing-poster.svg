@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640" role="img" aria-label="Demo poster">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e9e4ff"/>
+      <stop offset="1" stop-color="#ffe9d9"/>
+    </linearGradient>
+  </defs>
+  <rect width="360" height="640" fill="url(#bg)"/>
+  <rect x="40" y="300" width="280" height="24" rx="6" fill="#7a5233"/>
+  <rect x="58" y="324" width="16" height="150" rx="6" fill="#5e3e26"/>
+  <rect x="286" y="324" width="16" height="150" rx="6" fill="#5e3e26"/>
+  <rect x="190" y="324" width="96" height="70" rx="6" fill="#8a6040"/>
+  <rect x="225" y="352" width="26" height="6" rx="3" fill="#d9c2a3"/>
+  <text x="180" y="560" text-anchor="middle" font-family="system-ui, sans-serif" font-size="28" font-weight="700" fill="#3d3866">DEMO</text>
+</svg>

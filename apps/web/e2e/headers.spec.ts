@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { KEY_PAGES } from './support';
 
 const STATIC_HEADERS = {
   'strict-transport-security': 'max-age=63072000; includeSubDomains',
@@ -16,7 +17,8 @@ test.describe('security headers', () => {
       }
       expect(headers['permissions-policy']).toContain('camera=()');
       expect(headers['permissions-policy']).toContain('microphone=()');
-      expect(headers['permissions-policy']).toContain('geolocation=()');
+      // Location chip: geolocation for this origin only, on user request.
+      expect(headers['permissions-policy']).toContain('geolocation=(self)');
       expect(headers['x-powered-by']).toBeUndefined();
     });
   }
@@ -47,15 +49,52 @@ test.describe('security headers', () => {
     );
   });
 
-  test('the page runs under the CSP with no violations', async ({ page }) => {
+  test('pages run under the CSP with no violations', async ({ page }) => {
     const violations: string[] = [];
     page.on('console', (message) => {
       if (/Content Security Policy/i.test(message.text())) violations.push(message.text());
     });
-    await page.goto('/');
-    await page.getByRole('link', { name: 'Search', exact: true }).first().click();
-    await expect(page).toHaveURL('/search');
+    for (const path of KEY_PAGES) await page.goto(path);
+    // Interactive surfaces too: mega menu, location popover, sign-in sheet, client navigation.
+    await page.goto('/dev/templates/listing');
+    await page.getByRole('button', { name: 'All Categories' }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: /Near Celina/ }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Is this still available?' }).click();
+    await page.keyboard.press('Escape');
+    await page
+      .getByRole('navigation', { name: 'Categories', exact: true })
+      .getByRole('link', { name: 'Fashion' })
+      .click();
+    await expect(page).toHaveURL('/c/fashion');
     expect(violations).toEqual([]);
+  });
+
+  test('server HTML has no inline style attributes or style tags without the nonce', async ({
+    request,
+  }) => {
+    for (const path of KEY_PAGES) {
+      const response = await request.get(path);
+      const nonce = /'nonce-([^']+)'/.exec(
+        response.headers()['content-security-policy'] ?? '',
+      )?.[1];
+      const html = await response.text();
+      expect(html.match(/<[a-z][^>]*\sstyle="/gi) ?? [], path).toEqual([]);
+      for (const tag of html.match(/<style\b[^>]*>/gi) ?? [])
+        expect(tag, path).toContain(`nonce="${nonce ?? ''}"`);
+    }
+  });
+
+  test('images load from this origin only', async ({ page }) => {
+    for (const path of KEY_PAGES) {
+      await page.goto(path);
+      const sources = await page
+        .locator('img')
+        .evaluateAll((images) => images.map((image) => (image as HTMLImageElement).currentSrc));
+      for (const source of sources)
+        expect(new URL(source).origin, path).toBe('http://localhost:3100');
+    }
   });
 
   test('script tags carry the request nonce', async ({ page }) => {

@@ -1,0 +1,61 @@
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sky {
+  fill: var(--hx-art-1);
+}
+
+.sun {
+  fill: var(--hx-art-6);
+}
+
+.hill {
+  fill: var(--hx-art-2);
+}
+
+.boxA {
+  fill: var(--hx-art-5);
+}
+
+.boxB {
+  fill: var(--hx-art-4);
+}
+
+.ribbon {
+  fill: var(--hx-art-accent);
+  opacity: 0.85;
+}
+
+.spark {
+  fill: var(--hx-art-accent);
+}
+
+.phone {
+  fill: var(--hx-art-ink);
+}
+
+.screen {
+  fill: var(--hx-art-3);
+}
+
+.play {
+  fill: var(--hx-art-accent);
+}
+
+.line,
+.check {
+  fill: none;
+  stroke: var(--hx-art-ink);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shield {
+  fill: var(--hx-art-4);
+  stroke: var(--hx-art-ink);
+  stroke-width: 6;
+}

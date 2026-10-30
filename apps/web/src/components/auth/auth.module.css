@@ -1,0 +1,122 @@
+/* Sign-in / sign-up pages and the sign-in sheet. */
+
+.page {
+  display: grid;
+  justify-items: center;
+  padding: var(--hx-space-8) 0;
+}
+
+.card {
+  display: grid;
+  gap: var(--hx-space-4);
+  width: min(100%, 28rem);
+  padding: var(--hx-space-8);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.title {
+  font-size: var(--hx-text-title-1);
+  font-weight: 800;
+}
+
+.lede {
+  color: var(--hx-label-secondary);
+}
+
+.methods {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.method {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hx-space-2);
+  height: 2.75rem;
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.method:hover {
+  background: var(--hx-fill-hover);
+}
+
+.availability {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+  text-align: center;
+}
+
+.message:empty {
+  display: none;
+}
+
+.message {
+  padding: var(--hx-space-2) var(--hx-space-3);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent-subtle);
+  color: var(--hx-label);
+  font-size: var(--hx-text-subheadline);
+}
+
+.switch {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+  text-align: center;
+}
+
+.requirements {
+  margin: 0;
+  padding-left: var(--hx-space-6);
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+}
+
+.sheet {
+  width: min(calc(100% - 2rem), 28rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  box-shadow: var(--hx-shadow-popover);
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.sheetBody {
+  position: relative;
+  display: grid;
+  gap: var(--hx-space-4);
+  padding: var(--hx-space-8);
+}
+
+.close {
+  position: absolute;
+  top: var(--hx-space-3);
+  right: var(--hx-space-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: none;
+  color: var(--hx-label);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--hx-fill-hover);
+}

@@ -1,0 +1,44 @@
+.skipLink {
+  position: absolute;
+  top: var(--hx-space-2);
+  left: var(--hx-space-2);
+  z-index: 100;
+  padding: var(--hx-space-2) var(--hx-space-3);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: none;
+}
+
+/* Shown only below the 1280×720 minimum; the store keeps working underneath (also covers 200% zoom). */
+.desktopNotice {
+  display: none;
+  padding: var(--hx-space-2) var(--hx-space-4);
+  background: var(--hx-accent-subtle);
+  color: var(--hx-label);
+  font-size: var(--hx-text-subheadline);
+  text-align: center;
+}
+
+@media (max-width: 1279px), (max-height: 719px) {
+  .desktopNotice {
+    display: block;
+  }
+}
+
+.main {
+  max-width: var(--hx-page-max);
+  min-height: 60vh;
+  margin: 0 auto;
+  padding: var(--hx-space-6) var(--hx-page-gutter) 0;
+}
+
+.main:focus {
+  outline: none;
+}
