@@ -20,6 +20,33 @@ export function isSheetEntry(state: unknown, id: string): boolean {
 }
 
 /**
+ * The in-app path for `href`, or null when it is another origin or would be read as one: a path
+ * starting with `//` or `/\` becomes protocol-relative once the origin is dropped.
+ */
+export function sheetPath(href: string, origin: string): string | null {
+  const url = new URL(href, origin);
+  if (url.origin !== origin || /^\/[/\\]/.test(url.pathname)) return null;
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/** Destination of a GET form submit, honouring the submitter's form* overrides; null otherwise. */
+export function formNavigationTarget(
+  form: { action: string; method: string; target: string; entries: Iterable<[string, unknown]> },
+  origin: string,
+): string | null {
+  if (form.method.toLowerCase() !== 'get' || form.target === '_blank') return null;
+  const path = sheetPath(form.action, origin);
+  if (path === null) return null;
+  const pathname = new URL(path, origin).pathname;
+  const params = new URLSearchParams();
+  for (const [key, value] of form.entries) {
+    if (typeof value === 'string' && value !== '') params.append(key, value);
+  }
+  const search = params.toString();
+  return `${pathname}${search === '' ? '' : `?${search}`}`;
+}
+
+/**
  * The same-origin destination of a click or GET form submit inside a sheet, or null when the
  * browser should handle it (new tab, download, other origin, non-GET form).
  */
@@ -27,6 +54,7 @@ export function sheetNavigationTarget(
   event: {
     target: EventTarget | null;
     type: string;
+    submitter?: HTMLElement | null;
     button?: number;
     metaKey?: boolean;
     ctrlKey?: boolean;
@@ -48,20 +76,25 @@ export function sheetNavigationTarget(
     ) {
       return null;
     }
-    const url = new URL(anchor.href, origin);
-    return url.origin === origin ? `${url.pathname}${url.search}${url.hash}` : null;
+    return sheetPath(anchor.href, origin);
   }
   if (event.type === 'submit') {
     const form = event.target;
-    if (!(form instanceof HTMLFormElement) || form.method.toLowerCase() !== 'get') return null;
-    const url = new URL(form.action, origin);
-    if (url.origin !== origin) return null;
-    const params = new URLSearchParams();
-    for (const [key, value] of new FormData(form)) {
-      if (typeof value === 'string' && value !== '') params.append(key, value);
-    }
-    const search = params.toString();
-    return `${url.pathname}${search === '' ? '' : `?${search}`}`;
+    if (!(form instanceof HTMLFormElement)) return null;
+    const submitter =
+      event.submitter instanceof HTMLButtonElement || event.submitter instanceof HTMLInputElement
+        ? event.submitter
+        : null;
+    // formaction/formmethod/formtarget reflect the form's values when the attribute is absent.
+    return formNavigationTarget(
+      {
+        action: submitter?.hasAttribute('formaction') ? submitter.formAction : form.action,
+        method: submitter?.hasAttribute('formmethod') ? submitter.formMethod : form.method,
+        target: submitter?.hasAttribute('formtarget') ? submitter.formTarget : form.target,
+        entries: new FormData(form, submitter),
+      },
+      origin,
+    );
   }
   return null;
 }

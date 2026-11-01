@@ -23,6 +23,9 @@ const subscribeNothing = () => () => undefined;
  * inert, and page scroll is locked. Closes with the close button, Esc, or the browser Back button
  * (opening pushes one history entry). Links and GET forms inside the sheet pop that entry before
  * navigating, so Back never returns to a ghost "open" state. Focus returns to the opener.
+ *
+ * That interception runs in the capture phase and stops propagation, so a link's or form's own
+ * bubbling click/submit handlers inside the sheet never run. Use `onNavigate` for side effects.
  */
 export function BottomSheet({
   open,
@@ -156,6 +159,7 @@ export function BottomSheet({
       {
         target: event.target,
         type: event.type,
+        submitter: 'submitter' in native ? native.submitter : null,
         button: 'button' in native ? native.button : 0,
         metaKey: 'metaKey' in native && native.metaKey,
         ctrlKey: 'ctrlKey' in native && native.ctrlKey,
