@@ -77,7 +77,7 @@ APP_ORIGIN=http://localhost:3000
 GIT_COMMIT_SHA=
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_…   ← the "Publishable" value from `supabase status`
-DEFAULT_AREA_ZIP=75009
+DEFAULT_AREA_ZIP=97205
 ```
 Rules:
 - Use the **Publishable** key only. **Never** the "Secret" key.

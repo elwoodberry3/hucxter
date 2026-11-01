@@ -40,7 +40,7 @@ function supabaseEnv(): { SUPABASE_URL: string; SUPABASE_PUBLISHABLE_KEY: string
 const sharedEnv = {
   ...supabaseEnv(),
   GIT_COMMIT_SHA: process.env.GITHUB_SHA ?? 'e2e',
-  DEFAULT_AREA_ZIP: '75009',
+  DEFAULT_AREA_ZIP: '97205',
 };
 
 export default defineConfig({

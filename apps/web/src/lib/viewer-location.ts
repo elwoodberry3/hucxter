@@ -28,9 +28,9 @@ export function ipPostalCode(
 }
 
 /**
- * Viewer location (hucxter-geo-radius rule 7): the confirmed cookie (ZIP + radius) if present;
- * otherwise a visible guess from approximate IP location (Vercel), else DEFAULT_AREA_ZIP.
- * Members will use their saved home ZIP (Brief 03). Cached per request.
+ * Viewer location (hucxter-geo-radius rule 7). Order: the confirmed cookie (ZIP + radius) →
+ * (Brief 03B) the member's home ZIP → Vercel IP ZIP → DEFAULT_AREA_ZIP (97205). Anything but the
+ * cookie is a visible guess ("Near Portland 97205?"). Cached per request.
  */
 export const getViewerLocation = cache(async (): Promise<ViewerLocation | null> => {
   const config = serverConfig();
@@ -48,6 +48,7 @@ export const getViewerLocation = cache(async (): Promise<ViewerLocation | null> 
     }
   }
 
+  // Brief 03B inserts the signed-in member's home ZIP here, before the IP guess.
   const candidates = [
     { zip: ipPostalCode(await headers(), config.isVercel), source: 'ip' as const },
     { zip: config.defaultAreaZip, source: 'default' as const },

@@ -77,7 +77,7 @@ The storefront reads categories and ZIP areas from the **local** Supabase databa
 before `pnpm dev` or `pnpm test:e2e`:
 
 ```sh
-supabase start && supabase db reset   # migrations + seed (taxonomy, North Texas ZIP areas)
+supabase start && supabase db reset   # migrations (taxonomy, all US ZIP areas, launch area) + local seed
 supabase status                       # copy API_URL and PUBLISHABLE_KEY into apps/web/.env.local
 pnpm dev
 ```
