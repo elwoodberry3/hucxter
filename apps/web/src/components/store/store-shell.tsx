@@ -17,11 +17,14 @@ export function StoreShell({
   taxonomy,
   location,
   locationLabel,
+  notice,
   children,
 }: {
   taxonomy: Taxonomy;
   location: ReactNode;
   locationLabel: string | null;
+  /** Optional non-blocking notice under the category bar (launch area). */
+  notice?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -34,6 +37,7 @@ export function StoreShell({
         <HideOnProduct>
           <CategoryBar taxonomy={taxonomy} />
         </HideOnProduct>
+        {notice}
         <main id="main" tabIndex={-1} className={styles.main}>
           {children}
         </main>
