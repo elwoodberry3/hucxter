@@ -1,11 +1,11 @@
 'use client';
 
 import { Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useToast } from '@/components/ui/toast';
 
 /** Copies the page link. Sharing doesn't need an account. */
 export function ShareButton({ className }: { className?: string | undefined }) {
-  const [status, setStatus] = useState('');
+  const toast = useToast();
   return (
     <>
       <button
@@ -14,10 +14,10 @@ export function ShareButton({ className }: { className?: string | undefined }) {
         onClick={() => {
           navigator.clipboard.writeText(window.location.href).then(
             () => {
-              setStatus('Link copied');
+              toast('Link copied');
             },
             () => {
-              setStatus('Couldn’t copy the link');
+              toast('Couldn’t copy the link');
             },
           );
         }}
@@ -25,9 +25,6 @@ export function ShareButton({ className }: { className?: string | undefined }) {
         <Share2 size={18} aria-hidden="true" />
         Share
       </button>
-      <span role="status" className="visually-hidden">
-        {status}
-      </span>
     </>
   );
 }

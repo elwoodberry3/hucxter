@@ -28,7 +28,7 @@
   position: absolute;
   top: 100%;
   left: 50%;
-  z-index: 50;
+  z-index: var(--z-popover);
   display: grid;
   grid-template-columns: 17rem 1fr;
   width: min(

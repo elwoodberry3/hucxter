@@ -1,0 +1,59 @@
+.bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-tabbar);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--hx-separator);
+  background: var(--hx-toolbar-bg);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.bar[data-hidden='true'] {
+  display: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .bar {
+    background: var(--hx-bg-elevated);
+    backdrop-filter: none;
+  }
+}
+
+@media (width >= 64rem) {
+  .bar {
+    display: none;
+  }
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: var(--hx-tabbar-height);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: var(--hx-target-min);
+  height: 100%;
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-caption);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tab[aria-current='page'] {
+  color: var(--hx-accent);
+}
+
+.tab:active {
+  background: var(--hx-fill-hover);
+}

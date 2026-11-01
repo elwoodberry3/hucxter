@@ -14,25 +14,174 @@ import Link from 'next/link';
 import { track } from '@/lib/analytics';
 import styles from './results.module.css';
 
-/**
- * Left filter panel (storefront-ia §4): common filters, then the category's attribute filters.
- * A GET form, so state lives in the URL (shareable, back/forward work) and it works without JS.
- */
-export function FilterPanel({
-  action,
-  query,
-  filters,
-  freeOnly,
-  defaultDistanceMi,
-  surface,
-}: {
+export interface FilterProps {
   action: string;
   query: ListingQuery;
   filters: AttributeFilter[];
   freeOnly: boolean;
   defaultDistanceMi: RadiusMi;
   surface: 'category' | 'search';
-}) {
+}
+
+/** "Clear all" keeps the search query and drops every filter. */
+export function clearFiltersHref(action: string, query: ListingQuery): string {
+  return query.q === undefined ? action : `${action}?q=${encodeURIComponent(query.q)}`;
+}
+
+/** Records which filters were applied (names only, never values). */
+export function trackFilterSubmit(form: HTMLFormElement, surface: FilterProps['surface']): void {
+  const data = new FormData(form);
+  const keys = [...new Set([...data.entries()].filter(([, v]) => v !== '').map(([k]) => k))];
+  track({ name: 'filter_applied', surface, keys: keys.filter((k) => k !== 'q' && k !== 'sort') });
+}
+
+/** Fields shared by the desktop panel and the phone FilterDrawer. */
+export function FilterFields({
+  query,
+  filters,
+  freeOnly,
+  defaultDistanceMi,
+  idPrefix,
+}: Omit<FilterProps, 'action' | 'surface'> & { idPrefix: string }) {
+  return (
+    <>
+      {query.q === undefined ? null : <input type="hidden" name="q" value={query.q} />}
+      {query.sort === 'newest' ? null : <input type="hidden" name="sort" value={query.sort} />}
+
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Price</legend>
+        {freeOnly ? (
+          <p className={styles.hint}>Everything here is free.</p>
+        ) : (
+          <>
+            <div className={styles.priceRow}>
+              <label className={styles.inline}>
+                <span className="visually-hidden">Minimum price in dollars</span>
+                <span aria-hidden="true">$</span>
+                <input
+                  name="price_min"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={1000000}
+                  placeholder="Min"
+                  defaultValue={query.priceMin}
+                  className={styles.input}
+                />
+              </label>
+              <span aria-hidden="true">–</span>
+              <label className={styles.inline}>
+                <span className="visually-hidden">Maximum price in dollars</span>
+                <span aria-hidden="true">$</span>
+                <input
+                  name="price_max"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={1000000}
+                  placeholder="Max"
+                  defaultValue={query.priceMax}
+                  className={styles.input}
+                />
+              </label>
+            </div>
+            <label className={styles.check}>
+              <input type="checkbox" name="free" value="true" defaultChecked={query.free} />
+              Free only
+            </label>
+          </>
+        )}
+      </fieldset>
+
+      <div className={styles.fieldset}>
+        <label htmlFor={`${idPrefix}-distance`} className={styles.legend}>
+          Distance
+        </label>
+        <select
+          id={`${idPrefix}-distance`}
+          name="distance"
+          defaultValue={String(query.distanceMi ?? defaultDistanceMi)}
+          className={styles.select}
+        >
+          {RADIUS_OPTIONS_MI.map((miles) => (
+            <option key={miles} value={miles}>
+              Within {miles} mi
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Condition</legend>
+        {ListingCondition.options.map((condition) => (
+          <label key={condition} className={styles.check}>
+            <input
+              type="checkbox"
+              name="condition"
+              value={condition}
+              defaultChecked={query.conditions.includes(condition)}
+            />
+            {CONDITION_LABELS[condition]}
+          </label>
+        ))}
+      </fieldset>
+
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Posted</legend>
+        {POSTED_OPTIONS.map((posted) => (
+          <label key={posted} className={styles.check}>
+            <input
+              type="radio"
+              name="posted"
+              value={posted}
+              defaultChecked={query.posted === posted}
+            />
+            {POSTED_LABELS[posted]}
+          </label>
+        ))}
+      </fieldset>
+
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Status</legend>
+        <label className={styles.check}>
+          <input
+            type="radio"
+            name="status"
+            value="available"
+            defaultChecked={query.status === 'available'}
+          />
+          Available only
+        </label>
+        <label className={styles.check}>
+          <input
+            type="radio"
+            name="status"
+            value="include_pending"
+            defaultChecked={query.status === 'include_pending'}
+          />
+          Include pending
+        </label>
+      </fieldset>
+
+      {filters.map((filter) => (
+        <AttributeField
+          key={filter.key}
+          filter={filter}
+          value={query.attributes[filter.key]}
+          idPrefix={idPrefix}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Desktop filter panel (storefront-ia §4): common filters, then the category's attribute filters.
+ * A GET form, so state lives in the URL (shareable, back/forward work) and it works without JS.
+ * Hidden below 64rem, where the FilterDrawer takes over.
+ */
+export function FilterPanel(props: FilterProps) {
+  const { action, query, surface } = props;
   const hasActive = activeFilterKeys(query).length > 0;
   return (
     <aside className={styles.panel} aria-labelledby="filters-heading">
@@ -41,10 +190,7 @@ export function FilterPanel({
           Filters
         </h2>
         {hasActive ? (
-          <Link
-            href={query.q === undefined ? action : `${action}?q=${encodeURIComponent(query.q)}`}
-            className={styles.clearAll}
-          >
+          <Link href={clearFiltersHref(action, query)} className={styles.clearAll}>
             Clear all
           </Link>
         ) : null}
@@ -53,139 +199,10 @@ export function FilterPanel({
         action={action}
         className={styles.form}
         onSubmit={(event) => {
-          const data = new FormData(event.currentTarget);
-          const keys = [
-            ...new Set([...data.entries()].filter(([, v]) => v !== '').map(([k]) => k)),
-          ];
-          track({
-            name: 'filter_applied',
-            surface,
-            keys: keys.filter((k) => k !== 'q' && k !== 'sort'),
-          });
+          trackFilterSubmit(event.currentTarget, surface);
         }}
       >
-        {query.q === undefined ? null : <input type="hidden" name="q" value={query.q} />}
-        {query.sort === 'newest' ? null : <input type="hidden" name="sort" value={query.sort} />}
-
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Price</legend>
-          {freeOnly ? (
-            <p className={styles.hint}>Everything here is free.</p>
-          ) : (
-            <>
-              <div className={styles.priceRow}>
-                <label className={styles.inline}>
-                  <span className="visually-hidden">Minimum price in dollars</span>
-                  <span aria-hidden="true">$</span>
-                  <input
-                    name="price_min"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={1000000}
-                    placeholder="Min"
-                    defaultValue={query.priceMin}
-                    className={styles.input}
-                  />
-                </label>
-                <span aria-hidden="true">–</span>
-                <label className={styles.inline}>
-                  <span className="visually-hidden">Maximum price in dollars</span>
-                  <span aria-hidden="true">$</span>
-                  <input
-                    name="price_max"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={1000000}
-                    placeholder="Max"
-                    defaultValue={query.priceMax}
-                    className={styles.input}
-                  />
-                </label>
-              </div>
-              <label className={styles.check}>
-                <input type="checkbox" name="free" value="true" defaultChecked={query.free} />
-                Free only
-              </label>
-            </>
-          )}
-        </fieldset>
-
-        <div className={styles.fieldset}>
-          <label htmlFor="filter-distance" className={styles.legend}>
-            Distance
-          </label>
-          <select
-            id="filter-distance"
-            name="distance"
-            defaultValue={String(query.distanceMi ?? defaultDistanceMi)}
-            className={styles.select}
-          >
-            {RADIUS_OPTIONS_MI.map((miles) => (
-              <option key={miles} value={miles}>
-                Within {miles} mi
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Condition</legend>
-          {ListingCondition.options.map((condition) => (
-            <label key={condition} className={styles.check}>
-              <input
-                type="checkbox"
-                name="condition"
-                value={condition}
-                defaultChecked={query.conditions.includes(condition)}
-              />
-              {CONDITION_LABELS[condition]}
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Posted</legend>
-          {POSTED_OPTIONS.map((posted) => (
-            <label key={posted} className={styles.check}>
-              <input
-                type="radio"
-                name="posted"
-                value={posted}
-                defaultChecked={query.posted === posted}
-              />
-              {POSTED_LABELS[posted]}
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Status</legend>
-          <label className={styles.check}>
-            <input
-              type="radio"
-              name="status"
-              value="available"
-              defaultChecked={query.status === 'available'}
-            />
-            Available only
-          </label>
-          <label className={styles.check}>
-            <input
-              type="radio"
-              name="status"
-              value="include_pending"
-              defaultChecked={query.status === 'include_pending'}
-            />
-            Include pending
-          </label>
-        </fieldset>
-
-        {filters.map((filter) => (
-          <AttributeField key={filter.key} filter={filter} value={query.attributes[filter.key]} />
-        ))}
-
+        <FilterFields {...props} idPrefix="filter" />
         <button type="submit" className={styles.apply}>
           Apply filters
         </button>
@@ -197,11 +214,13 @@ export function FilterPanel({
 function AttributeField({
   filter,
   value,
+  idPrefix,
 }: {
   filter: AttributeFilter;
   value: string | number | boolean | undefined;
+  idPrefix: string;
 }) {
-  const id = `filter-${filter.key}`;
+  const id = `${idPrefix}-${filter.key}`;
   if (filter.type === 'boolean') {
     return (
       <div className={styles.fieldset}>

@@ -70,6 +70,35 @@
   --hx-radius-card: 12px;
   --hx-radius-control: 8px;
   --hx-radius-pill: 999px;
+
+  /* Elevation (ADR-0011): components use these, never raw z-index values. */
+  --z-raised: 1;
+  --z-category-bar: 30;
+  --z-header: 40;
+  --z-popover: 50;
+  --z-tabbar: 60;
+  --z-sheet: 70;
+  --z-dialog: 80;
+  --z-toast: 90;
+  --z-skip-link: 100;
+
+  /* Touch targets and phone chrome. */
+  --hx-target-min: 2.75rem;
+  --hx-tabbar-height: 3.5rem;
+  --hx-bottom-chrome: 0px;
+}
+
+/* Phone layout below the single content breakpoint (keep in sync with COMPACT_QUERY). */
+@media (width < 64rem) {
+  :root {
+    --hx-page-gutter: 1rem;
+    --hx-bottom-chrome: var(--hx-tabbar-height);
+  }
+}
+
+/* A modal sheet is open: lock page scroll behind it. */
+:root[data-sheet-open] {
+  overflow: hidden;
 }
 
 @media (prefers-color-scheme: dark) {

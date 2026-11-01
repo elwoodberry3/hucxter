@@ -310,3 +310,49 @@ fieldset > .legend {
 .secondaryButton:hover {
   background: var(--hx-fill-hover);
 }
+
+/* Phone filters (FilterDrawer) */
+
+.drawerAnchor {
+  display: none;
+}
+
+.filtersButton,
+.drawerClear,
+.drawerApply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hx-space-2);
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border-radius: var(--hx-radius-control);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.filtersButton,
+.drawerClear {
+  border: 1px solid var(--hx-separator-strong);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+}
+
+.drawerClear {
+  flex: 1;
+}
+
+.drawerApply {
+  flex: 2;
+  border: 0;
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+}
+
+@media (width < 64rem) {
+  .drawerAnchor {
+    display: block;
+  }
+}

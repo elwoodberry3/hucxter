@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useId, useMemo, useRef, useState, useTransition } from 'react';
 import { setLocationByZip, setLocationFromCoordinates } from '@/app/actions/location';
 import type { LocationResult } from '@/app/actions/location';
+import { useToast } from '@/components/ui/toast';
 import { track } from '@/lib/analytics';
 import { useDismiss } from '@/lib/use-dismiss';
 import styles from './location.module.css';
@@ -39,6 +40,7 @@ export function LocationChip({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const toast = useToast();
   const [pending, startTransition] = useTransition();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -60,7 +62,8 @@ export function LocationChip({
       return;
     }
     setError('');
-    setStatus(`Location set to ${result.areaLabel} ${result.zip}.`);
+    setStatus('');
+    toast(`Location set to ${result.areaLabel} ${result.zip}.`);
     track({ name: 'location_changed', zip: result.zip, source });
     close(true);
     router.refresh();
