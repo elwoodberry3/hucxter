@@ -2,6 +2,7 @@ import type { AttributeFilter, Department, ListingDetail } from '@hucxter/contra
 import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
 import { BadgeCheck, Flag, Heart, MapPin, MessageCircle, Play, ShieldCheck } from 'lucide-react';
 import { Breadcrumb, SubcategoryRow } from '@/components/results/results-layout';
+import { cx } from '@/lib/cx';
 import { GatedActionButton } from './gated-action';
 import { ShareButton } from './share-button';
 import { StatusBadge } from './status-badge';
@@ -58,17 +59,19 @@ export function ListingTemplate({
 
   return (
     <>
-      <Breadcrumb
-        items={[
-          { label: 'Feed', href: '/' },
-          { label: department.name, href: `/c/${department.slug}` },
-          ...(subcategory === undefined
-            ? []
-            : [{ label: subcategory.name, href: `/c/${department.slug}/${subcategory.slug}` }]),
-          { label: listing.title },
-        ]}
-      />
-      <SubcategoryRow department={department} activeSlug={subcategory?.slug} />
+      <div className={styles.compactHidden}>
+        <Breadcrumb
+          items={[
+            { label: 'Feed', href: '/' },
+            { label: department.name, href: `/c/${department.slug}` },
+            ...(subcategory === undefined
+              ? []
+              : [{ label: subcategory.name, href: `/c/${department.slug}/${subcategory.slug}` }]),
+            { label: listing.title },
+          ]}
+        />
+        <SubcategoryRow department={department} activeSlug={subcategory?.slug} />
+      </div>
 
       <article className={styles.layout} aria-labelledby="listing-title">
         <div className={styles.videoColumn}>
@@ -97,6 +100,7 @@ export function ListingTemplate({
             </p>
           </div>
 
+          {/* Desktop: the actions panel. Phones: a sticky bottom bar (Save · Share · primary). */}
           <div className={styles.actions}>
             {primary === null ? (
               <p className={styles.soldNote}>
@@ -112,25 +116,26 @@ export function ListingTemplate({
                 {primary}
               </GatedActionButton>
             )}
-            <div className={styles.secondaryRow}>
-              <GatedActionButton
-                action="save"
-                prompt="Sign in to save items"
-                className={styles.secondary}
-              >
-                <Heart size={18} aria-hidden="true" />
-                Save
-              </GatedActionButton>
-              <ShareButton className={styles.secondary} />
-              <GatedActionButton
-                action="report"
-                prompt="Sign in to report a listing"
-                className={styles.secondary}
-              >
-                <Flag size={18} aria-hidden="true" />
-                Report
-              </GatedActionButton>
-            </div>
+            <GatedActionButton
+              action="save"
+              prompt="Sign in to save items"
+              className={cx(styles.secondary, styles.save)}
+            >
+              <Heart size={18} aria-hidden="true" />
+              <span className={styles.actionLabel}>Save</span>
+            </GatedActionButton>
+            <ShareButton
+              className={cx(styles.secondary, styles.share)}
+              labelClassName={styles.actionLabel}
+            />
+            <GatedActionButton
+              action="report"
+              prompt="Sign in to report a listing"
+              className={cx(styles.secondary, styles.reportDesktop)}
+            >
+              <Flag size={18} aria-hidden="true" />
+              Report
+            </GatedActionButton>
           </div>
 
           {attributeRows.length === 0 ? null : (
@@ -194,6 +199,14 @@ export function ListingTemplate({
               <li>Check the item before you pay. Never pay ahead or send gift cards.</li>
             </ul>
           </section>
+          <GatedActionButton
+            action="report"
+            prompt="Sign in to report a listing"
+            className={cx(styles.secondary, styles.reportCompact)}
+          >
+            <Flag size={18} aria-hidden="true" />
+            Report this listing
+          </GatedActionButton>
         </div>
       </article>
 

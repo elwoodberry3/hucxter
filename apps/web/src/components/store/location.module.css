@@ -147,3 +147,30 @@
   color: var(--hx-label-secondary);
   font-size: var(--hx-text-footnote);
 }
+
+@media (width < 64rem) {
+  .anchor {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .chip {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Full-width popover under the header; the header is the containing block or the viewport. */
+  .popover {
+    position: fixed;
+    top: calc(var(--hx-header-height) + var(--hx-space-2));
+    right: var(--hx-page-gutter);
+    left: var(--hx-page-gutter);
+    width: auto;
+    max-height: calc(100dvh - var(--hx-header-height) - var(--hx-bottom-chrome) - 2rem);
+    overflow-y: auto;
+  }
+
+  .input {
+    font-size: max(1rem, var(--hx-text-body));
+  }
+}

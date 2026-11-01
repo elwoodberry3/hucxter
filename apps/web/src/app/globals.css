@@ -85,6 +85,7 @@
   /* Touch targets and phone chrome. */
   --hx-target-min: 2.75rem;
   --hx-tabbar-height: 3.5rem;
+  --hx-header-height: 4rem;
   --hx-bottom-chrome: 0px;
 }
 
@@ -93,6 +94,16 @@
   :root {
     --hx-page-gutter: 1rem;
     --hx-bottom-chrome: var(--hx-tabbar-height);
+    --hx-header-height: 3.5rem;
+  }
+}
+
+/* Phones: 16px form text so iOS Safari doesn't zoom into focused fields. */
+@media (width < 64rem) {
+  input:not([type='checkbox'], [type='radio']),
+  select,
+  textarea {
+    font-size: max(1rem, 1em) !important;
   }
 }
 

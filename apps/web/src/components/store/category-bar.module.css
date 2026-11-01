@@ -93,3 +93,113 @@
 .moreLink:hover {
   background: var(--hx-fill-hover);
 }
+
+/* Departments outside the bar: hidden on desktop (they live under More), chips on phones. */
+.chipOnly {
+  display: none;
+}
+
+.allButton {
+  display: none;
+  flex: none;
+  align-items: center;
+  gap: var(--hx-space-1);
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-3);
+  border: 0;
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-accent-subtle);
+  color: var(--hx-accent);
+  font: inherit;
+  font-size: var(--hx-text-subheadline);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (width < 64rem) {
+  .inner {
+    gap: var(--hx-space-2);
+    height: auto;
+    padding-top: var(--hx-space-2);
+    padding-bottom: var(--hx-space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .allButton,
+  .chipOnly {
+    display: flex;
+  }
+
+  .moreAnchor {
+    display: none;
+  }
+
+  .links {
+    gap: var(--hx-space-2);
+  }
+
+  .link {
+    min-height: var(--hx-target-min);
+    border: 1px solid var(--hx-separator-strong);
+    border-radius: var(--hx-radius-pill);
+  }
+
+  .link[data-active='true'] {
+    border-color: var(--hx-accent);
+    background: var(--hx-accent-subtle);
+    text-decoration: none;
+  }
+}
+
+/* All-categories sheet */
+.sheetList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheetRow,
+.sheetRowStrong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 var(--hx-space-2);
+  border: 0;
+  border-bottom: 1px solid var(--hx-separator);
+  background: none;
+  color: var(--hx-label);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sheetRowStrong {
+  color: var(--hx-accent);
+  font-weight: 700;
+}
+
+.sheetDrill {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.sheetBack {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  justify-self: start;
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-2);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: none;
+  color: var(--hx-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

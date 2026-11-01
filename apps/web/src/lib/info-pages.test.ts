@@ -25,6 +25,7 @@ describe('info pages', () => {
       'sign-up',
       'dev',
       'api',
+      'discover',
     ];
     for (const slug of Object.keys(INFO_PAGES)) expect(reserved).not.toContain(slug);
   });

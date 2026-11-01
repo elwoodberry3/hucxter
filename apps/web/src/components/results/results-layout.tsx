@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { CategoryArt } from '@/components/art/category-art';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ListingCardView } from '@/components/listing/listing-card';
+import { FilterDrawer } from './filter-drawer';
 import { FilterPanel } from './filter-panel';
 import { SortSelect } from './sort-select';
 import styles from './results.module.css';
@@ -67,7 +68,17 @@ export function ResultsLayout({
               ? `No listings ${near} yet`
               : `${String(listings.length)} ${listings.length === 1 ? 'listing' : 'listings'} ${near}`}
           </h2>
-          <SortSelect action={action} query={query} className={styles.sort} />
+          <div className={styles.toolbarActions}>
+            <FilterDrawer
+              action={action}
+              query={query}
+              filters={filters}
+              freeOnly={freeOnly}
+              defaultDistanceMi={viewerRadiusMi}
+              surface={surface}
+            />
+            <SortSelect action={action} query={query} className={styles.sort} />
+          </div>
         </div>
         {listings.length > 0 ? (
           <ul className={styles.grid}>

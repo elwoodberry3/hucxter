@@ -4,11 +4,18 @@
   display: flex;
 }
 
+@media (width < 64rem) {
+  .anchor {
+    display: none;
+  }
+}
+
 .trigger {
   display: inline-flex;
   align-items: center;
   gap: var(--hx-space-2);
   height: 2.25rem;
+  min-width: 2.75rem;
   padding: 0 var(--hx-space-3);
   border: 0;
   border-radius: var(--hx-radius-control);

@@ -4,7 +4,13 @@ import { Share2 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 
 /** Copies the page link. Sharing doesn't need an account. */
-export function ShareButton({ className }: { className?: string | undefined }) {
+export function ShareButton({
+  className,
+  labelClassName,
+}: {
+  className?: string | undefined;
+  labelClassName?: string | undefined;
+}) {
   const toast = useToast();
   return (
     <>
@@ -23,7 +29,7 @@ export function ShareButton({ className }: { className?: string | undefined }) {
         }}
       >
         <Share2 size={18} aria-hidden="true" />
-        Share
+        <span className={labelClassName}>Share</span>
       </button>
     </>
   );

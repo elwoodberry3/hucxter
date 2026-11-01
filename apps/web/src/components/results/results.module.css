@@ -356,3 +356,63 @@ fieldset > .legend {
     display: block;
   }
 }
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hx-space-2);
+}
+
+@media (width < 64rem) {
+  .panel {
+    display: none;
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hx-space-4);
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: var(--hx-space-3);
+  }
+
+  .sort select {
+    min-height: var(--hx-target-min);
+    font-size: 1rem;
+  }
+
+  .hero {
+    grid-template-columns: 1fr 7rem;
+    margin-bottom: var(--hx-space-4);
+  }
+
+  .heroCopy {
+    padding: var(--hx-space-4);
+  }
+
+  .heroTitle {
+    font-size: var(--hx-text-title-1);
+  }
+
+  .heroArt {
+    min-height: 6rem;
+  }
+
+  .chips ul {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chip {
+    flex: none;
+    min-height: var(--hx-target-min);
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+}

@@ -1,17 +1,9 @@
 import type { Taxonomy } from '@hucxter/contracts';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { FooterColumn } from './footer-column';
 import { HxLogo } from './hx-logo';
 import styles from './footer.module.css';
-
-function Column({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className={styles.column}>
-      <h2 className={styles.heading}>{title}</h2>
-      <ul className={styles.list}>{children}</ul>
-    </div>
-  );
-}
 
 function Item({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -39,30 +31,30 @@ export function SiteFooter({
           <p className={styles.tagline}>Buy and sell locally with short videos. Meet up nearby.</p>
         </div>
         <div className={styles.columns}>
-          <Column title="Shop">
+          <FooterColumn title="Shop">
             {taxonomy.departments.map((department) => (
               <Item key={department.slug} href={`/c/${department.slug}`}>
                 {department.name}
               </Item>
             ))}
-          </Column>
-          <Column title="Sell">
+          </FooterColumn>
+          <FooterColumn title="Sell">
             <Item href="/how-selling-works">How selling works</Item>
             <Item href="/sell">Sell an item</Item>
             <Item href="/seller-safety">Seller safety</Item>
-          </Column>
-          <Column title="Safety & Help">
+          </FooterColumn>
+          <FooterColumn title="Safety & Help">
             <Item href="/meetup-tips">Meetup tips</Item>
             <Item href="/report-a-problem">Report a problem</Item>
             <Item href="/help">Help center</Item>
             <Item href="/contact">Contact</Item>
-          </Column>
-          <Column title="Company">
+          </FooterColumn>
+          <FooterColumn title="Company">
             <Item href="/about">About</Item>
             <Item href="/how-it-works">How Hucxter works</Item>
             <Item href="/careers">Careers</Item>
             <Item href="/press">Press</Item>
-          </Column>
+          </FooterColumn>
         </div>
       </div>
       <div className={styles.bottom}>

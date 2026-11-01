@@ -401,3 +401,82 @@
   background: var(--hx-accent-subtle);
   color: var(--hx-accent);
 }
+
+/* Phones (ADR-0011) */
+@media (width < 64rem) {
+  .page {
+    gap: var(--hx-space-8);
+  }
+
+  .sectionTitle {
+    font-size: var(--hx-text-title-2);
+  }
+
+  .heroSlide {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .heroArt {
+    order: -1;
+    height: 10rem;
+    padding: var(--hx-space-3) var(--hx-space-3) 0;
+  }
+
+  .heroCopy {
+    padding: var(--hx-space-4) var(--hx-space-4) 4.5rem;
+  }
+
+  .heroTitle {
+    font-size: 1.625rem;
+  }
+
+  .heroBody {
+    font-size: var(--hx-text-body);
+  }
+
+  .heroControls {
+    left: var(--hx-space-4);
+  }
+
+  .heroButton,
+  .heroDot {
+    width: var(--hx-target-min);
+    height: var(--hx-target-min);
+  }
+
+  .categoryGrid {
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: var(--hx-space-2);
+  }
+
+  .invitation,
+  .promoSlot {
+    grid-template-columns: 1fr;
+  }
+
+  .invitationArt,
+  .promoSlotArt {
+    min-height: 6rem;
+  }
+
+  .invitationCopy,
+  .promoSlotCopy {
+    padding: var(--hx-space-4);
+  }
+
+  .railGrid,
+  .promoStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCta,
+  .primaryButton,
+  .secondaryButton {
+    min-height: var(--hx-target-min);
+  }
+
+  .comingSoon {
+    padding: var(--hx-space-8) var(--hx-space-4);
+  }
+}
