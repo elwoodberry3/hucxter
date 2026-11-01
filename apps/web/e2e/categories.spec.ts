@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { categoryUrls } from './support';
+import { DESKTOP_ONLY, SERVER_ONLY, categoryUrls } from './support';
 
 test.describe('category index and search', () => {
   test('every department and subcategory renders with filters and an empty state', async ({
     request,
-  }) => {
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     const urls = await categoryUrls(request);
     expect(urls.filter((url) => url.split('/').length === 3)).toHaveLength(14);
     expect(urls.length).toBeGreaterThan(80);
@@ -17,13 +18,18 @@ test.describe('category index and search', () => {
     }
   });
 
-  test('unknown category slugs return 404', async ({ request }) => {
+  test('unknown category slugs return 404', async ({ request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     for (const url of ['/c/vehicles', '/c/cars', '/c/electronics/furniture', '/c/home/nope']) {
       expect((await request.get(url)).status(), url).toBe(404);
     }
   });
 
-  test('subcategory page: breadcrumb, chips, hero, department filters', async ({ page }) => {
+  test('subcategory page: breadcrumb, chips, hero, department filters', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/c/electronics/phones-tablets');
     const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
     await expect(crumbs.getByRole('listitem')).toHaveText([
@@ -43,7 +49,9 @@ test.describe('category index and search', () => {
 
   test('filters round-trip through the URL and survive reload and back/forward', async ({
     page,
+    isMobile,
   }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/c/electronics/phones-tablets');
     await page.getByLabel('Minimum price in dollars').fill('50');
     await page.getByLabel('Good', { exact: true }).check();
@@ -79,7 +87,7 @@ test.describe('category index and search', () => {
   test('empty state offers Sell, a wider radius, and all categories', async ({ page }) => {
     await page.goto('/c/home/furniture?distance=10');
     await expect(
-      page.getByRole('heading', { name: 'Nothing in Furniture near Celina yet' }),
+      page.getByRole('heading', { name: 'Nothing in Furniture near Portland yet' }),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sell in Furniture' })).toHaveAttribute(
       'href',
@@ -90,7 +98,8 @@ test.describe('category index and search', () => {
     await expect(page.getByRole('link', { name: 'Browse all categories' })).toBeVisible();
   });
 
-  test('search echoes the query safely and uses the same layout', async ({ page }) => {
+  test('search echoes the query safely and uses the same layout', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     let dialogs = 0;
     page.on('dialog', (dialog) => {
       dialogs += 1;

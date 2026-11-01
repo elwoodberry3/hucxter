@@ -6,14 +6,16 @@ test.describe('guest location', () => {
     context,
   }) => {
     await page.goto('/');
-    const chip = page.getByRole('button', { name: /Near Celina 75009\?/ });
+    const chip = page.getByRole('button', { name: /Near Portland 97205\?/ });
     await chip.click();
     const popover = page.getByRole('dialog', { name: 'Your location' });
-    await expect(popover).toContainText('We’re showing Celina 75009 to start.');
+    await expect(popover).toContainText('We’re showing Portland 97205 to start.');
 
     await popover.getByLabel('ZIP code').fill('99999');
     await popover.getByRole('button', { name: 'Update location' }).click();
-    await expect(popover.getByRole('alert')).toHaveText(/isn’t in that area yet/);
+    await expect(popover.getByRole('alert')).toHaveText(
+      'We couldn’t find that ZIP. Try the ZIP where you live or pick up items.',
+    );
     await expect(popover.getByLabel('ZIP code')).toHaveAttribute('aria-invalid', 'true');
 
     await popover.getByLabel('ZIP code').fill('76102');
@@ -28,16 +30,16 @@ test.describe('guest location', () => {
 
   test('confirming the guess removes the question mark', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: /Near Celina 75009\?/ }).click();
-    await page.getByRole('button', { name: 'Yes, use Celina' }).click();
-    await expect(page.getByRole('button', { name: /^Near Celina 75009 Change$/ })).toBeVisible();
+    await page.getByRole('button', { name: /Near Portland 97205\?/ }).click();
+    await page.getByRole('button', { name: 'Yes, use Portland' }).click();
+    await expect(page.getByRole('button', { name: /^Near Portland 97205 Change$/ })).toBeVisible();
   });
 
   test('"Use my current location" maps browser coordinates to a ZIP', async ({ page, context }) => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 33.2148, longitude: -97.1331 });
     await page.goto('/');
-    await page.getByRole('button', { name: /Near Celina/ }).click();
+    await page.getByRole('button', { name: /Near Portland/ }).click();
     await page.getByRole('button', { name: 'Use my current location' }).click();
     await expect(page.getByRole('button', { name: /Near Denton 762\d\d Change/ })).toBeVisible();
     const cookie = (await context.cookies()).find((c) => c.name === 'hx_loc');
@@ -49,6 +51,6 @@ test.describe('guest location', () => {
       { name: 'hx_loc', value: '33.21,-97.13', url: 'http://localhost:3100' },
     ]);
     await page.goto('/');
-    await expect(page.getByRole('button', { name: /Near Celina 75009\?/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Near Portland 97205\?/ })).toBeVisible();
   });
 });

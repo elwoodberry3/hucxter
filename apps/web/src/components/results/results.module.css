@@ -410,6 +410,7 @@ fieldset > .legend {
   .chip {
     flex: none;
     min-height: var(--hx-target-min);
+    white-space: nowrap;
   }
 
   .grid {

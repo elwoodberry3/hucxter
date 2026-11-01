@@ -1,8 +1,10 @@
 import { HealthResponse } from '@hucxter/contracts';
 import { expect, test } from '@playwright/test';
+import { DESKTOP_ONLY } from './support';
 
 test.describe('storefront shell', () => {
-  test('has no app sidebar and exactly one search field', async ({ page }) => {
+  test('has no app sidebar and exactly one search field', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     for (const path of ['/', '/c/home', '/search?q=lamp', '/sign-in']) {
       await page.goto(path);
       await expect(page.getByRole('navigation', { name: 'Primary' })).toHaveCount(0);
@@ -10,11 +12,12 @@ test.describe('storefront shell', () => {
     }
   });
 
-  test('header: logo, location, search, Sell, Messages, Sign in', async ({ page }) => {
+  test('header: logo, location, search, Sell, Messages, Sign in', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/c/home');
     const header = page.getByRole('banner');
     await expect(header.getByRole('link', { name: 'Hucxter' })).toHaveAttribute('href', '/');
-    await expect(header.getByRole('button', { name: /Near Celina 75009\?/ })).toBeVisible();
+    await expect(header.getByRole('button', { name: /Near Portland 97205\?/ })).toBeVisible();
     await expect(header.getByRole('searchbox', { name: 'Search Hucxter' })).toHaveAttribute(
       'placeholder',
       'Search Hucxter',
@@ -26,7 +29,9 @@ test.describe('storefront shell', () => {
 
   test('category bar follows the taxonomy order and marks the active department', async ({
     page,
+    isMobile,
   }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/c/sports-outdoors/bikes');
     const bar = page.getByRole('navigation', { name: 'Categories', exact: true });
     await expect(bar.getByRole('link')).toHaveText([
@@ -52,8 +57,8 @@ test.describe('storefront shell', () => {
     await expect(
       page.getByRole('region', { name: 'Shop by category' }).getByRole('listitem'),
     ).toHaveCount(14);
-    await expect(page.getByRole('heading', { name: /^New near Celina$/ })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /^Free stuff near Celina$/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^New near Portland$/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Free stuff near Portland$/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /^Be the first/ }).first()).toBeVisible();
     const promo = page.getByRole('complementary', { name: 'Promoted by Hucxter' });
     await expect(promo).toBeVisible();
@@ -66,7 +71,8 @@ test.describe('storefront shell', () => {
     );
   });
 
-  test('footer has every column and the legal row', async ({ page }) => {
+  test('footer has every column and the legal row', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/');
     const footer = page.getByRole('contentinfo');
     for (const heading of ['Shop', 'Sell', 'Safety & Help', 'Company']) {
@@ -78,7 +84,7 @@ test.describe('storefront shell', () => {
     for (const link of ['Terms', 'Privacy', 'Prohibited items', 'Meetup tips', 'Help center']) {
       await expect(footer.getByRole('link', { name: link })).toBeVisible();
     }
-    await expect(footer).toContainText('Location: Near Celina 75009?');
+    await expect(footer).toContainText('Location: Near Portland 97205?');
   });
 
   test('no header, category bar, mega menu or footer link is a dead 404', async ({
@@ -116,7 +122,11 @@ test.describe('storefront shell', () => {
     await expect(page.getByRole('button', { name: /slideshow/ })).toHaveCount(0);
   });
 
-  test('keyboard: first Tab reaches the skip link, which moves focus to main', async ({ page }) => {
+  test('keyboard: first Tab reaches the skip link, which moves focus to main', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/');
     await page.keyboard.press('Tab');
     const skip = page.getByRole('link', { name: 'Skip to content' });
@@ -125,12 +135,12 @@ test.describe('storefront shell', () => {
     await expect(page.locator('main#main')).toBeFocused();
   });
 
-  test('desktop notice shows only below 1280×720', async ({ page }) => {
+  test('no "best on a desktop browser" notice at any width (ADR-0011)', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('Hucxter works best on a desktop browser.')).toBeHidden();
-    await page.setViewportSize({ width: 1024, height: 700 });
-    await expect(page.getByText('Hucxter works best on a desktop browser.')).toBeVisible();
-    await expect(page.getByRole('banner')).toBeVisible();
+    for (const width of [320, 390, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 800 });
+      await expect(page.getByText(/works best on a desktop browser/i)).toHaveCount(0);
+    }
   });
 
   test('favicons, manifest and health endpoint', async ({ page, request }) => {

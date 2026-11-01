@@ -26,7 +26,7 @@ export interface ChipLocation {
 }
 
 /**
- * Location chip + popover (storefront-ia §1). A guess shows as "Near Celina 75009?" until the
+ * Location chip + popover (storefront-ia §1). A guess shows as "Near Portland 97205?" until the
  * viewer confirms or changes it. Saves ZIP + radius only (first-party cookie, server action).
  */
 export function LocationChip({

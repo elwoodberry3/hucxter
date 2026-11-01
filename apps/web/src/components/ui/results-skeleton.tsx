@@ -4,7 +4,7 @@ import styles from './skeleton-layout.module.css';
 /** Loading placeholder for category and search results (layout is known). */
 export function ResultsSkeleton() {
   return (
-    <div className={styles.page} aria-busy="true" aria-label="Loading results">
+    <div className={styles.page} role="status" aria-busy="true" aria-label="Loading results">
       <Skeleton variant="text" />
       <Skeleton variant="block" />
       <div className={styles.grid}>

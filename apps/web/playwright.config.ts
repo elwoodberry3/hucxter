@@ -62,6 +62,9 @@ export default defineConfig({
       name: 'desktop-1280',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
+    // Phones (ADR-0011): Android Chrome and iPhone Safari profiles.
+    { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
+    { name: 'mobile-webkit', use: { ...devices['iPhone 15'] } },
   ],
   // Production builds, so headers and CSP are tested as they ship. Servers start in order: the
   // first builds; the second reuses that build with APP_ENV=production to prove /dev is gated.

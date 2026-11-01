@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { GATED_ROUTES } from './support';
+import { DESKTOP_ONLY, GATED_ROUTES, SERVER_ONLY } from './support';
 
 test.describe('sign-in gating', () => {
   for (const route of GATED_ROUTES) {
@@ -14,7 +14,8 @@ test.describe('sign-in gating', () => {
     });
   }
 
-  test('header Sell and Messages lead to sign-in', async ({ page }) => {
+  test('header Sell and Messages lead to sign-in', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/c/home');
     await page.getByRole('banner').getByRole('link', { name: 'Sell' }).click();
     await expect(page).toHaveURL('/sign-in?next=%2Fsell');
@@ -22,7 +23,8 @@ test.describe('sign-in gating', () => {
     await expect(page).toHaveURL('/sign-in?next=%2Fmessages');
   });
 
-  test('account menu returns guests to the current page', async ({ page }) => {
+  test('account menu returns guests to the current page', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.goto('/c/home/lighting?condition=good');
     const trigger = page.getByRole('button', { name: 'Sign in' });
     await trigger.click();
@@ -49,8 +51,14 @@ test.describe('sign-in gating', () => {
       ['Save', 'Sign in to save items'],
       ['Report', 'Sign in to report a listing'],
     ] as const) {
-      const trigger = page.getByRole('main').getByRole('button', { name: button, exact: true });
-      await trigger.click();
+      // Desktop: "Report"; phones: "Report this listing" (outside the sticky bar).
+      const trigger = page.getByRole('main').getByRole('button', {
+        name: button === 'Report' ? /^Report/ : button,
+        exact: button !== 'Report',
+      });
+      // Keyboard activation: WebKit doesn't focus buttons on click, and focus return is the point.
+      await trigger.focus();
+      await page.keyboard.press('Enter');
       const sheet = page.getByRole('dialog', { name: prompt });
       await expect(sheet).toBeVisible();
       for (const method of ['email', 'Facebook', 'TikTok']) {
@@ -96,7 +104,8 @@ test.describe('sign-in gating', () => {
     }
   });
 
-  test('admin and listing pages 404 for guests', async ({ request }) => {
+  test('admin and listing pages 404 for guests', async ({ request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     expect((await request.get('/admin')).status()).toBe(404);
     expect((await request.get('/l/00000000-0000-4000-8000-000000000001')).status()).toBe(404);
   });

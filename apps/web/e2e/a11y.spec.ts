@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { KEY_PAGES } from './support';
+import { DESKTOP_ONLY, KEY_PAGES } from './support';
 
 async function blockingViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -23,7 +23,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
     });
   }
 
-  test(`axe: open mega menu (${colorScheme})`, async ({ page }) => {
+  test(`axe: open mega menu (${colorScheme})`, async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
     await page.getByRole('button', { name: 'All Categories' }).click();
@@ -33,7 +34,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
   test(`axe: open location popover and sign-in sheet (${colorScheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     await page.goto('/dev/templates/listing');
-    await page.getByRole('button', { name: /Near Celina/ }).click();
+    await page.getByRole('button', { name: /Near Portland/ }).click();
     expect(await blockingViolations(page)).toEqual([]);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Is this still available?' }).click();
