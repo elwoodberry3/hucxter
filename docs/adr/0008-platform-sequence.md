@@ -1,5 +1,6 @@
 # ADR-0008: Platform sequence — desktop web first
-**Status:** Accepted (Founder, 2026-10-23)
+**Status:** Accepted (Founder, 2026-10-23) · **Amended by ADR-0011** (2026-10-31): Phases I–III are
+desktop **and mobile** web; the platform order below is unchanged
 
 ## Decision
 | Phases | Platform |

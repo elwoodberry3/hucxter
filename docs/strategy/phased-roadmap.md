@@ -37,7 +37,7 @@ The core loop only:
 | In | Out (later) |
 |---|---|
 | Storefront: header, category bar + mega menu, home, category index with filters, product page, footer (ADR-0009) | Follows, likes, comments, creator profiles |
-| Sign-up with email, Facebook, or TikTok + required phone SMS verification, 18+ gate, home ZIP (ADR-0010). Guests browse only | Card/ID verification (Phase II) |
+| Sign-up with email one-time code or Google + required phone SMS verification, 18+ attestation, home ZIP (ADR-0010 as amended by D-34). Guests browse only | Card/ID verification (Phase II) |
 | Upload short listing video (drag-and-drop/file picker); AI **draft** (title, category, tags, condition notes) | AI price guidance, negotiation, buyer "Real Talk" |
 | Price, condition, category, publish, edit, mark reserved/sold, delete | Payments, escrow, shipping (never) |
 | Local feed (radius ≤ 100 mi, recency) with keyboard navigation, listing detail, save | Ranking models, Explore/Trending, search ranking |
@@ -53,7 +53,7 @@ listings, prompt-injection text in videos, rate-limit abuse, and CSRF/XSS probes
 Phase I events flowing; trust-safety-reviewer pass on auth, sessions, location, messaging.
 
 ### Phase I-B — Local beta (one launch area, desktop web)
-Invite-only real sellers in one dense area (D-06). Recruit supply in person: resellers/flippers,
+Invite-only real sellers in one dense area: **Portland–Vancouver metro**, 30 mi from ZIP 97205 (D-35). Recruit supply in person: resellers/flippers,
 furniture, bikes, sneakers, tools, baby gear. These are categories where video beats photos and
 local pickup is natural. Resellers and flippers often work from a computer already, which suits a
 desktop-first launch. No paid acquisition until the organic loop shows signal.

@@ -1,7 +1,9 @@
 # ADR-0009: Storefront information architecture (top header + categories, no app sidebar)
 **Status:** Accepted (Founder, sprint grooming 2026-10-24). Details marked *(proposed)* need
 Founder confirmation before they ship. **Amends:** ADR-0007 layout section; supersedes the
-"sidebar + toolbar" shell built in Brief 01.
+"sidebar + toolbar" shell built in Brief 01. **Amended by ADR-0011** (2026-10-31): this layout
+applies at desktop widths; phone widths use the mobile shell (tab bar, sheets) and the "best on a
+desktop browser" notice is removed.
 
 ## Context
 The Brief 01 shell (persistent left sidebar: Feed, Search, Sell, Messages, Saved, My Listings,

@@ -6,14 +6,14 @@ layouts for structure only. Design rules: `hucxter-design-system` (Apple HIG bas
 
 ## 1. Global header (all pages, sticky)
 ```
-[Hx Hucxter]  [📍 Near Aubrey 75009 ▾]  [ 🔍 Search Hucxter ................ ]  [+ Sell] [💬] [Sign in | (avatar ▾)]
+[Hx Hucxter]  [📍 Near Portland 97205 ▾]  [ 🔍 Search Hucxter ................ ]  [+ Sell] [💬] [Sign in | (avatar ▾)]
 [≡ All Categories ▾]  Electronics  Home & Living  Fashion  Sports & Outdoors  Tools  Baby & Kids  Free Stuff  More ▾
 ```
 - **Logo** links to `/` (the Feed). There is no separate Home or Feed nav item.
 - **Location chip:**
   - Shows the area label and ZIP, and opens a popover: enter a ZIP, "Use my current location"
     (browser geolocation, user-initiated), and a radius select.
-  - For guests, the default comes from **approximate IP location**, shown as "Near Aubrey 75009?"
+  - For guests, the default comes from **approximate IP location**, shown as "Near Portland 97205?"
     so it's clearly a guess, and editable.
   - Stored only in a first-party cookie (ZIP + radius). Never sent to analytics with more
     precision than the ZIP.
@@ -51,11 +51,11 @@ In order from top:
    "Sell it in seconds: film it, post it, meet up," and "Meet safely: public exchange spots."
    Each links to a real page; a category page with an empty state is acceptable.
 2. **Shop by category:** a card grid of all departments (art + name), linking to `/c/[slug]`.
-3. **Near you rails:** "New near Aubrey," "Free stuff near you," and one rail per featured
+3. **Near you rails:** "New near Portland," "Free stuff near you," and one rail per featured
    department.
    - With listings: horizontal listing cards.
    - Without listings: the rail shows a **designed invitation card** instead ("Be the first to list
-     furniture near Aubrey → Sell"). No fake listings.
+     furniture near Portland → Sell"). No fake listings.
 4. **Promo strip** with house promos: safety tips, invite friends *(future)*, "How Hucxter works."
 5. **Sponsored slot placeholder** *(proposed)*: one in-feed slot rendered through the typed feed
    envelope (`type: 'sponsored'`). In Phase I it shows a house promo **labeled "Promoted by
@@ -77,7 +77,7 @@ In order from top:
   - distance bucket
   - area
   - status badge if Pending
-- **Empty state:** illustration + "Nothing in Bikes near Aubrey yet" + [Sell a bike] + [Widen your
+- **Empty state:** illustration + "Nothing in Bikes near Portland yet" + [Sell a bike] + [Widen your
   radius] + [Browse all categories].
 - Pagination uses keyset pagination with a "Load more" button.
 
@@ -116,7 +116,7 @@ In order from top:
 **Guest view:**
 - Guests see the full page.
 - Every action opens a **sign-in sheet**: "Sign in to message this seller." The sheet offers
-  Continue with email · Continue with Facebook · Continue with TikTok, plus "New here? Create an
+  Continue with Google · Continue with email, plus "New here? Create an
   account."
 - The sheet returns guests to the same listing and completes the intended action after sign-in,
   once verification is done.
@@ -128,7 +128,7 @@ Four columns plus a bottom row:
 - **Safety & Help:** Meetup tips · Report a problem · Help center · Contact.
 - **Company:** About · Careers *(later)* · Press *(later)*.
 
-Bottom row: © Hucxter · Terms · Privacy · Prohibited items · Location: Near Aubrey 75009.
+Bottom row: © Hucxter · Terms · Privacy · Prohibited items · Location: Near Portland 97205.
 Links for pages that don't exist yet go to a simple "Coming soon" page with the footer intact. No
 dead 404s.
 
@@ -148,3 +148,22 @@ dead 404s.
 `category_viewed`, `mega_menu_opened`, `hero_clicked`, `location_changed` (ZIP-level only),
 `filter_applied`, `sign_in_prompted` (with the `action` that triggered it), `sign_in_started`
 (with `method`), `availability_asked`, `listing_status_changed`.
+
+## 9. Mobile (ADR-0011, D-37)
+Phone widths (below the 64rem content breakpoint) use the same routes and data with a mobile shell:
+- **Header (sticky, compact):** Hx mark → `/`, location chip, and a search button that opens a
+  full-screen search sheet. There is still only one search field in the accessibility tree.
+- **Category chips:** a horizontally scrollable row of departments plus **All**, which opens a
+  full-screen "All categories" sheet (department → subcategory drill-in, with Back).
+- **Bottom tab bar:** Home · Discover · Sell · Inbox · Account, with safe-area insets. It hides
+  while an on-screen keyboard is up. Guests: Sell, Inbox and Account lead to sign-in.
+- **Filters:** a "Filters" button opens the FilterDrawer bottom sheet (Apply / Clear). Filter state
+  stays in the URL.
+- **Footer:** columns collapse to accordions.
+- **Product page:** video on top (9:16, height capped so the price and primary action are visible
+  without scrolling), details below, and a sticky bottom action bar ("Is this still available?" +
+  Save + Share). On product pages the tab bar is replaced by a back button in the header if both
+  can't fit.
+- Sheets close with the close button, Esc, or the browser Back button, and return focus to what
+  opened them. Touch targets are at least 44×44 CSS px; nothing scrolls sideways at 320 px.
+- Desktop widths keep §1–§6 exactly, with **Discover** added to the header.

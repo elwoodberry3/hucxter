@@ -1,6 +1,13 @@
 # ADR-0010: Sign-up and verification methods
-**Status:** Proposed (Founder requirement 2026-10-24: email, Facebook, TikTok). Confirm D-25,
-D-26, and D-08 before Brief 03. **Amends:** the "phone OTP sign-in" assumption in earlier briefs.
+**Status:** Accepted as amended (Founder, D-34, 2026-10-31). **Amends:** the "phone OTP sign-in"
+assumption in earlier briefs.
+
+> **Amendment (D-34, 2026-10-31):** sign-up is **email one-time code or Google**, then required
+> phone SMS verification, 18+ attestation, and home ZIP. **Facebook and TikTok are removed**
+> (supersedes D-25, D-26, D-33). Google uses Supabase's built-in provider with PKCE and the
+> `openid email profile` scopes only. The text below is the original proposal, kept for history;
+> where it mentions Facebook or TikTok, D-34 wins. The Phase V note about Sign in with Apple
+> still stands (Apple requires it when an iOS app offers third-party sign-in such as Google).
 
 ## Context
 - The Founder requires sign-up with **email, Facebook, or TikTok**, plus identity due diligence:
