@@ -2,7 +2,7 @@
 
 A hyperlocal, video-first marketplace. Sellers post a short video of an item, nearby buyers find it
 in a local feed and message the seller, and they meet in person. Phase I is a **desktop web app**
-for current desktop Chrome.
+for desktop and mobile browsers (mobile first, ADR-0011).
 
 Project rules live in [`CLAUDE.md`](CLAUDE.md), decisions in [`docs/adr/`](docs/adr/), and the
 roadmap in [`docs/strategy/phased-roadmap.md`](docs/strategy/phased-roadmap.md).
@@ -36,21 +36,21 @@ supabase stop
 Before the first e2e run, install the Playwright browser once:
 
 ```sh
-pnpm --filter @hucxter/web exec playwright install chromium
+pnpm --filter @hucxter/web exec playwright install chromium webkit
 ```
 
 ## Scripts
 
-| Command          | What it does                                                                        |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| `pnpm dev`       | Next.js dev server for `apps/web`                                                   |
-| `pnpm build`     | Production build of every workspace (`APP_ORIGIN` must be set when it runs)         |
-| `pnpm lint`      | ESLint in every workspace (warnings fail)                                           |
-| `pnpm typecheck` | `tsc --noEmit` in every workspace                                                   |
-| `pnpm test`      | Vitest unit tests                                                                   |
-| `pnpm test:e2e`  | Playwright (Chromium) at 1440×900 and 1280×800, with axe and security-header checks |
-| `pnpm test:db`   | `supabase test db` (run `supabase start` first)                                     |
-| `pnpm format`    | Prettier write (`format:check` runs in CI)                                          |
+| Command          | What it does                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`       | Next.js dev server for `apps/web`                                                                                                          |
+| `pnpm build`     | Production build of every workspace (`APP_ORIGIN` must be set when it runs)                                                                |
+| `pnpm lint`      | ESLint in every workspace (warnings fail)                                                                                                  |
+| `pnpm typecheck` | `tsc --noEmit` in every workspace                                                                                                          |
+| `pnpm test`      | Vitest unit tests                                                                                                                          |
+| `pnpm test:e2e`  | Playwright: desktop Chromium 1440×900 / 1280×800, Pixel 7 (Chromium), iPhone 15 (WebKit); axe, CSP and header checks. Needs local Supabase |
+| `pnpm test:db`   | `supabase test db` (run `supabase start` first)                                                                                            |
+| `pnpm format`    | Prettier write (`format:check` runs in CI)                                                                                                 |
 
 ## Layout
 
@@ -96,3 +96,19 @@ never the secret/service-role key), `APP_ENV=local`, and `DEFAULT_AREA_ZIP` (see
 | `/dev/templates/listing`                         | Product page template with a **Demo** fixture; 404 when `APP_ENV=production`       |
 
 Never add fake listings, counts, ratings, or scale claims. Demo data lives only under `/dev`.
+
+## Mobile web and nationwide ZIPs (Brief 03, Milestone 3A)
+
+- **Mobile first** (ADR-0011): below 64rem the app uses a compact header, scrollable category
+  chips with an "All categories" sheet, a bottom tab bar (Home · Discover · Sell · Inbox ·
+  Account), a FilterDrawer and sticky product actions. Primitives live in
+  `apps/web/src/components/ui/` (BottomSheet, TabBar, Toast, Skeleton, EmptyState, ErrorState).
+  Elevation uses `--z-*` tokens only.
+- **Reference data is migrated, not seeded:** every 2020 ZCTA for the 50 states, DC and Puerto
+  Rico (`postal_areas`), the category taxonomy, and the Portland–Vancouver launch area
+  (`service_areas`). `supabase/seed.sql` is for local demo data only. Regenerate ZIP data with
+  `supabase/scripts/build_postal_areas.py` (instructions in the file).
+- **Default location** is ZIP 97205 (`DEFAULT_AREA_ZIP`). Any US ZIP can be set; outside the launch
+  area a dismissible notice explains where Hucxter is starting.
+- Test on phones too: `pnpm test:e2e` runs the mobile projects; for real devices see
+  `docs/standards/mobile-experience-standard.md` §14.

@@ -42,7 +42,8 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   FilterDrawer, accordions, sticky product actions), UI primitives in `components/ui/`, all 2020
   ZCTAs and the taxonomy as **data migrations** (`seed.sql` is local demo data only),
   `service_areas` (Portland–Vancouver launch area), default ZIP 97205. Playwright runs 4 projects
-  (desktop 1440/1280, mobile Chromium, mobile WebKit).
+  (desktop 1440/1280, mobile Chromium, mobile WebKit). Reference data migrations: 33,774 ZCTAs
+  (50 states + DC + PR), taxonomy, `service_areas`; postal lookups cache hits only.
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
