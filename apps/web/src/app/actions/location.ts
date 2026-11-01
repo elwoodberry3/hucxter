@@ -30,7 +30,10 @@ export async function setLocationByZip(input: unknown): Promise<LocationResult> 
   if (!parsed.success) return { ok: false, error: 'Enter a 5-digit ZIP code.' };
   const area = await lookupPostalArea(parsed.data.zip);
   if (area === null) {
-    return { ok: false, error: 'Hucxter isn’t in that area yet. Try a North Texas ZIP code.' };
+    return {
+      ok: false,
+      error: 'We couldn’t find that ZIP. Try the ZIP where you live or pick up items.',
+    };
   }
   await remember(area.zip, parsed.data.radiusMi);
   return { ok: true, zip: area.zip, areaLabel: area.area_label };
@@ -48,7 +51,7 @@ export async function setLocationFromCoordinates(input: unknown): Promise<Locati
     if (area === null) {
       return {
         ok: false,
-        error: 'Hucxter isn’t near you yet. Enter a North Texas ZIP code instead.',
+        error: 'We couldn’t find a ZIP near you. Enter your ZIP code instead.',
       };
     }
     await remember(area.zip, parsed.data.radiusMi);
