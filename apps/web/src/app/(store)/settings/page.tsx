@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { requireMember } from '@/lib/auth-gate';
+import { requireVerifiedMember } from '@/server/auth/gate';
 
 export const metadata: Metadata = { title: 'Settings' };
 
-/** Members only: guests are redirected to /sign-in?next=/settings. */
+/** Verified members only: guests go to /sign-in, unverified members to /welcome (D-34). */
 export default async function Page() {
-  await requireMember('/settings', 'settings');
+  await requireVerifiedMember('/settings', 'settings');
   return <h1>Settings</h1>;
 }

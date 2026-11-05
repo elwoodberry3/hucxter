@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { requireMember } from '@/lib/auth-gate';
+import { requireVerifiedMember } from '@/server/auth/gate';
 
 export const metadata: Metadata = { title: 'Saved' };
 
-/** Members only: guests are redirected to /sign-in?next=/saved. */
+/** Verified members only: guests go to /sign-in, unverified members to /welcome (D-34). */
 export default async function Page() {
-  await requireMember('/saved', 'saved');
+  await requireVerifiedMember('/saved', 'saved');
   return <h1>Saved</h1>;
 }

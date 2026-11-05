@@ -7,7 +7,9 @@ const BASE = 'https://hucxter.invalid';
 const MAX_LENGTH = 512;
 // eslint-disable-next-line no-control-regex -- control characters are exactly what we reject
 const UNSAFE_CHARS = /[\u0000-\u001f\u007f\\]/;
-const AUTH_PATHS = new Set(['/sign-in', '/sign-up']);
+// Never a return target: the sign-in pages, onboarding, and the auth routes themselves.
+const AUTH_PATHS = new Set(['/sign-in', '/sign-up', '/welcome']);
+const AUTH_PREFIX = '/auth/';
 
 function normalizedPathname(pathname: string): string {
   let decoded = pathname;
@@ -26,7 +28,8 @@ function looksUnsafe(path: string): boolean {
 /**
  * Returns `raw` normalized as a same-origin relative path (path + query + hash), or null if it
  * isn't one. Rejects absolute URLs, protocol-relative `//host`, backslashes, control characters,
- * and encoded variants of those, and never returns a path to the sign-in pages themselves.
+ * and encoded variants of those, and never returns a path to the sign-in pages, `/welcome`, or
+ * `/auth/*`.
  */
 export function safeNextPath(raw: unknown): string | null {
   if (typeof raw !== 'string' || raw.length === 0 || raw.length > MAX_LENGTH) return null;
@@ -50,7 +53,10 @@ export function safeNextPath(raw: unknown): string | null {
 
   const path = `${url.pathname}${url.search}${url.hash}`;
   // Dot segments can normalize into `//host` (e.g. "/.//evil.example").
-  if (looksUnsafe(path) || AUTH_PATHS.has(normalizedPathname(url.pathname))) return null;
+  const normalized = normalizedPathname(url.pathname);
+  if (looksUnsafe(path) || AUTH_PATHS.has(normalized) || `${normalized}/`.startsWith(AUTH_PREFIX)) {
+    return null;
+  }
   return path;
 }
 
@@ -61,4 +67,10 @@ export function authHref(
 ): string {
   const safe = safeNextPath(next);
   return safe === null || safe === '/' ? page : `${page}?next=${encodeURIComponent(safe)}`;
+}
+
+/** `/welcome?next=…`: onboarding for signed-in members who aren't verified yet. */
+export function welcomeHref(next: string | null | undefined): string {
+  const safe = safeNextPath(next);
+  return safe === null || safe === '/' ? '/welcome' : `/welcome?next=${encodeURIComponent(safe)}`;
 }

@@ -19,6 +19,21 @@ describe('contentSecurityPolicy', () => {
     expect(csp).toContain("style-src 'self' 'unsafe-inline'");
   });
 
+  it('allows Cloudflare Turnstile only when the captcha is on', () => {
+    const off = contentSecurityPolicy({ nonce: 'n', isDev: false, upgradeInsecure: true });
+    expect(off).not.toContain('challenges.cloudflare.com');
+    expect(off).not.toContain('frame-src');
+    const on = contentSecurityPolicy({
+      nonce: 'n',
+      isDev: false,
+      upgradeInsecure: true,
+      turnstile: true,
+    });
+    expect(on).toContain('frame-src https://challenges.cloudflare.com');
+    expect(on).toContain("'strict-dynamic' https://challenges.cloudflare.com");
+    expect(on).toContain("connect-src 'self'");
+  });
+
   it('creates distinct 128-bit base64 nonces', () => {
     const a = createNonce();
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);
