@@ -4,7 +4,7 @@ import { AnalyticsEvent, CONSENT_VERSION, envelope } from './events';
 describe('analytics events', () => {
   it('wraps events with schema and consent versions', () => {
     const tracked = envelope(
-      { name: 'sign_in_started', method: 'tiktok' },
+      { name: 'sign_in_started', method: 'google' },
       new Date('2026-10-24T00:00:00Z'),
     );
     expect(tracked).toMatchObject({

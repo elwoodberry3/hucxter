@@ -10,7 +10,7 @@ export const EVENT_SCHEMA_VERSION = 1;
 /** No consent UI exists yet; every event records that it predates consent capture. */
 export const CONSENT_VERSION = 'pre-consent-0';
 
-export const SignInMethod = z.enum(['email', 'facebook', 'tiktok']);
+export const SignInMethod = z.enum(['email', 'google']);
 export type SignInMethod = z.infer<typeof SignInMethod>;
 
 /** The action a guest tried that needs an account. */
