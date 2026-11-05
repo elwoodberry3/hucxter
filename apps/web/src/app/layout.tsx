@@ -21,7 +21,12 @@ export function generateMetadata(): Metadata {
   };
 }
 
+// Mobile first (ADR-0011): fit the device, cover the notch area (safe-area insets are handled in
+// CSS), and never disable pinch zoom.
 export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
   colorScheme: 'light dark',
 };
 

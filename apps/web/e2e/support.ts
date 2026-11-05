@@ -15,7 +15,28 @@ export const KEY_PAGES = [
   '/sign-up',
   '/terms',
   '/dev/templates/listing',
+  '/discover',
 ];
+
+/** Skip-group reasons (reported per project in the PR). */
+export const DESKTOP_ONLY =
+  'desktop layout (ADR-0009); the phone layout is covered by mobile.spec.ts';
+export const MOBILE_ONLY = 'phone layout (ADR-0011); desktop is covered by the desktop specs';
+export const SERVER_ONLY =
+  'server-side/HTTP check with no layout dependence; runs once in desktop-1440';
+
+/**
+ * WebKit (Playwright's build) logs one CSP "Refused to apply a stylesheet" message per <select>
+ * element, from its own internal styles: a bare <select> under a strict style-src triggers it with
+ * no page styles at all. It is not our code, so CSP checks ignore exactly that message in WebKit.
+ * Verify on a physical iPhone during manual QA.
+ */
+export function isWebKitSelectNoise(text: string, browserName: string): boolean {
+  return (
+    browserName === 'webkit' &&
+    text.startsWith('Refused to apply a stylesheet because its hash, its nonce, or')
+  );
+}
 
 /**
  * Every department and subcategory URL, discovered from rendered pages (the nav reads the

@@ -1,0 +1,10 @@
+.page {
+  display: grid;
+  gap: var(--hx-space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--hx-space-4);
+}

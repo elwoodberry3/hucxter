@@ -15,7 +15,7 @@
 .video {
   position: relative;
   aspect-ratio: 9 / 16;
-  max-height: calc(100vh - 10rem);
+  max-height: calc(100svh - 10rem);
   margin: 0 auto;
   overflow: hidden;
   border-radius: var(--hx-radius-card);
@@ -45,6 +45,7 @@
 
 .playHint {
   position: absolute;
+  white-space: nowrap;
   bottom: var(--hx-space-3);
   left: 50%;
   display: inline-flex;
@@ -86,7 +87,8 @@
 
 .actions {
   display: grid;
-  gap: var(--hx-space-3);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--hx-space-3) var(--hx-space-2);
   padding: var(--hx-space-4);
   border-radius: var(--hx-radius-card);
   background: var(--hx-bg-elevated);
@@ -107,7 +109,8 @@
 }
 
 .primary {
-  height: 3rem;
+  grid-column: 1 / -1;
+  min-height: 3rem;
   border: 0;
   background: var(--hx-accent);
   color: var(--hx-on-accent);
@@ -118,14 +121,8 @@
   filter: brightness(1.08);
 }
 
-.secondaryRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--hx-space-2);
-}
-
 .secondary {
-  height: 2.5rem;
+  min-height: var(--hx-target-min);
   border: 1px solid var(--hx-separator-strong);
   background: var(--hx-bg-elevated);
   color: var(--hx-label);
@@ -136,7 +133,127 @@
 }
 
 .soldNote {
+  grid-column: 1 / -1;
   color: var(--hx-label-secondary);
+}
+
+.reportCompact {
+  display: none;
+}
+
+/* Phones (ADR-0011): video on top with capped height, details below, sticky action bar. */
+@media (width < 64rem) {
+  .compactHidden {
+    display: none;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+    gap: var(--hx-space-4);
+  }
+
+  .videoColumn {
+    position: static;
+  }
+
+  .video {
+    width: auto;
+    height: min(32svh, 20rem);
+    max-height: none;
+    aspect-ratio: 9 / 16;
+  }
+
+  .title {
+    font-size: var(--hx-text-title-1);
+  }
+
+  .price {
+    font-size: 1.5rem;
+  }
+
+  .actions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-tabbar);
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    padding: var(--hx-space-2) var(--hx-page-gutter)
+      calc(var(--hx-space-2) + env(safe-area-inset-bottom));
+    border-radius: 0;
+    border-top: 1px solid var(--hx-separator);
+    box-shadow: var(--hx-shadow-popover);
+  }
+
+  .primary {
+    grid-column: 3;
+    grid-row: 1;
+    min-height: var(--hx-target-min);
+    padding: 0 var(--hx-space-3);
+    font-size: var(--hx-text-body);
+  }
+
+  .save {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .share {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .save,
+  .share {
+    min-width: var(--hx-target-min);
+    padding: 0;
+  }
+
+  .soldNote {
+    grid-column: 3;
+    grid-row: 1;
+    font-size: var(--hx-text-subheadline);
+  }
+
+  .actionLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .reportDesktop {
+    display: none;
+  }
+
+  .reportCompact {
+    display: inline-flex;
+    justify-self: start;
+    padding: 0 var(--hx-space-4);
+  }
+
+  .rail:last-of-type {
+    margin-bottom: 5rem;
+  }
+
+  .demoNote {
+    display: none;
+  }
+
+  .playHint {
+    padding: 2px var(--hx-space-2);
+    font-size: var(--hx-text-caption);
+  }
+
+  .demoBanner {
+    gap: var(--hx-space-1) var(--hx-space-3);
+    margin-bottom: var(--hx-space-3);
+    padding: var(--hx-space-2) var(--hx-space-3);
+    font-size: var(--hx-text-footnote);
+  }
 }
 
 .panel {

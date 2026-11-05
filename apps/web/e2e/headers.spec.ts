@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { KEY_PAGES } from './support';
+import { DESKTOP_ONLY, KEY_PAGES, SERVER_ONLY } from './support';
 
 const STATIC_HEADERS = {
   'strict-transport-security': 'max-age=63072000; includeSubDomains',
@@ -10,7 +10,8 @@ const STATIC_HEADERS = {
 
 test.describe('security headers', () => {
   for (const path of ['/', '/api/health']) {
-    test(`${path} sends the static security headers`, async ({ request }) => {
+    test(`${path} sends the static security headers`, async ({ request }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
       const headers = (await request.get(path)).headers();
       for (const [name, value] of Object.entries(STATIC_HEADERS)) {
         expect(headers[name], name).toBe(value);
@@ -23,7 +24,8 @@ test.describe('security headers', () => {
     });
   }
 
-  test('pages send a nonce CSP that changes per request', async ({ request }) => {
+  test('pages send a nonce CSP that changes per request', async ({ request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     const first = (await request.get('/')).headers()['content-security-policy'] ?? '';
     const second = (await request.get('/')).headers()['content-security-policy'] ?? '';
 
@@ -38,28 +40,32 @@ test.describe('security headers', () => {
     expect(nonce(first)).not.toBe(nonce(second));
   });
 
-  test('dotted page paths still get the page CSP', async ({ request }) => {
+  test('dotted page paths still get the page CSP', async ({ request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     const csp = (await request.get('/u/john.doe')).headers()['content-security-policy'] ?? '';
     expect(csp).toMatch(/script-src 'self' 'nonce-/);
   });
 
-  test('API routes get a deny-all CSP', async ({ request }) => {
+  test('API routes get a deny-all CSP', async ({ request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     expect((await request.get('/api/health')).headers()['content-security-policy']).toBe(
       "default-src 'none'; frame-ancestors 'none'",
     );
   });
 
-  test('pages run under the CSP with no violations', async ({ page }) => {
+  test('pages run under the CSP with no violations', async ({ page, isMobile }) => {
+    test.skip(isMobile, DESKTOP_ONLY);
     const violations: string[] = [];
     page.on('console', (message) => {
-      if (/Content Security Policy/i.test(message.text())) violations.push(message.text());
+      if (/Content Security Policy|Refused to/i.test(message.text()))
+        violations.push(message.text());
     });
     for (const path of KEY_PAGES) await page.goto(path);
     // Interactive surfaces too: mega menu, location popover, sign-in sheet, client navigation.
     await page.goto('/dev/templates/listing');
     await page.getByRole('button', { name: 'All Categories' }).click();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: /Near Celina/ }).click();
+    await page.getByRole('button', { name: /Near Portland/ }).click();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Is this still available?' }).click();
     await page.keyboard.press('Escape');
@@ -73,7 +79,8 @@ test.describe('security headers', () => {
 
   test('server HTML has no inline style attributes or style tags without the nonce', async ({
     request,
-  }) => {
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     for (const path of KEY_PAGES) {
       const response = await request.get(path);
       const nonce = /'nonce-([^']+)'/.exec(
@@ -97,13 +104,21 @@ test.describe('security headers', () => {
     }
   });
 
-  test('script tags carry the request nonce', async ({ page }) => {
-    const response = await page.goto('/');
-    const nonce = /'nonce-([^']+)'/.exec(response?.headers()['content-security-policy'] ?? '')?.[1];
-    const scriptNonces = await page
-      .locator('script')
-      .evaluateAll((scripts) => scripts.map((script) => (script as HTMLScriptElement).nonce));
-    expect(scriptNonces.length).toBeGreaterThan(0);
-    for (const value of scriptNonces) expect(value).toBe(nonce);
+  test('every server-rendered script tag carries the request nonce', async ({
+    request,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
+    for (const path of KEY_PAGES) {
+      const response = await request.get(path);
+      const nonce = /'nonce-([^']+)'/.exec(
+        response.headers()['content-security-policy'] ?? '',
+      )?.[1];
+      expect(nonce, path).toBeDefined();
+      const tags = (await response.text()).match(/<script\b[^>]*>/gi) ?? [];
+      expect(tags.length, path).toBeGreaterThan(0);
+      for (const tag of tags) expect(tag, path).toContain(`nonce="${nonce ?? ''}"`);
+    }
+    // Chunks the Next.js runtime loads after hydration are trusted via 'strict-dynamic' (no
+    // nonce of their own); the no-violation tests above prove nothing is blocked.
   });
 });

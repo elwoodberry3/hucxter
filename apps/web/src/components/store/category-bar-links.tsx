@@ -6,7 +6,13 @@ import type { NavDepartment } from './category-bar';
 import styles from './category-bar.module.css';
 
 /** Top-level department links; the active department is underlined and marked aria-current. */
-export function CategoryBarLinks({ departments }: { departments: NavDepartment[] }) {
+export function CategoryBarLinks({
+  departments,
+  barSlugs,
+}: {
+  departments: NavDepartment[];
+  barSlugs: string[];
+}) {
   const pathname = usePathname();
   return (
     <ul className={styles.links}>
@@ -15,7 +21,10 @@ export function CategoryBarLinks({ departments }: { departments: NavDepartment[]
         const exact = pathname === href;
         const within = pathname.startsWith(`${href}/`);
         return (
-          <li key={department.slug}>
+          <li
+            key={department.slug}
+            className={barSlugs.includes(department.slug) ? undefined : styles.chipOnly}
+          >
             <Link
               href={href}
               className={styles.link}

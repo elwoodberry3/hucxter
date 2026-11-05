@@ -28,7 +28,7 @@ description: PostGIS location, 100-mile radius, local feed queries, distance dis
    `ST_SetSRID(..., 4326)::geography`. Validate lat ∈ [-90, 90], lon ∈ [-180, 180] in zod first.
 7. **Guest location (ADR-0009):** a guest's default area may come from **approximate IP location**
    (on Vercel, the `x-vercel-ip-postal-code` / `-city` request headers; locally, `DEFAULT_AREA_ZIP`),
-   shown as a visible guess ("Near Aubrey 75009?") that's one click to change. Store only ZIP +
+   shown as a visible guess ("Near Portland 97205?") that's one click to change. Store only ZIP +
    radius in a first-party cookie. Never store IP-derived coordinates, never send more than the ZIP
    to analytics, and never present the guess as fact. Members use their saved home ZIP.
 8. **Pagination**: keyset on `(created_at, id)`, limit ≤ 50. No OFFSET.

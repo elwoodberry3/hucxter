@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PRODUCTION_URL } from './support';
+import { PRODUCTION_URL, SERVER_ONLY } from './support';
 
 test.describe('/dev routes and demo fixtures', () => {
   test('the listing template renders locally with a visible Demo label', async ({ page }) => {
@@ -27,7 +27,8 @@ test.describe('/dev routes and demo fixtures', () => {
 
   test('APP_ENV=production: /dev routes 404 and the storefront still works', async ({
     request,
-  }) => {
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', SERVER_ONLY);
     for (const path of ['/dev/templates/listing', '/dev/templates/listing?status=sold']) {
       const response = await request.get(`${PRODUCTION_URL}${path}`);
       expect(response.status(), path).toBe(404);

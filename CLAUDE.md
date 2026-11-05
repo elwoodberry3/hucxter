@@ -8,9 +8,10 @@ item, nearby buyers discover it in a local feed and message the seller, and the 
 No shipping. Discovery is capped at a 100-mile radius.
 
 **Current phase: Phase 0 → Phase I (closed alpha for the internal QA buyer/seller team).**
-IMPORTANT: Phase I is a **desktop web app only**, used in a desktop browser (Chrome is the
-reference browser). There is no native iOS/Android app, Expo, React Native, or desktop wrapper in
-Phase I — don't add them. Platform order (ADR-0008): desktop web (Phases I–III) → downloadable
+IMPORTANT: Phase I is a **web app for desktop and mobile browsers** (ADR-0011, D-37): mobile first,
+to the standard in `docs/standards/mobile-experience-standard.md` as adapted by ADR-0011 (no cart,
+bids, shipping, or payments). There is no native iOS/Android app, Expo, React Native, or desktop
+wrapper in Phase I — don't add them. Platform order (ADR-0008): web (Phases I–III) → downloadable
 Chromium desktop app (Phase IV) → native iOS (Phase V). Creators (Phase II) and the FairXchange
 ad network (Phase III) are out of scope unless a brief says so.
 Roadmap and gates: `docs/strategy/phased-roadmap.md`.
@@ -34,8 +35,15 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   footer, home, category index/search with URL filters, product template at
   `/dev/templates/listing` (404 when `APP_ENV=production`), guest location chip (ZIP + radius
   cookie), sign-in pages/sheet (UI only), route gating with safe `next`. Data: `categories` and
-  `postal_areas` (Census 2020 ZCTA, North Texas) migrations + seed. `pnpm dev` and `pnpm test:e2e`
+  `postal_areas` migrations (data loaded nationwide in 3A). `pnpm dev` and `pnpm test:e2e`
   now need local Supabase running (`supabase start && supabase db reset`).
+- **Brief 03 (QA Release 1)** runs as milestones 3A–3E: `docs/kickoff/brief-03.md`. **3A (branch
+  `brief-03a-mobile`):** docs for D-34–D-41 and ADR-0011, mobile-first shell (tab bar, sheets,
+  FilterDrawer, accordions, sticky product actions), UI primitives in `components/ui/`, all 2020
+  ZCTAs and the taxonomy as **data migrations** (`seed.sql` is local demo data only),
+  `service_areas` (Portland–Vancouver launch area), default ZIP 97205. Playwright runs 4 projects
+  (desktop 1440/1280, mobile Chromium, mobile WebKit). Reference data migrations: 33,774 ZCTAs
+  (50 states + DC + PR), taxonomy, `service_areas`; postal lookups cache hits only.
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
@@ -60,7 +68,8 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
 
 ## Commands (exist after Brief 01; update if they change)
 - `pnpm install` · `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test`
-- `pnpm test:e2e` — Playwright against desktop Chrome (Chromium) at 1440×900 and 1280×800
+- `pnpm test:e2e` — Playwright: desktop Chromium 1440×900 and 1280×800, mobile Chromium (Pixel 7),
+  mobile WebKit (iPhone 15). Needs local Supabase running
 - `pnpm test:db` — pgTAP tests against local Supabase (run `supabase start` first)
 - `supabase db reset` — rebuild the local DB from migrations + seed (local only)
 - `supabase migration new <name>` — create a migration. Never edit an applied migration.
@@ -88,15 +97,18 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
 - Money as integer cents (`price_cents`). Times as `timestamptz` UTC.
 - Every list endpoint is keyset-paginated with an explicit limit.
 - Feed responses use the typed item envelope from `hucxter-event-taxonomy` (future-proofs ad slots).
-- Supported browser for Phase I: current desktop Chrome. Use standard web APIs only (no
-  Chrome-only APIs) so the Phase IV Chromium app and other browsers work later. Minimum viewport
-  1280×720; below that, show a "best on desktop" notice rather than a broken layout.
+- Supported browsers for Phase I: current desktop Chrome (reference), iOS Safari, and Android
+  Chrome. Use standard web APIs only (no Chrome-only APIs). Mobile first: primary flows work from
+  320 CSS px with no horizontal scroll; content-based breakpoints in `rem`; touch targets ≥ 44×44
+  CSS px; respect safe-area insets; use `dvh`/`svh`, never bare `100vh`; never disable pinch zoom.
 
 ## Design direction (D-03, ADR-0007)
 Apple's Human Interface Guidelines are the structural baseline for every Hucxter surface. For
-Phase I that means HIG desktop (macOS) patterns rendered in the browser. Before building or changing
-any UI, load the `hucxter-design-system` skill. Short version: storefront header + category bar
-(no app sidebar; filter rail only on category/search pages), system
+Phase I that means HIG iOS patterns at phone widths and macOS patterns at desktop widths, rendered
+in the browser (ADR-0011). Before building or changing any UI, load the `hucxter-design-system`
+skill. Short version: desktop = storefront header + category bar (no app sidebar; filter rail only
+on category/search pages); phone = compact header, category chips, bottom tab bar, bottom sheets;
+CSS Modules + tokens (no Tailwind, D-38), system
 fonts, semantic light/dark tokens, full keyboard navigation with visible focus, WCAG 2.2 AA.
 Brand comes through the Hx mark, color tokens, and voice, not custom navigation or decoration.
 

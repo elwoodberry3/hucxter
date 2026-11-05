@@ -4,7 +4,9 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CategoryArt } from '@/components/art/category-art';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ListingCardView } from '@/components/listing/listing-card';
+import { FilterDrawer } from './filter-drawer';
 import { FilterPanel } from './filter-panel';
 import { SortSelect } from './sort-select';
 import styles from './results.module.css';
@@ -66,7 +68,17 @@ export function ResultsLayout({
               ? `No listings ${near} yet`
               : `${String(listings.length)} ${listings.length === 1 ? 'listing' : 'listings'} ${near}`}
           </h2>
-          <SortSelect action={action} query={query} className={styles.sort} />
+          <div className={styles.toolbarActions}>
+            <FilterDrawer
+              action={action}
+              query={query}
+              filters={filters}
+              freeOnly={freeOnly}
+              defaultDistanceMi={viewerRadiusMi}
+              surface={surface}
+            />
+            <SortSelect action={action} query={query} className={styles.sort} />
+          </div>
         </div>
         {listings.length > 0 ? (
           <ul className={styles.grid}>
@@ -77,7 +89,7 @@ export function ResultsLayout({
             ))}
           </ul>
         ) : (
-          <EmptyState
+          <ResultsEmptyState
             copy={empty}
             widerHref={widerHref}
             widerLabel={wider === undefined ? null : `Widen to ${String(wider)} mi`}
@@ -88,7 +100,7 @@ export function ResultsLayout({
   );
 }
 
-function EmptyState({
+function ResultsEmptyState({
   copy,
   widerHref,
   widerLabel,
@@ -98,30 +110,27 @@ function EmptyState({
   widerLabel: string | null;
 }) {
   return (
-    <div className={styles.empty}>
-      <div className={styles.emptyArt}>
-        <CategoryArt heroKey={copy.heroKey} size="banner" />
-      </div>
-      <h3 className={styles.emptyTitle}>{copy.title}</h3>
-      <p className={styles.emptyBody}>
-        Hucxter is new here, so listings are still arriving. Be the first to post, or look a little
-        farther out.
-      </p>
-      <div className={styles.emptyActions}>
-        <Link href="/sell" className={styles.primaryButton}>
-          <Plus size={16} aria-hidden="true" />
-          {copy.sellLabel}
-        </Link>
-        {widerHref === null || widerLabel === null ? null : (
-          <Link href={widerHref} className={styles.secondaryButton}>
-            {widerLabel}
+    <EmptyState
+      art={<CategoryArt heroKey={copy.heroKey} size="banner" />}
+      title={copy.title}
+      body="Hucxter is new here, so listings are still arriving. Be the first to post, or look a little farther out."
+      actions={
+        <>
+          <Link href="/sell" className={styles.primaryButton}>
+            <Plus size={16} aria-hidden="true" />
+            {copy.sellLabel}
           </Link>
-        )}
-        <Link href="/#shop-by-category" className={styles.secondaryButton}>
-          Browse all categories
-        </Link>
-      </div>
-    </div>
+          {widerHref === null || widerLabel === null ? null : (
+            <Link href={widerHref} className={styles.secondaryButton}>
+              {widerLabel}
+            </Link>
+          )}
+          <Link href="/#shop-by-category" className={styles.secondaryButton}>
+            Browse all categories
+          </Link>
+        </>
+      }
+    />
   );
 }
 

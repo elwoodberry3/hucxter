@@ -14,7 +14,7 @@ export function demoListing(status: ListingStatus = 'available'): ListingDetail 
     condition: 'good',
     status,
     distance_bucket: '1–5 mi',
-    area_label: 'Celina',
+    area_label: 'Portland',
     posted_at: '2026-10-24T15:00:00Z',
     poster_url: '/demo/listing-poster.svg',
     category_slug: 'furniture',

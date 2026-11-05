@@ -12,10 +12,14 @@ async function lookup(zip: string): Promise<PostalArea | null> {
 
 const cachedLookup = unstable_cache(lookup, ['postal-area-v1'], { revalidate: 86_400 });
 
-/** ZIP -> area label, or null if the ZIP isn't in a covered region. */
+/**
+ * ZIP -> area label, or null for a ZIP that isn't a ZCTA. Hits are cached for a day; misses are
+ * always re-checked, so ZIPs added by a later data migration resolve immediately.
+ */
 export async function lookupPostalArea(zip: string): Promise<PostalArea | null> {
   const parsed = Zip.safeParse(zip);
-  return parsed.success ? cachedLookup(parsed.data) : null;
+  if (!parsed.success) return null;
+  return (await cachedLookup(parsed.data)) ?? lookup(parsed.data);
 }
 
 /**

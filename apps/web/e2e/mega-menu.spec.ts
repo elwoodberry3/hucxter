@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { DESKTOP_ONLY } from './support';
 
 test.describe('mega menu', () => {
+  test.skip(({ isMobile }) => isMobile, DESKTOP_ONLY);
+
   test('mouse: click opens, hovering a department switches the panel, links navigate', async ({
     page,
   }) => {

@@ -14,6 +14,7 @@ Template: Status · Date · Context · Decision · Alternatives considered · Co
 | 0005 | AI price guidance deferred | Proposed |
 | 0006 | Analytics events | Proposed |
 | 0007 | Apple HIG design baseline | Accepted (layout amended by 0009) |
-| 0008 | Platform sequence: desktop web → desktop app → iOS | Accepted |
-| 0009 | Storefront information architecture (no app sidebar) | Accepted |
-| 0010 | Sign-up and verification methods | Proposed |
+| 0008 | Platform sequence: desktop web → desktop app → iOS | Accepted (amended by 0011) |
+| 0009 | Storefront information architecture (no app sidebar) | Accepted (amended by 0011) |
+| 0010 | Sign-up and verification methods | Accepted as amended by D-34 (email + Google) |
+| 0011 | Mobile web is a first-class Phase I surface | Accepted |

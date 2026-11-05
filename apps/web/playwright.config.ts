@@ -40,7 +40,7 @@ function supabaseEnv(): { SUPABASE_URL: string; SUPABASE_PUBLISHABLE_KEY: string
 const sharedEnv = {
   ...supabaseEnv(),
   GIT_COMMIT_SHA: process.env.GITHUB_SHA ?? 'e2e',
-  DEFAULT_AREA_ZIP: '75009',
+  DEFAULT_AREA_ZIP: '97205',
 };
 
 export default defineConfig({
@@ -62,6 +62,9 @@ export default defineConfig({
       name: 'desktop-1280',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
+    // Phones (ADR-0011): Android Chrome and iPhone Safari profiles.
+    { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
+    { name: 'mobile-webkit', use: { ...devices['iPhone 15'] } },
   ],
   // Production builds, so headers and CSP are tested as they ship. Servers start in order: the
   // first builds; the second reuses that build with APP_ENV=production to prove /dev is gated.

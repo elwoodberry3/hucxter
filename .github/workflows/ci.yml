@@ -16,7 +16,7 @@ jobs:
   web:
     name: Lint, typecheck, unit and e2e
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,8 +36,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
 
-      - name: Install Playwright Chromium
-        run: pnpm --filter @hucxter/web exec playwright install --with-deps chromium
+      # Desktop + mobile Chromium (Pixel 7) and mobile WebKit (iPhone 15) projects (ADR-0011).
+      - name: Install Playwright browsers
+        run: pnpm --filter @hucxter/web exec playwright install --with-deps chromium webkit
 
       # The storefront reads categories and postal areas from local Supabase (never a remote
       # project). Database, REST and Auth (Auth makes `supabase status` report the publishable key).

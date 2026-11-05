@@ -7,7 +7,7 @@ import { cx } from '@/lib/cx';
 import styles from './home.module.css';
 
 export interface RailInvitation {
-  /** "Be the first to list furniture near Celina" */
+  /** "Be the first to list furniture near Portland" */
   title: string;
   body: string;
   sellLabel: string;

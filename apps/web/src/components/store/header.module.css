@@ -3,7 +3,7 @@
 .header {
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: var(--z-header);
   border-bottom: 1px solid var(--hx-separator);
   background: var(--hx-toolbar-bg);
   backdrop-filter: saturate(180%) blur(20px);
@@ -21,7 +21,7 @@
   align-items: center;
   gap: var(--hx-space-4);
   max-width: var(--hx-page-max);
-  height: 4rem;
+  height: var(--hx-header-height);
   margin: 0 auto;
   padding: 0 var(--hx-page-gutter);
 }
@@ -53,7 +53,7 @@
 
 .searchInput {
   width: 100%;
-  height: 2.5rem;
+  height: var(--hx-target-min);
   padding: 0 3rem 0 var(--hx-space-4);
   border: 1px solid var(--hx-separator-strong);
   border-radius: var(--hx-radius-pill);
@@ -68,8 +68,8 @@
 
 .searchButton {
   position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
+  top: 0.375rem;
+  right: 0.375rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,7 +93,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--hx-space-1);
-  height: 2.5rem;
+  height: var(--hx-target-min);
   padding: 0 var(--hx-space-4);
   border-radius: var(--hx-radius-control);
   background: var(--hx-accent);
@@ -111,8 +111,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
   border-radius: var(--hx-radius-control);
   color: var(--hx-label);
 }
@@ -130,7 +130,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--hx-space-1);
-  height: 2.5rem;
+  height: var(--hx-target-min);
   padding: 0 var(--hx-space-3);
   border: 1px solid var(--hx-separator-strong);
   border-radius: var(--hx-radius-control);
@@ -149,7 +149,7 @@
   position: absolute;
   top: calc(100% + var(--hx-space-2));
   right: 0;
-  z-index: 50;
+  z-index: var(--z-popover);
   width: 16rem;
   padding: var(--hx-space-3);
   border: 1px solid var(--hx-separator);
@@ -199,4 +199,105 @@
 
 .popoverLink:hover {
   background: var(--hx-fill-hover);
+}
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  height: var(--hx-target-min);
+  padding: 0 var(--hx-space-3);
+  border-radius: var(--hx-radius-control);
+  color: var(--hx-label);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.textButton:hover {
+  background: var(--hx-fill-hover);
+}
+
+/* Phone-only controls (hidden on desktop). */
+.mobileSearchButton,
+.backButton {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: none;
+  color: var(--hx-label);
+  cursor: pointer;
+}
+
+.mobileSearchButton {
+  margin-left: auto;
+}
+
+.sheetSearch {
+  display: flex;
+  gap: var(--hx-space-2);
+}
+
+.sheetSearchInput {
+  flex: 1;
+  min-width: 0;
+  height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  /* 16px stops iOS Safari zooming into the field. */
+  font-size: max(1rem, var(--hx-text-body));
+}
+
+.sheetSearchSubmit {
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 0;
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (width < 64rem) {
+  .inner {
+    gap: var(--hx-space-2);
+  }
+
+  .search,
+  .actions {
+    display: none;
+  }
+
+  .mobileSearchButton,
+  .backButton {
+    display: inline-flex;
+  }
+
+  .logo {
+    flex: none;
+    min-width: var(--hx-target-min);
+    min-height: var(--hx-target-min);
+  }
+}
+
+@media (width < 26rem) {
+  /* Narrow phones: keep the mark, drop the wordmark so the location chip fits. */
+  .logo span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }

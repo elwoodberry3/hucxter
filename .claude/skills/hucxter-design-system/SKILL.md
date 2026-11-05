@@ -6,14 +6,14 @@ description: Hucxter desktop-web UI rules built on Apple's Human Interface Guide
 # Hucxter design system (ADR-0007 + ADR-0008)
 
 Apple's Human Interface Guidelines (HIG) are the structural baseline for every Hucxter surface.
-Phases I–III are a **desktop web app in Chrome**, so apply the HIG's macOS patterns rendered as web
-UI, on both Mac and Windows. Where the HIG and web accessibility standards differ, meet both
+Phases I–III are a **web app for desktop and mobile browsers** (ADR-0011): apply the HIG's iOS
+patterns at phone widths and macOS patterns at desktop widths, rendered as web UI. Mobile first. Where the HIG and web accessibility standards differ, meet both
 (WCAG 2.2 AA is the floor). Check the current HIG at
 developer.apple.com/design/human-interface-guidelines when unsure; don't rely on memory.
 
 ## Layout & navigation (ADR-0009 storefront: **no app sidebar**)
 Full spec: `docs/specs/storefront-ia.md`. Summary:
-- **Global header** (sticky): Hx logo → `/` · location chip ("Near Aubrey 75009") · one search
+- **Global header** (sticky): Hx logo → `/` · location chip ("Near Portland 97205") · one search
   field · **+ Sell** · Messages · account control (guest: Sign in; member: avatar menu holding My
   Listings, Saved, Messages, Profile, Settings, Help, Sign out, Admin for staff).
 - **Category bar** under the header: "All Categories ▾" mega menu (departments left, subcategory
@@ -32,8 +32,9 @@ Full spec: `docs/specs/storefront-ia.md`. Summary:
   pages that don't exist yet go to a "Coming soon" page, never a 404.
 - **Guests** can view home, category, search, and product pages. Every action opens a sign-in sheet
   (email · Facebook · TikTok) and then returns to the same place.
-- **Viewport:** design at 1440×900, support down to 1280×720. Below that, show a non-blocking
-  "Hucxter works best on a desktop browser" banner. No mobile layouts in Phase I.
+- **Viewport:** mobile first. Primary flows work from **320 CSS px** with no horizontal scroll;
+  test 320/360/375/390/414/430 plus 1280 and 1440. One content-based breakpoint at **64rem**:
+  below it the phone layout, at and above it the desktop storefront. No "best on desktop" notice.
 - **Containers:** sheets/modals for short tasks (sign-in prompt, report, meetup spot, location);
   popovers for menus (mega menu, account menu, location). Every modal or popover closes with Esc
   and returns focus to its trigger.
@@ -43,6 +44,28 @@ Full spec: `docs/specs/storefront-ia.md`. Summary:
   star ratings, Creator Studio, menu-bar app, launcher/setup wizard (Phase IV desktop app).
 - **Copy honesty:** never claim scale we don't have ("millions of items"), never show fake
   counts, ratings, or reviews.
+
+## Phone layout (ADR-0011; below 64rem)
+- **Compact sticky header:** Hx mark, location chip, search button → full-screen search sheet
+  (only one search field in the accessibility tree).
+- **Category chips:** horizontally scrollable departments + **All** → full-screen "All categories"
+  sheet with department → subcategory drill-in.
+- **Bottom tab bar:** Home · Discover · Sell · Inbox · Account. Safe-area inset at the bottom;
+  hidden while a text field has focus so it never covers the keyboard. Desktop has no tab bar.
+- **Sheets** (`components/ui/bottom-sheet`): peek/expanded, drag handle **and** an
+  Expand/Collapse button, focus trap, inert background, scroll containment, close via close
+  button, Esc, or browser Back (one Back press, no ghost history entries), focus returns to the
+  opener.
+- **Filters:** FilterDrawer bottom sheet with Apply/Clear; filter state stays in the URL.
+- **Footer:** accordions. **Product page:** video on top with capped height, price and primary
+  action visible without scrolling, sticky bottom action bar; the tab bar gives way to a header
+  back button on product pages.
+- **Units:** `100dvh`/`100svh`, never bare `100vh`; `env(safe-area-inset-*)` on fixed bars and
+  sheets; never `maximum-scale` or `user-scalable=no`.
+- **Elevation tokens only:** `--z-header`, `--z-tabbar`, `--z-sheet`, `--z-dialog`, `--z-toast`.
+  No raw z-index values in components.
+- Primitives: `BottomSheet`, `TabBar`, `FilterDrawer`, `Toast`, `Skeleton`, `EmptyState`,
+  `ErrorState`. Reuse them; don't fork interaction logic.
 
 ## Keyboard (first-class on desktop)
 - Everything works without a mouse, with a visible focus ring (`:focus-visible`, at least 3:1
@@ -91,7 +114,8 @@ subtle shadows and translucency (backdrop blur on the toolbar only). No heavy bo
 offset shadows.
 
 ## Pointer & interaction
-- Pointer targets at least 24×24 CSS px (WCAG 2.2 SC 2.5.8). Primary buttons 32–40 px tall.
+- Touch/pointer targets for primary controls at least **44×44 CSS px** at every width
+  (`--hx-target-min`); nothing below WCAG 2.2 SC 2.5.8's 24×24. Primary buttons 44 px tall.
 - Hover states on every interactive element; never put information *only* in hover.
 - Destructive actions confirm with a specific title ("Remove listing?") and a destructive button.
 - Drag-and-drop upload zone for video, with a file-picker fallback.
@@ -118,6 +142,6 @@ and specific. AI text is labeled "AI draft — check before posting."
 the Next.js metadata and manifest. Never use `assets/images/app-icon.png` (pre-rounded preview).
 
 ## Verification for UI changes
-Playwright screenshots in desktop Chrome at 1440×900 and 1280×800, light and dark mode, plus one at
-200% zoom; keyboard-only walkthrough of the changed flow; axe report with no serious or critical
+Playwright screenshots at 1440 and 390 CSS px (plus 1280 where layout differs), light and dark
+mode; all four Playwright projects (desktop 1440/1280, mobile Chromium, mobile WebKit) pass; keyboard-only walkthrough of the changed flow; axe report with no serious or critical
 violations. Attach all of it to the PR.

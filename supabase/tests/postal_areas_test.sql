@@ -2,16 +2,43 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(21);
 
 select has_table('public', 'postal_areas', 'postal_areas table exists');
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.postal_areas'::regclass),
   'RLS is enabled on postal_areas'
 );
-select ok(
-  (select count(*) from public.postal_areas) >= 250,
-  'North Texas test region is seeded'
+-- Nationwide data migration (D-36): 2020 ZCTAs for the 50 states, DC and Puerto Rico. The source
+-- has 33,791 ZCTAs; 17 in other territories are excluded (see the migration header).
+select is(
+  (select count(*)::int from public.postal_areas where is_active),
+  33774,
+  'every 2020 ZCTA in the 50 states, DC and PR is loaded (33,791 in source minus 17 territory ZCTAs)'
+);
+select is(
+  (select count(distinct state)::int from public.postal_areas),
+  52,
+  '50 states + DC + PR'
+);
+select results_eq(
+  $$select zip, state from public.postal_areas
+    where zip in ('97205', '98660', '10001', '99501', '96813', '00601') order by zip$$,
+  $$values ('00601'::text, 'PR'::text), ('10001', 'NY'), ('96813', 'HI'), ('97205', 'OR'), ('98660', 'WA'), ('99501', 'AK')$$,
+  'Portland, Vancouver WA, New York, Anchorage, Honolulu and Puerto Rico ZIPs resolve'
+);
+select results_eq(
+  $$select area_label from public.postal_area_lookup('97205')$$,
+  $$values ('Portland'::text)$$,
+  '97205 is labeled Portland'
+);
+select is_empty(
+  $$select * from public.postal_area_lookup('00501')$$,
+  'a non-ZCTA ZIP (00501, IRS business ZIP) does not resolve'
+);
+select is_empty(
+  $$select * from public.postal_area_lookup('00802')$$,
+  'territory ZCTAs outside the 50 states, DC and PR are not loaded'
 );
 
 -- Lookup
@@ -32,8 +59,8 @@ select is(
   'postal_area_nearest finds a nearby ZIP'
 );
 select is_empty(
-  $$select * from public.postal_area_nearest(40.7128, -74.0060)$$,
-  'postal_area_nearest returns nothing far outside the region'
+  $$select * from public.postal_area_nearest(35.0, -45.0)$$,
+  'postal_area_nearest returns nothing more than 40 km from any ZIP (mid-Atlantic)'
 );
 select is(
   (select pronargs::int from pg_proc where oid = 'public.postal_area_nearest'::regproc),
@@ -62,7 +89,7 @@ select is_empty(
   'lookup hides inactive postal areas from anon'
 );
 select ok(
-  (select count(*) from public.postal_areas) >= 250,
+  (select count(*) from public.postal_areas) > 33000,
   'anon can read active postal-area labels'
 );
 select throws_ok(

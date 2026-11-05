@@ -1,0 +1,105 @@
+/* EmptyState, ErrorState, Skeleton. */
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--hx-space-3);
+  padding: var(--hx-space-8) var(--hx-space-4) var(--hx-space-10);
+  border: 1px dashed var(--hx-separator-strong);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  text-align: center;
+}
+
+.art {
+  width: 12rem;
+  max-width: 100%;
+  height: 8rem;
+  overflow: hidden;
+  border-radius: var(--hx-radius-card);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--hx-accent-subtle);
+  color: var(--hx-accent);
+}
+
+.title {
+  font-size: var(--hx-text-title-1);
+  font-weight: 700;
+}
+
+.body {
+  max-width: 32rem;
+  color: var(--hx-label-secondary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--hx-space-2);
+  margin-top: var(--hx-space-2);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.skeleton {
+  display: block;
+  border-radius: var(--hx-radius-control);
+  background: linear-gradient(
+    90deg,
+    var(--hx-fill-strong),
+    var(--hx-fill-hover),
+    var(--hx-fill-strong)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.block {
+  width: 100%;
+  height: 8rem;
+}
+
+.text {
+  width: 60%;
+  height: 1rem;
+}
+
+.card {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--hx-radius-card);
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

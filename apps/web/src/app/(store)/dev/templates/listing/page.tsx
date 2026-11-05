@@ -28,7 +28,7 @@ export default async function DemoListingTemplatePage({
     <>
       <div className={styles.demoBanner} role="note" aria-label="Demo">
         <strong>Demo listing.</strong>
-        <span>
+        <span className={styles.demoNote}>
           Template preview with made-up data. Not for sale, and never shown in production.
         </span>
         <span>
