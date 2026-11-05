@@ -91,8 +91,8 @@ never the secret/service-role key), `APP_ENV=local`, and `DEFAULT_AREA_ZIP` (see
 | `/`                                              | Home = Feed: hero, categories, near-you rails, house promos. No listings exist yet |
 | `/c/[dept]`, `/c/[dept]/[sub]`                   | Category index with filters in the URL                                             |
 | `/search?q=`                                     | Search results (same layout)                                                       |
-| `/sign-in`, `/sign-up`                           | UI only until Brief 03                                                             |
-| `/sell`, `/messages`, `/saved`, `/listings`, ... | Redirect guests to `/sign-in?next=…`                                               |
+| `/sign-in`, `/sign-up`                           | Email code or Google (3B); new accounts continue to `/welcome`                     |
+| `/sell`, `/messages`, `/saved`, `/listings`, ... | Guests → `/sign-in?next=…`; unverified members → `/welcome?next=…`                 |
 | `/dev/templates/listing`                         | Product page template with a **Demo** fixture; 404 when `APP_ENV=production`       |
 
 Never add fake listings, counts, ratings, or scale claims. Demo data lives only under `/dev`.
@@ -112,3 +112,20 @@ Never add fake listings, counts, ratings, or scale claims. Demo data lives only 
   area a dismissible notice explains where Hucxter is starting.
 - Test on phones too: `pnpm test:e2e` runs the mobile projects; for real devices see
   `docs/standards/mobile-experience-standard.md` §14.
+
+## Accounts and verification (Brief 03, Milestone 3B)
+
+- **Sign in** with a 6-digit email code or Google (D-34). Facebook and TikTok sign-in are gone.
+- **Verified member** = confirmed email, verified US mobile number (SMS code), 18+ attestation,
+  home ZIP and, when `INVITE_ONLY=true`, an invite. `/welcome` walks through the missing steps and
+  resumes after a reload. Every gated page and action uses `requireVerifiedMember()`
+  (`apps/web/src/server/auth/gate.ts`); every mutation checks `Origin` first.
+- **Settings** (`/settings`): profile, phone change, signed-in devices (no IP addresses), sign out
+  everywhere, delete account.
+- **Local testing:** codes arrive in Mailpit (http://127.0.0.1:54324). Test numbers
+  +1 503 555 0100–0139 take code `123456` (`supabase/config.toml`). Invites, the first admin,
+  OTP limits and the cloud settings for QA are in `docs/runbooks/accounts.md`.
+- **Variables** (`apps/web/.env.local`, never committed): `SUPABASE_SECRET_KEY` (server only; used
+  for account deletion, audit entries and OTP limits), `INVITE_ONLY`, `CAPTCHA_PROVIDER`
+  (`turnstile` | `none`; `none` is refused in production), `TURNSTILE_SITE_KEY`,
+  `TURNSTILE_SECRET_KEY`.
