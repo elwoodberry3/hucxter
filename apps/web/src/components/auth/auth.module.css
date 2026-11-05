@@ -204,3 +204,77 @@
 .close:hover {
   background: var(--hx-fill-hover);
 }
+
+.hint {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--hx-space-3);
+  min-height: var(--hx-target-min);
+  font-weight: 600;
+}
+
+.check input {
+  width: 1.375rem;
+  height: 1.375rem;
+  accent-color: var(--hx-accent);
+}
+
+.progress {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.steps {
+  display: flex;
+  gap: var(--hx-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  flex: 1;
+  height: 0.25rem;
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-separator-strong);
+}
+
+.steps li[data-done='true'] {
+  background: var(--hx-accent);
+}
+
+.secondaryButton {
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: var(--hx-fill-hover);
+}
+
+/* Phones: the card fills the width and sits near the top, so the keyboard doesn't cover it. */
+@media (width < 64rem) {
+  .page {
+    align-content: start;
+    padding: var(--hx-space-4) 0;
+  }
+
+  .card {
+    padding: var(--hx-space-4);
+    box-shadow: none;
+  }
+}
