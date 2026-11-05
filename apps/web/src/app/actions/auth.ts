@@ -71,7 +71,7 @@ async function sendNeutrally(
       return { status: 'closed_test', message: CLOSED_TEST_MESSAGE };
     if (error.code === 'captcha_failed') {
       // No code went out: don't let a junk token use up this address's allowance.
-      await refundEmailCodeSend(email);
+      await refundEmailCodeSend(email).catch(() => undefined);
       return { status: 'error', message: CAPTCHA_ERROR };
     }
     return { status: 'sent' };

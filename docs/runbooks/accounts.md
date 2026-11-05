@@ -127,6 +127,13 @@ rules. Until a Supabase "Send SMS" hook enforces them at the source, the **Twili
 geo permissions, Fraud Guard and per-number limits, and the project SMS cap are mandatory**, not
 optional.
 
+The same applies to **`POST /auth/v1/verify`**: anyone with the project URL and the publishable key
+can check email codes directly, from their own IP, outside the app's code-check limits, at
+Supabase's per-IP token-verification rate. So for Phase I the **publishable key stays server-only**
+(it has no `NEXT_PUBLIC_` form today); rotate it if it leaks. Before Phase IV/V clients ship the
+key, forward the real client IP to Supabase Auth (if the hosted project supports it) or move code
+checks behind a Supabase auth hook.
+
 ---
 
 ## 6. Manual QA (can't run in CI)
