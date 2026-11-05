@@ -4,6 +4,7 @@ import {
   TEST_SMS_CODE,
   completeOnboarding,
   deleteE2eUsers,
+  emailCode,
   emailCount,
   invite,
   signInWithEmail,
@@ -196,6 +197,30 @@ test.describe('accounts (D-34)', () => {
     await expect(
       alert(page, /^Too many codes requested\. Try again in \d+ minutes?\.$/),
     ).toBeVisible();
+  });
+
+  test('wrong email codes are limited per address, so a code cannot be guessed', async ({
+    page,
+  }, testInfo) => {
+    const email = await newMember(testInfo);
+    await page.goto('/sign-in');
+    const main = page.getByRole('main');
+    await main.getByRole('button', { name: 'Continue with email' }).click();
+    await main.getByLabel('Email').fill(email);
+    await main.getByRole('button', { name: 'Send code' }).click();
+    await expect(main.getByRole('status')).toContainText('We sent a code if this address');
+    const right = await emailCode(email);
+    const wrong = right === '000000' ? '111111' : '000000';
+    for (let check = 1; check <= 10; check += 1) {
+      await main.getByLabel('6-digit code').fill(wrong);
+      await main.getByRole('button', { name: 'Continue' }).click();
+      await expect(alert(page, /code/i)).toBeVisible();
+    }
+    // Even the right code is refused once the limit is reached.
+    await main.getByLabel('6-digit code').fill(right);
+    await main.getByRole('button', { name: 'Continue' }).click();
+    await expect(alert(page, /^Too many tries\. Try again in \d+ minutes?\.$/)).toBeVisible();
+    await expect(page).toHaveURL(/\/sign-in/);
   });
 
   test('email codes are limited per address, and the answer stays the same (no enumeration)', async ({

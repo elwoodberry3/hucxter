@@ -11,6 +11,10 @@ export const OTP_LIMITS = {
   phoneSendsPerNumberPerHour: 3,
   distinctPhonesPerUserPerDay: 3,
   emailSendsPerAddressPerHour: 5,
+  // Code checks (right or wrong): stops guessing a 6-digit code. Supabase's per-IP limits only see
+  // this server's IP, so they can't do it.
+  emailChecksPerAddressPerHour: 10,
+  phoneChecksPerUserPerHour: 10,
 } as const;
 
 const RetryAfter = z.number().int().nonnegative();
@@ -18,7 +22,7 @@ const RetryAfter = z.number().int().nonnegative();
 export type LimitResult = { ok: true } | { ok: false; retryAfterSeconds: number };
 
 async function attempt(
-  kind: 'email' | 'phone',
+  kind: 'email' | 'phone' | 'email_check' | 'phone_check',
   normalized: string,
   userId: string | null,
   limits: { perSubject: number; perUser: number | null; distinct: number | null },
@@ -52,5 +56,34 @@ export function allowPhoneCodeSend(userId: string, e164: string): Promise<LimitR
     perSubject: OTP_LIMITS.phoneSendsPerNumberPerHour,
     perUser: OTP_LIMITS.phoneSendsPerUserPerHour,
     distinct: OTP_LIMITS.distinctPhonesPerUserPerDay,
+  });
+}
+
+/**
+ * Gives back an email send that Supabase refused with captcha_failed (no code went out), so a junk
+ * bot-check token can't use up someone else's allowance. Best effort.
+ */
+export async function refundEmailCodeSend(email: string): Promise<void> {
+  await adminDb().rpc('otp_send_refund', {
+    p_kind: 'email',
+    p_subject_hash: subjectHash('email', email),
+  });
+}
+
+/** Records an email-code check for this (lowercased) address if it's within the limit. */
+export function allowEmailCodeCheck(email: string): Promise<LimitResult> {
+  return attempt('email_check', email, null, {
+    perSubject: OTP_LIMITS.emailChecksPerAddressPerHour,
+    perUser: null,
+    distinct: null,
+  });
+}
+
+/** Records a phone-code check for this member if it's within the limit. */
+export function allowPhoneCodeCheck(userId: string): Promise<LimitResult> {
+  return attempt('phone_check', userId, userId, {
+    perSubject: OTP_LIMITS.phoneChecksPerUserPerHour,
+    perUser: null,
+    distinct: null,
   });
 }

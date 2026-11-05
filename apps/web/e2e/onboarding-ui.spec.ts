@@ -95,6 +95,8 @@ interface Stage {
  * No email address or phone number is ever on screen when a screenshot is taken.
  */
 async function checkStage(page: Page, projectName: string, stage: Stage) {
+  // Client-side step changes update <title> just after the new content renders.
+  await expect(page).toHaveTitle(/\S/);
   for (const scheme of SCHEMES) {
     await applyScheme(page, scheme);
     expect(await blockingViolations(page), `${stage.name} (${scheme})`).toEqual([]);

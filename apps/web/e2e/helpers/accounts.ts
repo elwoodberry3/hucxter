@@ -54,10 +54,20 @@ export async function deleteE2eUsers(only?: string[]): Promise<void> {
     for (const user of data.users) {
       if (!isE2eEmail(user.email)) continue;
       if (only !== undefined && !targets.has((user.email ?? '').toLowerCase())) continue;
+      // Limiter rows outlive deleted accounts (on purpose), so clear the test account's own rows
+      // first or the shared test numbers would hit the per-number limit in later tests.
+      await db.from('otp_send_attempts').delete().eq('user_id', user.id);
       await db.auth.admin.deleteUser(user.id);
     }
     if (data.users.length < 200) break;
   }
+  // Phone rows of accounts deleted through the app (the deletion test) or in an interrupted run
+  // become orphans (user_id null) on a shared test number. Local stack only.
+  await db
+    .from('otp_send_attempts')
+    .delete()
+    .is('user_id', null)
+    .in('kind', ['phone', 'phone_check']);
   const emails = only ?? [];
   if (only === undefined) {
     await db.from('qa_invites').delete().like('email', `%${E2E_EMAIL_DOMAIN}`);

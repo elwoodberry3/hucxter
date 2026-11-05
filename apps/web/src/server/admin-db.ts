@@ -36,7 +36,10 @@ export function adminDb(): SupabaseClient {
  * Keyed hash for rate-limit counters, so an email or phone number is never stored. The key is
  * derived from the secret key; rotating that key resets the counters, which is acceptable.
  */
-export function subjectHash(kind: 'email' | 'phone', normalized: string): string {
+export function subjectHash(
+  kind: 'email' | 'phone' | 'email_check' | 'phone_check',
+  normalized: string,
+): string {
   const key = createHmac('sha256', secretKey()).update('hucxter-otp-limits-v1').digest();
   return createHmac('sha256', key).update(`${kind}:${normalized}`).digest('hex');
 }

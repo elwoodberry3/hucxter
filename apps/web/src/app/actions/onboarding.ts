@@ -25,10 +25,11 @@ import {
   PHONE_NOT_US,
   phoneErrorCopy,
   tooManyCodes,
+  tooManyTries,
 } from '@/server/auth/errors';
 import { requireSignedIn } from '@/server/auth/gate';
 import { requestIsSameOrigin } from '@/server/auth/origin';
-import { allowPhoneCodeSend } from '@/server/auth/otp-limits';
+import { allowPhoneCodeCheck, allowPhoneCodeSend } from '@/server/auth/otp-limits';
 import { sessionClient } from '@/server/supabase-server';
 
 export type StepResult = { status: 'sent' } | { status: 'error'; message: string };
@@ -87,12 +88,14 @@ export async function sendPhoneCode(input: unknown): Promise<StepResult> {
 /** Confirms the SMS code for the number Supabase is holding as the pending change. */
 export async function verifyPhoneCode(input: unknown, target: unknown): Promise<StepResult> {
   if (!(await requestIsSameOrigin())) return { status: 'error', message: ORIGIN_ERROR };
-  await requireSignedIn('/welcome');
+  const member = await requireSignedIn('/welcome');
   const parsed = PhoneCodeVerify.safeParse(input);
   const back = PhoneReturn.safeParse(target);
   if (!parsed.success || !back.success) return { status: 'error', message: CODE_ERROR };
 
   try {
+    const limit = await allowPhoneCodeCheck(member.userId);
+    if (!limit.ok) return { status: 'error', message: tooManyTries(limit.retryAfterSeconds) };
     const supabase = await sessionClient();
     const { data } = await supabase.auth.getUser();
     const pending = data.user?.new_phone;

@@ -20,6 +20,12 @@ export function tooManyCodes(retryAfterSeconds: number): string {
   return `Too many codes requested. Try again in ${String(minutes)} minute${minutes === 1 ? '' : 's'}.`;
 }
 
+/** Over the code-check limit (same answer whether or not the address has an account). */
+export function tooManyTries(retryAfterSeconds: number): string {
+  const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60));
+  return `Too many tries. Try again in ${String(minutes)} minute${minutes === 1 ? '' : 's'}.`;
+}
+
 interface AuthErrorLike {
   status?: number | undefined;
   code?: string | undefined;

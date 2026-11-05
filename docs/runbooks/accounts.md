@@ -98,10 +98,10 @@ defaults and need Founder sign-off.
 | Phone provider | **Twilio Verify** (D-08); phone sign-ups **off** (phone is only added to an existing account); **Confirm phone ON**. With it off, Supabase applies a phone change with no code at all (checked in the Auth source, `internal/api/user.go`) |
 | Twilio Verify | Geo permissions: **United States only**. Turn on **Fraud Guard** (SMS pumping protection). Rate limits per number in Verify as well |
 | Google provider | on, client ID and secret from the Google Cloud **Web** client; scopes are Supabase's defaults (email, profile) plus `openid` |
-| Captcha | Turnstile on; secret = the QA site's Turnstile secret. The app needs the same site's `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (the server checks phone-code sends itself, because Supabase doesn't captcha-check `PUT /user`) |
+| Captcha | **Required:** Turnstile on; secret = the QA site's Turnstile secret. The app relies on it for email-code sends (it refunds a send that Supabase rejects with `captcha_failed`). The app needs the same site's `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (the server checks phone-code sends itself, because Supabase doesn't captcha-check `PUT /user`) |
 | Before-user-created hook | on, Postgres function `public.hook_before_user_created` |
 | Custom SMTP | the D-39 provider; sender on the sending domain with SPF, DKIM, DMARC |
-| Rate limits *(proposal)* | emails sent 30/h · SMS sent 30/h · sign-ups and sign-ins 30 per 5 min per IP · token verifications 30 per 5 min per IP · token refreshes 150 per 5 min per IP |
+| Rate limits *(proposal)* | emails sent 30/h · SMS sent 30/h (the project-wide backstop) · sign-ups and sign-ins, token verifications and token refreshes: **high** (e.g. 1000 per 5 min per IP). Every call comes from the app server, so Supabase's per-IP limits count all members as one IP: low values would let one person block sign-in for everyone. Guessing is stopped by the app's code-check limits below |
 
 **App-level limits** (in `apps/web/src/server/auth/otp-limits.ts`, the same in every environment):
 
@@ -111,9 +111,21 @@ defaults and need Founder sign-off.
 | Phone-code sends per number per hour | 3 |
 | Distinct phone numbers per account per day | 3 |
 | Email-code sends per address per hour | 5 |
+| Code checks (right or wrong) per email address per hour | 10 |
+| Phone-code checks per account per hour | 10 |
 
-Over the limit, people see "Too many codes requested. Try again in N minutes." Counters store a
-salted hash of the email or number, never the value itself.
+Over the limit, people see "Too many codes requested. Try again in N minutes." (sends) or "Too
+many tries. Try again in N minutes." (checks). Counters store a keyed hash of the email or number,
+never the value itself. They outlive account deletion, so deleting and re-creating an account
+doesn't reset the per-number limits. To clear a member's limits, delete their rows from
+`public.otp_send_attempts` with the service role.
+
+**Known gap (accepted risk, needs Founder sign-off):** a signed-in member can call Supabase Auth's
+`PUT /auth/v1/user` with their own session and the publishable key, changing their phone without
+going through the app. That skips the app's Turnstile check, these limits and the US-only number
+rules. Until a Supabase "Send SMS" hook enforces them at the source, the **Twilio Verify US-only
+geo permissions, Fraud Guard and per-number limits, and the project SMS cap are mandatory**, not
+optional.
 
 ---
 

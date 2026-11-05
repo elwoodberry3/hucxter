@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(46);
+select plan(51);
 
 -- Fixtures: two users (the trigger creates their profiles), a session each, one invite.
 insert into auth.users (id, email, aud, role)
@@ -42,7 +42,8 @@ select is_empty(
   $$select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and p.proname in ('my_sessions', 'has_role', 'attest_age', 'current_user_invited',
-        'otp_send_attempt', 'hook_before_user_created', 'handle_new_user', 'audit_log_append_only')
+        'otp_send_attempt', 'otp_send_refund', 'hook_before_user_created', 'handle_new_user',
+        'audit_log_append_only')
       and not coalesce(p.proconfig @> array['search_path=""'], false)$$,
   'every account function sets search_path to empty'
 );
@@ -50,7 +51,8 @@ select is_empty(
   $$select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and p.proname in ('my_sessions', 'has_role', 'attest_age', 'current_user_invited',
-        'otp_send_attempt', 'hook_before_user_created', 'handle_new_user', 'audit_log_append_only')
+        'otp_send_attempt', 'otp_send_refund', 'hook_before_user_created', 'handle_new_user',
+        'audit_log_append_only')
       and has_function_privilege('anon', p.oid, 'execute')$$,
   'anon can execute none of the account functions'
 );
@@ -143,6 +145,41 @@ select ok(
 select ok(
   public.otp_send_attempt('phone', repeat('b', 64), '00000000-0000-4000-8000-0000000000a1', 2, 5, 1) between 1 and 86400,
   'a new number is refused once the daily distinct-number limit (1 here) is reached'
+);
+
+select ok(
+  not has_function_privilege('authenticated', 'public.otp_send_refund(text, text)', 'execute'),
+  'authenticated cannot execute otp_send_refund'
+);
+
+-- Code checks are limited too (trust-safety H1)
+select is(
+  (select count(*)::int from (
+    select public.otp_send_attempt('email_check', repeat('c', 64), null, 3, null, null)
+    from generate_series(1, 3)) attempts),
+  3, 'three code checks for one address are recorded'
+);
+select ok(
+  public.otp_send_attempt('email_check', repeat('c', 64), null, 3, null, null) between 1 and 3600,
+  'the next code check for that address returns a retry-after'
+);
+
+-- A refused bot check gives the email send back (trust-safety M1)
+select public.otp_send_attempt('email', repeat('d', 64), null, 1, null, null);
+select public.otp_send_refund('email', repeat('d', 64));
+select is(
+  public.otp_send_attempt('email', repeat('d', 64), null, 1, null, null),
+  0, 'a refunded email send does not count against the address'
+);
+
+-- Deleting the account keeps its send rows (trust-safety M2)
+insert into auth.users (id, email, aud, role)
+values ('00000000-0000-4000-8000-0000000000d1', 'gone@example.test', 'authenticated', 'authenticated');
+select public.otp_send_attempt('phone', repeat('e', 64), '00000000-0000-4000-8000-0000000000d1', 1, 5, 3);
+delete from auth.users where id = '00000000-0000-4000-8000-0000000000d1';
+select ok(
+  public.otp_send_attempt('phone', repeat('e', 64), null, 1, null, null) between 1 and 3600,
+  'per-number limits survive deleting the account that sent them'
 );
 
 -- Anonymous role sees nothing

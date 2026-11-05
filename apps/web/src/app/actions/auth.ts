@@ -11,10 +11,15 @@ import {
   GENERIC_ERROR,
   ORIGIN_ERROR,
   isClosedTestRejection,
+  tooManyTries,
 } from '@/server/auth/errors';
 import { loadMember } from '@/server/auth/member';
 import { requestIsSameOrigin } from '@/server/auth/origin';
-import { allowEmailCodeSend } from '@/server/auth/otp-limits';
+import {
+  allowEmailCodeCheck,
+  allowEmailCodeSend,
+  refundEmailCodeSend,
+} from '@/server/auth/otp-limits';
 import { sessionClient } from '@/server/supabase-server';
 
 export type EmailCodeResult =
@@ -64,7 +69,11 @@ async function sendNeutrally(
     if (error === null) return { status: 'sent' };
     if (isClosedTestRejection(error))
       return { status: 'closed_test', message: CLOSED_TEST_MESSAGE };
-    if (error.code === 'captcha_failed') return { status: 'error', message: CAPTCHA_ERROR };
+    if (error.code === 'captcha_failed') {
+      // No code went out: don't let a junk token use up this address's allowance.
+      await refundEmailCodeSend(email);
+      return { status: 'error', message: CAPTCHA_ERROR };
+    }
     return { status: 'sent' };
   } catch {
     return { status: 'sent' };
@@ -80,6 +89,8 @@ export async function verifyEmailCode(input: unknown, next: unknown): Promise<Ve
   if (!parsed.success) return { status: 'error', message: 'Enter the 6-digit code.' };
   let destination: string;
   try {
+    const limit = await allowEmailCodeCheck(parsed.data.email);
+    if (!limit.ok) return { status: 'error', message: tooManyTries(limit.retryAfterSeconds) };
     const supabase = await sessionClient();
     const { error } = await supabase.auth.verifyOtp({
       email: parsed.data.email,

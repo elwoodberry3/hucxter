@@ -8,6 +8,7 @@ import {
   isClosedTestRejection,
   phoneErrorCopy,
   tooManyCodes,
+  tooManyTries,
 } from './errors';
 
 describe('isClosedTestRejection', () => {
@@ -60,5 +61,12 @@ describe('tooManyCodes', () => {
   it('rounds up to whole minutes', () => {
     expect(tooManyCodes(30)).toBe('Too many codes requested. Try again in 1 minute.');
     expect(tooManyCodes(3599)).toBe('Too many codes requested. Try again in 60 minutes.');
+  });
+});
+
+describe('tooManyTries', () => {
+  it('rounds up to whole minutes and never mentions the address', () => {
+    expect(tooManyTries(61)).toBe('Too many tries. Try again in 2 minutes.');
+    expect(tooManyTries(1)).toBe('Too many tries. Try again in 1 minute.');
   });
 });
