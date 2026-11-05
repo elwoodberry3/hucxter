@@ -3,12 +3,14 @@
 import type { GatedAction } from '@hucxter/contracts';
 import { X } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { track } from '@/lib/analytics';
-import { authHref } from '@/lib/next-path';
+import { useToast } from '@/components/ui/toast';
+import { authHref, welcomeHref } from '@/lib/next-path';
 import { AuthMethods } from './auth-methods';
+import { useViewer } from './viewer-context';
 import styles from './auth.module.css';
 
 interface SheetRequest {
@@ -40,8 +42,11 @@ export function SignInSheetProvider({
   const pathname = usePathname();
   const query = useSearchParams().toString();
   const here = query === '' ? pathname : `${pathname}?${query}`;
+  const viewer = useViewer();
+  const router = useRouter();
+  const toast = useToast();
 
-  const open = useCallback((next: SheetRequest) => {
+  const openSheet = useCallback((next: SheetRequest) => {
     openerRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setRequest(next);
@@ -49,6 +54,23 @@ export function SignInSheetProvider({
     track({ name: 'sign_in_prompted', action: next.action, surface: 'listing' });
     dialogRef.current?.showModal();
   }, []);
+
+  const open = useCallback(
+    (next: SheetRequest) => {
+      // Members never see the sheet: unverified ones finish onboarding first, and verified ones
+      // are told the action isn't built yet (Brief 03: messaging/saving arrive later).
+      if (viewer.status === 'unverified') {
+        router.push(welcomeHref(here));
+        return;
+      }
+      if (viewer.status === 'verified') {
+        toast('This arrives in the next QA build.');
+        return;
+      }
+      openSheet(next);
+    },
+    [viewer.status, router, here, toast, openSheet],
+  );
 
   const close = () => {
     dialogRef.current?.close();

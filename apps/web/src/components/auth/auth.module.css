@@ -278,3 +278,60 @@
     box-shadow: none;
   }
 }
+
+.destructive {
+  background: var(--hx-destructive);
+  color: var(--hx-on-accent);
+}
+
+/* Settings page sections. */
+.settings {
+  display: grid;
+  gap: var(--hx-space-6);
+  width: min(100%, 36rem);
+  margin: 0 auto;
+  padding: var(--hx-space-6) 0;
+}
+
+.section {
+  display: grid;
+  gap: var(--hx-space-3);
+  padding: var(--hx-space-6);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.sectionTitle {
+  font-size: var(--hx-text-title-3);
+  font-weight: 700;
+}
+
+.sessions {
+  display: grid;
+  gap: var(--hx-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sessions li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--hx-space-2);
+  padding: var(--hx-space-2) 0;
+  border-bottom: 1px solid var(--hx-separator);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hx-space-2);
+}
+
+@media (width < 64rem) {
+  .section {
+    padding: var(--hx-space-4);
+  }
+}
