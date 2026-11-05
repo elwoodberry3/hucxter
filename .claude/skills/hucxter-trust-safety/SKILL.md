@@ -8,20 +8,28 @@ description: Authentication, bot resistance, rate limits, messaging safety, repo
 "Zero bots" is not achievable or provable. The goal is **layered bot resistance** and fast
 detection/removal. Do not use "zero-bot" in product copy.
 
-## Identity & access (Phase I, ADR-0010)
-- **Sign up / sign in** with one of: **email one-time code** (no passwords), **Facebook**
-  (built-in Supabase provider, `public_profile` + `email`), or **TikTok** (Supabase custom OAuth2
-  provider `custom:tiktok`; TikTok returns no email, so the user must add and confirm one).
-  Accounts link by verified email.
-- **Verification before any action** (message, save, sell, report): confirmed email + **phone
-  verified by SMS code** (one active account per phone) + 18+ confirmation + home ZIP. Guests and
-  unverified members can browse only.
+## Identity & access (Phase I, ADR-0010 as amended by D-34)
+- **Sign up / sign in** with one of: **email one-time code** (6 digits, no passwords, no
+  magic-link-only flow) or **Google** (Supabase built-in provider, PKCE, scopes
+  `openid email profile` only). No Facebook, TikTok, or Apple login in Phase I. Supabase links
+  identities with the same verified email into one user automatically.
+- **Onboarding gate** (`/welcome`, resumable): confirmed email → **phone verified by SMS code**
+  (`updateUser({ phone })` + `verifyOtp({ type: 'phone_change' })`; one account per phone; a
+  number in use gets a neutral error) → **18+ attestation** (`age_attested_at`, no date of birth) →
+  **home ZIP** → display name. **Verified = all four** of email, phone, 18+, home ZIP.
+- **One gate:** `requireVerifiedMember()` (`apps/web/src/server/auth/gate.ts`) protects every gated
+  page and action and sends unverified members to `/welcome?next=…`. It checks the session with
+  the Auth server (`getUser()`), so revoked sessions and deleted users fail closed.
+- **QA invite gate:** with `INVITE_ONLY=true` (default for `APP_ENV=qa`), only emails in
+  `qa_invites` finish sign-up; the Supabase `before_user_created` hook enforces the same list in QA.
 - **No guest interactions.** Every gated action routes to sign-in with a safe, same-origin `next`
-  path (reject absolute URLs and `//` to prevent open redirects).
-- OTP send/verify rate-limited per phone, per email, per device, per IP.
-- OAuth: use PKCE and the state parameter; request minimal scopes; store only provider user ID,
-  display name, avatar, and email; never post to the user's social accounts; honor provider
-  data-deletion requests.
+  path (reject absolute URLs, `//`, backslashes, encoded variants; never `/welcome` or `/auth/*`).
+- **OTP abuse limits** (Postgres-backed, `apps/web/src/server/auth/otp-limits.ts`): phone-code
+  sends per user and per number per hour, distinct numbers per account per day, email-code sends
+  per address per hour, on top of Supabase's own limits. US (+1) numbers only. The email step is
+  enumeration-neutral: same copy and timing whether or not the address has an account.
+- OAuth: PKCE and the state parameter; minimal scopes; store only provider user ID, display name,
+  and email; never post on the user's behalf; honor provider data-deletion requests.
 - Phone line-type check (block VoIP/disposable where the provider supports it) — provider is an
   open decision; build behind an interface `PhoneRiskProvider` with a no-op default.
 - Sessions: Supabase SSR auth with **httpOnly, Secure, SameSite=Lax** cookies scoped to the app
@@ -29,9 +37,16 @@ detection/removal. Do not use "zero-bot" in product copy.
   active sessions under account settings, with "sign out everywhere."
 - Roles: `user`, `moderator`, `admin` in the `app_roles` table; `/admin` routes check the role
   server-side on every request (middleware alone is not enough).
-- Bot resistance on the web: an invisible challenge (e.g., Cloudflare Turnstile; provider per
-  D-08) on OTP send and sign-up, behind the same provider interface. Device attestation comes with
-  the Phase IV desktop app and Phase V iOS app.
+- Bot resistance on the web: Cloudflare Turnstile (D-08) behind `CAPTCHA_PROVIDER`
+  (`turnstile` | `none`; `none` is refused when `APP_ENV=production`). Email-code sends use
+  Supabase's captcha support (`captchaToken`). Supabase does **not** captcha-check phone changes
+  (`PUT /user`), so the server verifies the Turnstile token itself before sending a phone code.
+  Device attestation comes with the Phase IV desktop app and Phase V iOS app.
+- **Service-role key** (`SUPABASE_SECRET_KEY`) is read only in `apps/web/src/server/admin-db.ts`
+  and used only for account deletion, audit writes, abuse counters, and (later) webhooks, jobs and
+  admin actions. A unit test fails if any other module reads it.
+- Emails and phone numbers never appear in logs, analytics, error messages, or test snapshots. Show
+  fixed copy mapped from Supabase `error.code`; never show or log `error.message`.
 
 ## Web security baseline (Phase I)
 - **CSRF:** cookie-authenticated mutations must verify the `Origin` header against `APP_ORIGIN`

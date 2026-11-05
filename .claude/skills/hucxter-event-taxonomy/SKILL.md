@@ -39,7 +39,7 @@ Table `events` (append-only) or a vendor SDK behind `track()` — ADR-0006. Rule
   `video_upload_failed`, `notification_sent`, `notification_opened`, `reply_received`,
   `category_viewed`, `mega_menu_opened`, `hero_clicked`, `location_changed` (ZIP only),
   `filter_applied`, `sign_in_prompted` (with triggering `action`), `sign_in_started` (with
-  `method`: email | facebook | tiktok), `phone_verified`, `availability_asked`,
+  `method`: email | google), `phone_verified`, `availability_asked`,
   `listing_status_changed`.
 - Desktop-risk metrics (ADR-0008): time from draft started to published, upload failure rate, time
   to first seller reply, share of messages unread after 24 h.

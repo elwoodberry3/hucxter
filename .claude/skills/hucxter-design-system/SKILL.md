@@ -31,7 +31,7 @@ Full spec: `docs/specs/storefront-ia.md`. Summary:
 - **Big footer** on every page (Shop · Sell · Safety & Help · Company + legal row). Footer links for
   pages that don't exist yet go to a "Coming soon" page, never a 404.
 - **Guests** can view home, category, search, and product pages. Every action opens a sign-in sheet
-  (email · Facebook · TikTok) and then returns to the same place.
+  (Continue with Google · Continue with email) and then returns to the same place.
 - **Viewport:** mobile first. Primary flows work from **320 CSS px** with no horizontal scroll;
   test 320/360/375/390/414/430 plus 1280 and 1440. One content-based breakpoint at **64rem**:
   below it the phone layout, at and above it the desktop storefront. No "best on desktop" notice.
