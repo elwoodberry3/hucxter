@@ -18,6 +18,7 @@ export function StoreShell({
   location,
   locationLabel,
   notice,
+  captchaSiteKey,
   children,
 }: {
   taxonomy: Taxonomy;
@@ -25,11 +26,13 @@ export function StoreShell({
   locationLabel: string | null;
   /** Optional non-blocking notice under the category bar (launch area). */
   notice?: ReactNode;
+  /** Turnstile site key when CAPTCHA_PROVIDER=turnstile (public by design). */
+  captchaSiteKey: string | null;
   children: ReactNode;
 }) {
   return (
     <ToastProvider>
-      <SignInSheetProvider>
+      <SignInSheetProvider captchaSiteKey={captchaSiteKey}>
         <a href="#main" className={styles.skipLink}>
           Skip to content
         </a>

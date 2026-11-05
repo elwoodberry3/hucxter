@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--hx-space-2);
-  height: 2.75rem;
+  min-height: var(--hx-target-min);
   border: 1px solid var(--hx-separator-strong);
   border-radius: var(--hx-radius-control);
   background: var(--hx-bg-elevated);
@@ -45,14 +45,98 @@
   cursor: pointer;
 }
 
+.method {
+  text-decoration: none;
+}
+
 .method:hover {
   background: var(--hx-fill-hover);
 }
 
-.availability {
-  color: var(--hx-label-secondary);
-  font-size: var(--hx-text-footnote);
-  text-align: center;
+/* Email/code forms here and the /welcome steps share these controls. */
+.form {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.input {
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-3);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  /* 16px minimum so iOS Safari doesn't zoom into the field. */
+  font-size: max(1rem, var(--hx-text-body));
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--hx-destructive);
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3em;
+}
+
+.primary {
+  min-height: var(--hx-target-min);
+  margin-top: var(--hx-space-2);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.textButton {
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-2);
+  border: 0;
+  background: none;
+  color: var(--hx-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.textButton:hover {
+  text-decoration: underline;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--hx-space-2);
+}
+
+.error:empty {
+  display: none;
+}
+
+.error {
+  color: var(--hx-destructive);
+  font-size: var(--hx-text-subheadline);
+}
+
+.closed {
+  padding: var(--hx-space-3) var(--hx-space-4);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-warning-bg);
+  color: var(--hx-warning-label);
+  font-weight: 600;
 }
 
 .message:empty {
@@ -108,8 +192,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
   border: 0;
   border-radius: var(--hx-radius-control);
   background: none;

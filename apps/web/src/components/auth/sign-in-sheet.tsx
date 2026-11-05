@@ -21,13 +21,22 @@ const SheetContext = createContext<((request: SheetRequest) => void) | null>(nul
 
 /**
  * One modal sign-in sheet per page (storefront-ia §5 guest view). Gated actions open it; it
- * offers email, Facebook, and TikTok, and links to sign-in/sign-up with `next` set to this page.
- * Native <dialog>: focus is trapped, Esc closes, and focus returns to the opener.
+ * offers Continue with Google and Continue with email (D-34) and returns here (`next`) after
+ * sign-in and onboarding. Native <dialog>: focus is trapped, Esc closes, and focus returns to the
+ * opener.
  */
-export function SignInSheetProvider({ children }: { children: ReactNode }) {
+export function SignInSheetProvider({
+  captchaSiteKey,
+  children,
+}: {
+  captchaSiteKey: string | null;
+  children: ReactNode;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const [request, setRequest] = useState<SheetRequest | null>(null);
+  // Remounts the methods on every open so a half-finished email step doesn't linger.
+  const [openCount, setOpenCount] = useState(0);
   const pathname = usePathname();
   const query = useSearchParams().toString();
   const here = query === '' ? pathname : `${pathname}?${query}`;
@@ -36,6 +45,7 @@ export function SignInSheetProvider({ children }: { children: ReactNode }) {
     openerRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setRequest(next);
+    setOpenCount((count) => count + 1);
     track({ name: 'sign_in_prompted', action: next.action, surface: 'listing' });
     dialogRef.current?.showModal();
   }, []);
@@ -69,7 +79,7 @@ export function SignInSheetProvider({ children }: { children: ReactNode }) {
             {request?.prompt ?? 'Sign in to continue'}
           </h2>
           <p className={styles.lede}>You’ll come back to this page after you sign in.</p>
-          <AuthMethods />
+          <AuthMethods key={openCount} next={here} captchaSiteKey={captchaSiteKey} />
           <p className={styles.switch}>
             New here?{' '}
             <Link href={authHref(here, '/sign-up')} onClick={close}>

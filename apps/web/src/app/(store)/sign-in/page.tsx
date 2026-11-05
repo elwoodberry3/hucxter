@@ -3,8 +3,8 @@ import { AuthPage } from '@/components/auth/auth-page';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-// Members will be redirected to `next` (or /) here once accounts exist (Brief 03).
+// Signed-in members are sent on to `next` (verified) or /welcome (AuthPage).
 export default async function SignInPage({ searchParams }: PageProps<'/sign-in'>) {
-  const { next } = await searchParams;
-  return <AuthPage mode="sign-in" next={next} />;
+  const { next, error } = await searchParams;
+  return <AuthPage mode="sign-in" next={next} error={error} />;
 }
