@@ -64,6 +64,9 @@
 }
 
 .input {
+  /* Fill the grid track; never widen it to the input's default size (overflowed 320 px phones). */
+  width: 100%;
+  min-width: 0;
   min-height: var(--hx-target-min);
   padding: 0 var(--hx-space-3);
   border: 1px solid var(--hx-separator-strong);
@@ -183,6 +186,34 @@
   display: grid;
   gap: var(--hx-space-4);
   padding: var(--hx-space-8);
+}
+
+/* Phones, and short viewports (an open on-screen keyboard): tighter, so the field and its button
+   stay in view together. */
+@media (width < 40rem), (height < 32rem) {
+  .sheetBody {
+    gap: var(--hx-space-3);
+    padding: var(--hx-space-6) var(--hx-space-4) var(--hx-space-4);
+  }
+
+  /* Keep the title clear of the close button. */
+  .sheetBody > .title {
+    padding-inline-end: var(--hx-space-10);
+  }
+}
+
+/* Very short (a small phone with the keyboard open): drop the supporting lines while typing; they
+   come back when the keyboard closes. */
+@media (height < 22rem) {
+  .sheet {
+    max-height: calc(100dvh - var(--hx-space-4));
+    margin-block: var(--hx-space-2) auto;
+  }
+
+  .sheet .lede,
+  .sheet .switch {
+    display: none;
+  }
 }
 
 .close {

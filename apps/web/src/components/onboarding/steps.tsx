@@ -62,8 +62,11 @@ export function PhoneStep({
   const describedBy = error === null ? undefined : errorId;
 
   if (phase === 'code') {
+    // Distinct keys: otherwise React reuses the "Use a different number" button as the number
+    // form's submit button, and the same click submits it (sending an extra code).
     return (
       <form
+        key="code"
         className={styles.form}
         noValidate
         onSubmit={(event) => {
@@ -116,6 +119,7 @@ export function PhoneStep({
 
   return (
     <form
+      key="number"
       className={styles.form}
       noValidate
       onSubmit={(event) => {
