@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'e2e/**/*.unit.test.ts'],
     environment: 'node',
   },
 });

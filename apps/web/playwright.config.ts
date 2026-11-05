@@ -6,6 +6,8 @@ const PORT = 3100;
 const PRODUCTION_PORT = 3101;
 const baseURL = `http://localhost:${String(PORT)}`;
 const productionURL = `http://localhost:${String(PRODUCTION_PORT)}`;
+const INVITE_OFF_PORT = 3102;
+const inviteOffURL = `http://localhost:${String(INVITE_OFF_PORT)}`;
 
 interface SupabaseEnv {
   SUPABASE_URL: string;
@@ -68,6 +70,9 @@ const sharedEnv = {
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['**/*.unit.test.ts'],
+  globalSetup: './e2e/global-setup.ts',
+  globalTeardown: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -90,7 +95,8 @@ export default defineConfig({
     { name: 'mobile-webkit', use: { ...devices['iPhone 15'] } },
   ],
   // Production builds, so headers and CSP are tested as they ship. Servers start in order: the
-  // first builds; the second reuses that build with APP_ENV=production to prove /dev is gated.
+  // first builds; the second reuses that build with APP_ENV=production to prove /dev is gated;
+  // the third reuses it with the invite gate off.
   webServer: [
     {
       command: `pnpm build && pnpm start -p ${String(PORT)}`,
@@ -116,6 +122,20 @@ export default defineConfig({
         ...TURNSTILE_TEST_KEYS,
         APP_ENV: 'production',
         APP_ORIGIN: productionURL,
+      },
+    },
+    {
+      // Same build, invite gate off: proves INVITE_ONLY=false lets an uninvited email sign up.
+      command: `pnpm start -p ${String(INVITE_OFF_PORT)}`,
+      url: `${inviteOffURL}/api/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        ...sharedEnv,
+        APP_ENV: 'qa',
+        APP_ORIGIN: inviteOffURL,
+        INVITE_ONLY: 'false',
+        CAPTCHA_PROVIDER: 'none',
       },
     },
   ],
