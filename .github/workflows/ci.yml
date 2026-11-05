@@ -41,13 +41,13 @@ jobs:
         run: pnpm --filter @hucxter/web exec playwright install --with-deps chromium webkit
 
       # The storefront reads categories and postal areas from local Supabase (never a remote
-      # project). Database, REST and Auth (Auth makes `supabase status` report the publishable key).
+      # project). Database, REST, Auth, and Mailpit (e2e reads 6-digit email codes from its API).
       - uses: supabase/setup-cli@v3
         with:
           version: 2.122.0
 
-      - name: Start local Supabase (database + REST API)
-        run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Start local Supabase (database, REST, Auth, Mailpit)
+        run: supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - run: supabase db reset
 
@@ -76,9 +76,10 @@ jobs:
         with:
           version: 2.122.0
 
-      # Local stack only (never linked to a remote project); Postgres is all the DB tests need.
-      - name: Start local Supabase (Postgres only)
-        run: supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      # Local stack only (never linked to a remote project). Auth (gotrue) runs too: it creates
+      # auth.sessions, which the account functions and their pgTAP tests use.
+      - name: Start local Supabase (Postgres + Auth)
+        run: supabase start -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - run: supabase db reset
       - run: supabase test db

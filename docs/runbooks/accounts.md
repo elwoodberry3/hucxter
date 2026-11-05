@@ -95,7 +95,7 @@ defaults and need Founder sign-off.
 | Redirect allowlist | `https://qa.hucxter.app/auth/callback**` only |
 | Email provider | on; **Confirm email on**; OTP length **6**; OTP expiry **600 s** *(proposal)* |
 | Email templates | "Confirm signup" **and** "Magic link" both use the code template in `supabase/templates/` (`{{ .Token }}` only, no link). Both must be changed: new users get the first, returning users the second |
-| Phone provider | **Twilio Verify** (D-08); phone sign-ups **off** (phone is only added to an existing account) |
+| Phone provider | **Twilio Verify** (D-08); phone sign-ups **off** (phone is only added to an existing account); **Confirm phone ON**. With it off, Supabase applies a phone change with no code at all (checked in the Auth source, `internal/api/user.go`) |
 | Twilio Verify | Geo permissions: **United States only**. Turn on **Fraud Guard** (SMS pumping protection). Rate limits per number in Verify as well |
 | Google provider | on, client ID and secret from the Google Cloud **Web** client; scopes are Supabase's defaults (email, profile) plus `openid` |
 | Captcha | Turnstile on; secret = the QA site's Turnstile secret. The app needs the same site's `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (the server checks phone-code sends itself, because Supabase doesn't captcha-check `PUT /user`) |
