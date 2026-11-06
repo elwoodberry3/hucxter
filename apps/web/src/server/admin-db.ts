@@ -37,7 +37,7 @@ export function adminDb(): SupabaseClient {
  * derived from the secret key; rotating that key resets the counters, which is acceptable.
  */
 export function subjectHash(
-  kind: 'email' | 'phone' | 'email_check' | 'phone_check',
+  kind: 'email' | 'phone' | 'email_check' | 'phone_check' | 'email_browser' | 'email_device',
   normalized: string,
 ): string {
   const key = createHmac('sha256', secretKey()).update('hucxter-otp-limits-v1').digest();

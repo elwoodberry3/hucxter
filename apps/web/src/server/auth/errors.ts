@@ -8,6 +8,8 @@ export const GENERIC_ERROR = 'Something went wrong. Try again.';
 export const ORIGIN_ERROR = 'This request didn’t come from Hucxter. Reload the page and try again.';
 export const CAPTCHA_ERROR = 'We couldn’t confirm you’re a person. Try again.';
 export const CODE_ERROR = 'That code didn’t work. Check it, or send a new one.';
+/** Email code: this browser's tries are used up, or the code was replaced. No timer (§3.0). */
+export const NEW_CODE_NEEDED = 'That code has expired or was replaced. Send a new code.';
 export const PHONE_IN_USE = 'We can’t use that number. Try a different mobile number.';
 export const PHONE_NOT_US = 'Enter a US mobile number (+1).';
 export const PHONE_FORMAT = 'Enter a 10-digit US mobile number.';
@@ -20,7 +22,7 @@ export function tooManyCodes(retryAfterSeconds: number): string {
   return `Too many codes requested. Try again in ${String(minutes)} minute${minutes === 1 ? '' : 's'}.`;
 }
 
-/** Over the code-check limit (same answer whether or not the address has an account). */
+/** Over the phone code-check limit. */
 export function tooManyTries(retryAfterSeconds: number): string {
   const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60));
   return `Too many tries. Try again in ${String(minutes)} minute${minutes === 1 ? '' : 's'}.`;

@@ -10,14 +10,16 @@ import {
   CODE_ERROR,
   GENERIC_ERROR,
   ORIGIN_ERROR,
+  NEW_CODE_NEEDED,
   isClosedTestRejection,
-  tooManyTries,
 } from '@/server/auth/errors';
+import { codeBrowserId, knownDeviceId, rememberKnownDevice } from '@/server/auth/code-cookies';
 import { loadMember } from '@/server/auth/member';
 import { requestIsSameOrigin } from '@/server/auth/origin';
 import {
-  allowEmailCodeCheck,
   allowEmailCodeSend,
+  beginEmailCodeCheck,
+  emailCodeSucceeded,
   refundEmailCodeSend,
 } from '@/server/auth/otp-limits';
 import { sessionClient } from '@/server/supabase-server';
@@ -59,7 +61,9 @@ async function sendNeutrally(
   captchaToken: string | undefined,
 ): Promise<EmailCodeResult> {
   try {
-    const limit = await allowEmailCodeSend(email);
+    const browserId = await codeBrowserId({ create: true });
+    if (browserId === null) return { status: 'sent' };
+    const limit = await allowEmailCodeSend(email, browserId, await knownDeviceId());
     if (!limit.ok) return { status: 'sent' };
     const supabase = await sessionClient();
     const { error } = await supabase.auth.signInWithOtp({
@@ -71,7 +75,7 @@ async function sendNeutrally(
       return { status: 'closed_test', message: CLOSED_TEST_MESSAGE };
     if (error.code === 'captcha_failed') {
       // No code went out: don't let a junk token use up this address's allowance.
-      await refundEmailCodeSend(email).catch(() => undefined);
+      await refundEmailCodeSend(limit.sessionId).catch(() => undefined);
       return { status: 'error', message: CAPTCHA_ERROR };
     }
     return { status: 'sent' };
@@ -89,8 +93,12 @@ export async function verifyEmailCode(input: unknown, next: unknown): Promise<Ve
   if (!parsed.success) return { status: 'error', message: 'Enter the 6-digit code.' };
   let destination: string;
   try {
-    const limit = await allowEmailCodeCheck(parsed.data.email);
-    if (!limit.ok) return { status: 'error', message: tooManyTries(limit.retryAfterSeconds) };
+    // Only the browser that asked for the code may check it, a limited number of times. Out of
+    // tries (or the address hit its wrong-code ceiling): ask for a new code. Never a timed lock.
+    const browserId = await codeBrowserId({ create: false });
+    const checkId =
+      browserId === null ? null : await beginEmailCodeCheck(parsed.data.email, browserId);
+    if (checkId === null) return { status: 'error', message: NEW_CODE_NEEDED };
     const supabase = await sessionClient();
     const { error } = await supabase.auth.verifyOtp({
       email: parsed.data.email,
@@ -98,6 +106,9 @@ export async function verifyEmailCode(input: unknown, next: unknown): Promise<Ve
       type: 'email',
     });
     if (error !== null) return { status: 'error', message: CODE_ERROR };
+    await emailCodeSucceeded(parsed.data.email, checkId, await rememberKnownDevice()).catch(
+      () => undefined,
+    );
     destination = destinationAfterSignIn(await loadMember(), next);
   } catch {
     return { status: 'error', message: GENERIC_ERROR };

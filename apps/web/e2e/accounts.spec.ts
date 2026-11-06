@@ -24,6 +24,35 @@ function alert(page: Page, text: string | RegExp) {
   return page.getByRole('main').getByRole('alert').filter({ hasText: text });
 }
 
+let lastSend = 0;
+
+/**
+ * On the email step: asks for a code and waits for the neutral "sent" answer. Sends are spaced
+ * just over 1 s apart because local Supabase allows one email per address per second
+ * ([auth.email] max_frequency), and a skipped email would make the counts below flaky.
+ */
+async function requestCode(page: Page, email: string) {
+  const wait = lastSend + 1100 - Date.now();
+  if (wait > 0) await page.waitForTimeout(wait);
+  lastSend = Date.now();
+  const main = page.getByRole('main');
+  await main.getByLabel('Email').fill(email);
+  await main.getByRole('button', { name: 'Send code' }).click();
+  await expect(main.getByRole('status')).toHaveText(
+    'We sent a code if this address can sign in. Check your inbox.',
+  );
+}
+
+async function enterCode(page: Page, code: string) {
+  const main = page.getByRole('main');
+  await main.getByLabel('6-digit code').fill(code);
+  await main.getByRole('button', { name: 'Continue' }).click();
+}
+
+function wrongCode(right: string): string {
+  return right === '000000' ? '111111' : '000000';
+}
+
 async function newMember(testInfo: TestInfo, label = 'm'): Promise<string> {
   const email = testEmail(testInfo, label);
   created.push(email);
@@ -199,55 +228,122 @@ test.describe('accounts (D-34)', () => {
     ).toBeVisible();
   });
 
-  test('wrong email codes are limited per address, so a code cannot be guessed', async ({
+  // Email-code limits (Brief 03C.1 §3.0): checks are bound to the browser that asked for the code,
+  // and wrong codes never start a timed lock, so nobody without the inbox can block its owner.
+  test("wrong email codes end this browser's tries, then a new code works (no timed lock)", async ({
     page,
   }, testInfo) => {
     const email = await newMember(testInfo);
     await page.goto('/sign-in');
     const main = page.getByRole('main');
     await main.getByRole('button', { name: 'Continue with email' }).click();
-    await main.getByLabel('Email').fill(email);
-    await main.getByRole('button', { name: 'Send code' }).click();
-    await expect(main.getByRole('status')).toContainText('We sent a code if this address');
-    const right = await emailCode(email);
-    const wrong = right === '000000' ? '111111' : '000000';
-    for (let check = 1; check <= 10; check += 1) {
-      await main.getByLabel('6-digit code').fill(wrong);
-      await main.getByRole('button', { name: 'Continue' }).click();
-      await expect(alert(page, /code/i)).toBeVisible();
+    let started = new Date(Date.now() - 1000);
+    await requestCode(page, email);
+    const wrong = wrongCode(await emailCode(email, started));
+    for (let check = 1; check <= 5; check += 1) {
+      await enterCode(page, wrong);
+      await expect(
+        alert(page, 'That code didn’t work. Check it, or send a new one.'),
+      ).toBeVisible();
     }
-    // Even the right code is refused once the limit is reached.
-    await main.getByLabel('6-digit code').fill(right);
-    await main.getByRole('button', { name: 'Continue' }).click();
-    await expect(alert(page, /^Too many tries\. Try again in \d+ minutes?\.$/)).toBeVisible();
-    await expect(page).toHaveURL(/\/sign-in/);
+    await enterCode(page, wrong);
+    await expect(
+      alert(page, 'That code has expired or was replaced. Send a new code.'),
+    ).toBeVisible();
+
+    await main.getByRole('button', { name: 'Send a new code' }).click();
+    started = new Date(Date.now() - 1000);
+    await requestCode(page, email);
+    await enterCode(page, await emailCode(email, started));
+    await expect(page).toHaveURL(/\/welcome/);
   });
 
-  test('email codes are limited per address, and the answer stays the same (no enumeration)', async ({
+  test('someone guessing from other browsers cannot block the inbox owner', async ({
+    browser,
+    page,
+  }, testInfo) => {
+    const email = await newMember(testInfo);
+    await page.goto('/sign-in');
+    await page.getByRole('main').getByRole('button', { name: 'Continue with email' }).click();
+    await requestCode(page, email);
+
+    // Four attacker browsers ask for codes and guess: 20 wrong checks pass the 15 ceiling, which
+    // invalidates every outstanding code (the owner's too) instead of locking the address.
+    for (let attacker = 1; attacker <= 4; attacker += 1) {
+      const context = await browser.newContext();
+      const other = await context.newPage();
+      await other.goto('/sign-in');
+      await other.getByRole('main').getByRole('button', { name: 'Continue with email' }).click();
+      const started = new Date(Date.now() - 1000);
+      await requestCode(other, email);
+      const wrong = wrongCode(await emailCode(email, started));
+      for (let check = 1; check <= 5; check += 1) {
+        await enterCode(other, wrong);
+        await expect(alert(other, /code/)).toBeVisible();
+      }
+      await context.close();
+    }
+
+    // The owner asks for a fresh code from their own browser and signs in.
+    await page.getByRole('main').getByRole('button', { name: 'Send a new code' }).click();
+    const started = new Date(Date.now() - 1000);
+    await requestCode(page, email);
+    await enterCode(page, await emailCode(email, started));
+    await expect(page).toHaveURL(/\/welcome/);
+  });
+
+  test("a known device still gets a code after someone uses up the address's sends", async ({
+    browser,
+    context,
+    page,
+  }, testInfo) => {
+    const email = await newMember(testInfo);
+    // The owner signed in on this browser before: it holds the known-device cookie.
+    await page.goto('/sign-in');
+    await signInWithEmail(page, email);
+    await expect(page).toHaveURL(/\/welcome/);
+    await context.clearCookies({ name: /^sb-/ });
+    expect(await emailCount(email)).toBe(1);
+
+    // An attacker uses up the address pool (6 an hour) and the overflow slot (1 per 10 min).
+    const sends = [3, 3, 1];
+    for (const count of sends) {
+      const attacker = await browser.newContext();
+      const other = await attacker.newPage();
+      await other.goto('/sign-in');
+      await other.getByRole('main').getByRole('button', { name: 'Continue with email' }).click();
+      for (let send = 1; send <= count; send += 1) {
+        await requestCode(other, email);
+        await other.getByRole('main').getByRole('button', { name: 'Send a new code' }).click();
+      }
+      await attacker.close();
+    }
+    // 1 (owner) + 5 normal + 1 overflow went out; the last attacker request got the neutral reply.
+    await expect.poll(() => emailCount(email)).toBe(7);
+
+    await page.goto('/sign-in');
+    await signInWithEmail(page, email);
+    await expect(page).toHaveURL(/\/welcome/);
+    expect(await emailCount(email)).toBe(8);
+  });
+
+  test('email code sends are limited per browser, and the answer stays the same (no enumeration)', async ({
     page,
   }, testInfo) => {
     const email = await newMember(testInfo);
     await page.goto('/sign-in');
     const main = page.getByRole('main');
     await main.getByRole('button', { name: 'Continue with email' }).click();
-    for (let send = 1; send <= 6; send += 1) {
-      await main.getByLabel('Email').fill(email);
-      await main.getByRole('button', { name: 'Send code' }).click();
-      await expect(main.getByRole('status')).toHaveText(
-        'We sent a code if this address can sign in. Check your inbox.',
-      );
+    for (let send = 1; send <= 4; send += 1) {
+      await requestCode(page, email);
       await main.getByRole('button', { name: 'Send a new code' }).click();
     }
-    await expect.poll(() => emailCount(email)).toBe(5);
+    await expect.poll(() => emailCount(email)).toBe(3);
 
     // An address with no account gets exactly the same answer.
     const stranger = testEmail(testInfo, 'nobody');
     created.push(stranger);
-    await main.getByLabel('Email').fill(stranger);
-    await main.getByRole('button', { name: 'Send code' }).click();
-    await expect(main.getByRole('status')).toHaveText(
-      'We sent a code if this address can sign in. Check your inbox.',
-    );
+    await requestCode(page, stranger);
   });
 
   test('sign out everywhere ends the session in another browser', async ({ browser }, testInfo) => {
@@ -322,6 +418,15 @@ test.describe('accounts (D-34)', () => {
       expect(cookie.sameSite, cookie.name).toBe('Lax');
     }
     expect(await page.evaluate(() => document.cookie)).not.toContain('auth-token');
+    // Email-code browser binding and known-device cookies (§3.0): httpOnly, never script-readable.
+    const cookies = await context.cookies();
+    const codeBrowser = cookies.find(({ name }) => name === 'hx_ec');
+    const knownDevice = cookies.find(({ name }) => name === 'hx_kd');
+    expect(codeBrowser?.httpOnly).toBe(true);
+    expect(codeBrowser?.sameSite).toBe('Strict');
+    expect(knownDevice?.httpOnly).toBe(true);
+    expect(knownDevice?.sameSite).toBe('Lax');
+    expect(await page.evaluate(() => document.cookie)).not.toMatch(/hx_ec|hx_kd/);
   });
 });
 
