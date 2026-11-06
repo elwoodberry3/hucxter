@@ -6,6 +6,9 @@ export const PRODUCTION_URL = 'http://localhost:3101';
 /** Third test server: APP_ENV=qa with INVITE_ONLY=false (see playwright.config.ts). */
 export const INVITE_OFF_URL = 'http://localhost:3102';
 
+/** Fourth test server: APP_ENV=local, VIDEO_PROVIDER=fake, invite gate off. */
+export const LOCAL_URL = 'http://localhost:3103';
+
 export const GATED_ROUTES = ['/sell', '/messages', '/saved', '/listings', '/profile', '/settings'];
 
 /** Pages covered by the axe and CSP checks. */

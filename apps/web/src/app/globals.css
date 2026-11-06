@@ -34,6 +34,7 @@
   --hx-art-1: #e9e4ff;
   /* Video stage behind a letterboxed player (both modes stay dark, like a viewer). */
   --hx-stage: #1c1b22;
+  --hx-on-stage: #f4f3f8;
   --hx-art-2: #dff3ea;
   --hx-art-3: #ffe9d9;
   --hx-art-4: #dcecff;

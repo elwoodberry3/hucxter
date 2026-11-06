@@ -43,3 +43,14 @@ export function subjectHash(
   const key = createHmac('sha256', secretKey()).update('hucxter-otp-limits-v1').digest();
   return createHmac('sha256', key).update(`${kind}:${normalized}`).digest('hex');
 }
+
+/**
+ * Event actor id (Founder amendment 4): HMAC of a member id or a per-day guest id, keyed with a
+ * salt derived from the UTC date (`HMAC(server secret, 'listing_viewed:' || date)`). The salt is
+ * never stored, so the same person can't be linked across days.
+ */
+export function dailyActorHash(subject: string, now = new Date()): string {
+  const day = now.toISOString().slice(0, 10);
+  const salt = createHmac('sha256', secretKey()).update(`listing_viewed:${day}`).digest();
+  return createHmac('sha256', salt).update(subject).digest('hex');
+}

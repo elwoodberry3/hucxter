@@ -46,7 +46,7 @@ export const PriceDollars = z
   .max(100_000, 'Prices go up to $100,000.');
 
 export const ListingAttributeValues = z.record(
-  z.string().regex(/^[a-z_]{1,40}$/),
+  z.string().regex(/^[a-z][a-z0-9_]{0,39}$/),
   z.union([z.string().max(80), z.number(), z.boolean()]),
 );
 

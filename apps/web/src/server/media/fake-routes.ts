@@ -59,7 +59,9 @@ export async function fakeUpload(request: Request, mediaId: string): Promise<Res
   const end = range === null ? body.byteLength - 1 : Number(range[2]);
   if (total > mediaConfig().maxBytes) return new Response('Too large', { status: 413 });
   received.set(mediaId, (received.get(mediaId) ?? 0) + body.byteLength);
-  if (end + 1 < total) return new Response(null, { status: 308 });
+  if (end + 1 < total) {
+    return new Response(null, { status: 308, headers: { Range: `bytes=0-${String(end)}` } });
+  }
 
   received.delete(mediaId);
   const value = (await cookies()).get(FAKE_OUTCOME_COOKIE)?.value;

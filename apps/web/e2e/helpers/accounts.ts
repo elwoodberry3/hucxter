@@ -149,3 +149,30 @@ export async function completeOnboarding(
   await page.getByLabel('What should people call you?').fill(name);
   await page.getByRole('button', { name: 'Finish' }).click();
 }
+
+/**
+ * Signs up a new e2e member at `base` (default: the test's baseURL) and finishes onboarding.
+ * Returns the address so the test can delete the account afterwards.
+ */
+export async function signUpVerified(
+  page: Page,
+  testInfo: TestInfo,
+  {
+    base = '',
+    slot = 0,
+    label = 'm',
+    zip,
+    name,
+  }: { base?: string; slot?: 0 | 1; label?: string; zip?: string; name?: string } = {},
+): Promise<string> {
+  const email = testEmail(testInfo, label);
+  await invite(email);
+  await page.goto(`${base}/sign-in?next=%2Fsettings`);
+  await signInWithEmail(page, email);
+  await completeOnboarding(page, testPhone(testInfo, slot), {
+    ...(zip === undefined ? {} : { zip }),
+    ...(name === undefined ? {} : { name }),
+  });
+  await expect(page).toHaveURL(`${base}/settings`);
+  return email;
+}

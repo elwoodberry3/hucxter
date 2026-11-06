@@ -16,6 +16,7 @@
     "@hucxter/contracts": "workspace:*",
     "@mux/mux-player-react": "3.14.1",
     "@mux/ts": "15.6.1",
+    "@mux/upchunk": "3.5.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
     "lucide-react": "^1.61.0",
