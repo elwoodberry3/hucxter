@@ -120,7 +120,8 @@ never the value itself. They outlive account deletion, so deleting and re-creati
 doesn't reset the per-number limits. To clear a member's limits, delete their rows from
 `public.otp_send_attempts` with the service role.
 
-**Known gap (accepted risk, needs Founder sign-off):** a signed-in member can call Supabase Auth's
+**Known gap (D-47: accepted by the Founder on PR #9 for the closed QA only; a Supabase Send SMS hook
+must close it before the Phase I-B public beta):** a signed-in member can call Supabase Auth's
 `PUT /auth/v1/user` with their own session and the publishable key, changing their phone without
 going through the app. That skips the app's Turnstile check, these limits and the US-only number
 rules. Until a Supabase "Send SMS" hook enforces them at the source, the **Twilio Verify US-only
