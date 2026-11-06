@@ -3,7 +3,7 @@
 -- measured between snapped display points (checked when this test was written).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(46);
 
 -- Fixtures ----------------------------------------------------------------------------------
 insert into auth.users (id, email, aud, role, email_confirmed_at, phone_confirmed_at, phone) values
@@ -144,6 +144,7 @@ select lives_ok($$select public.admin_listing_remove('00000000-0000-4000-8000-00
 select is(public.media_playback((select id from public.listing_media where listing_id = '00000000-0000-4000-8000-0000000b0004')), null, 'no playback for removed media');
 select throws_ok($$select public.admin_listing_remove('00000000-0000-4000-8000-00000000a202', '00000000-0000-4000-8000-0000000b0005', 'x')$$, '42501', null, 'non-staff cannot remove');
 
+select public.events_insert('listing_viewed', '00000000-0000-4000-8000-0000000b0003', repeat('b', 64), null, '{}', 1::smallint, 'pre-consent-0');
 select ok(public.account_delete_prepare('00000000-0000-4000-8000-00000000a201') > 0, 'account deletion enqueues jobs');
 delete from auth.users where id = '00000000-0000-4000-8000-00000000a201';
 select ok(
@@ -153,6 +154,9 @@ select ok(
   (select count(*) from public.reports where target_id = '00000000-0000-4000-8000-0000000b0003') = 1
   and (select count(*) from public.listings where seller_id = '00000000-0000-4000-8000-00000000a201') = 0,
   'listings cascade away; reports about them remain');
+select is(
+  (select count(*)::int from public.events where listing_id = '00000000-0000-4000-8000-0000000b0003'),
+  1, 'events about deleted listings remain (no FK)');
 
 select * from finish();
 rollback;

@@ -3,6 +3,8 @@ import type { Page, TestInfo } from '@playwright/test';
 import {
   TEST_SMS_CODE,
   completeOnboarding,
+  localAdmin,
+  userIdFor,
   deleteE2eUsers,
   emailCode,
   emailCount,
@@ -404,6 +406,62 @@ test.describe('accounts (D-34)', () => {
     await expect(replayPage.getByRole('heading', { name: 'Verify your phone' })).toBeVisible();
     await context.close();
     await replay.close();
+  });
+
+  test('deleting the account: Mux jobs first, then listings cascade; reports and events stay (amendment 2)', async ({
+    page,
+  }, testInfo) => {
+    const email = await verifiedMember(page, testInfo);
+    const userId = await userIdFor(email);
+    const listing = await seedListing(testInfo, { owner: { id: userId, email } });
+    const db = localAdmin();
+    const media = await db.from('listing_media').select('id').eq('listing_id', listing.id).single();
+    const mediaId = (media.data as { id: string }).id;
+    const reported = await db.from('reports').insert({
+      reporter_id: null,
+      target_type: 'listing',
+      target_id: listing.id,
+      reason: 'other',
+    });
+    expect(reported.error).toBeNull();
+    // events is insert-only through events_insert, even for the service role.
+    const viewed = await db.rpc('events_insert', {
+      p_name: 'listing_viewed',
+      p_listing_id: listing.id,
+      p_actor_hash: 'a'.repeat(64),
+      p_viewer_id: null,
+      p_props: {},
+      p_schema_version: 1,
+      p_consent_version: 'pre-consent-0',
+    });
+    expect(viewed.error).toBeNull();
+
+    await page.getByLabel('Type DELETE to confirm').fill('DELETE');
+    await page.getByRole('button', { name: 'Delete my account' }).click();
+    await expect(page).toHaveURL('/?deleted=1');
+
+    const listings = await db.from('listings').select('id').eq('id', listing.id);
+    expect(listings.data).toEqual([]);
+    const jobs = await db
+      .from('jobs')
+      .select('kind')
+      .eq('payload->>asset_id', `fake-asset-${mediaId}`)
+      .order('kind');
+    expect((jobs.data as { kind: string }[]).map((j) => j.kind)).toEqual([
+      'mux_delete_asset',
+      'mux_delete_playback_id',
+    ]);
+    const reports = await db.from('reports').select('id').eq('target_id', listing.id);
+    expect(reports.data).toHaveLength(1);
+    const events = await db.from('events').select('id').eq('listing_id', listing.id);
+    expect(events.data).toHaveLength(1);
+    const audit = await db
+      .from('audit_log')
+      .select('action')
+      .eq('target_id', userId)
+      .like('action', 'account.%');
+    expect(audit.data).toEqual([{ action: 'account.deleted' }]);
+    await db.from('reports').delete().eq('target_id', listing.id);
   });
 
   test('settings: profile updates and the session list shows no IP', async ({ page }, testInfo) => {

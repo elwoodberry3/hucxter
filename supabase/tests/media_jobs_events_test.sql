@@ -38,6 +38,8 @@ select throws_ok(
 -- Jobs: service role only, claim locks, failures back off
 select ok(not has_function_privilege('authenticated', 'public.jobs_enqueue(text, jsonb, timestamptz)', 'execute'), 'members cannot enqueue jobs');
 select ok(not has_table_privilege('authenticated', 'public.jobs', 'select'), 'members cannot read jobs');
+-- Start from an empty queue (rolled back with the test), so rows left by e2e runs don't count.
+delete from public.jobs;
 select public.jobs_enqueue('mux_delete_asset', '{"asset_id": "a1"}');
 select is((select count(*)::int from public.jobs_claim(10, 60)), 1, 'a due job is claimed');
 select is((select count(*)::int from public.jobs_claim(10, 60)), 0, 'a claimed job is locked');
@@ -52,7 +54,8 @@ select ok(not has_table_privilege('anon', 'public.reports', 'select'), 'anon can
 select public.events_insert('listing_viewed', '00000000-0000-4000-8000-00000000d101', repeat('a', 64), null, '{}', 1::smallint, 'pre-consent-0');
 select public.events_insert('listing_viewed', '00000000-0000-4000-8000-00000000d101', repeat('a', 64), null, '{}', 1::smallint, 'pre-consent-0');
 select public.events_insert('listing_viewed', '00000000-0000-4000-8000-00000000d101', repeat('b', 64), '00000000-0000-4000-8000-00000000c101', '{}', 1::smallint, 'pre-consent-0');
-select is((select count(*)::int from public.events where name = 'listing_viewed'), 1,
+select is((select count(*)::int from public.events
+  where name = 'listing_viewed' and listing_id = '00000000-0000-4000-8000-00000000d101'), 1,
   'a repeat view the same day and the owner''s own view are not stored');
 select ok(not has_function_privilege('anon', 'public.events_insert(text, uuid, text, uuid, jsonb, smallint, text)', 'execute'), 'anon cannot write events');
 select ok(not has_table_privilege('authenticated', 'public.events', 'select'), 'members cannot read events');
