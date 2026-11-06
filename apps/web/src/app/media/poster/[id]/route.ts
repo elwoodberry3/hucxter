@@ -23,7 +23,14 @@ export async function GET(_request: Request, { params }: RouteContext<'/media/po
   if (view?.kind !== 'listing' || view.mediaId === null) {
     return new Response('Not found', { status: 404 });
   }
-  const url = await posterUrl(view.mediaId, 480);
+  let url: string | null;
+  try {
+    url = await posterUrl(view.mediaId, 480);
+  } catch {
+    // The video provider being down (or unconfigured) costs the card its poster, nothing more.
+    console.error('poster_unavailable');
+    url = null;
+  }
   if (url === null) return new Response('Not found', { status: 404 });
   return new Response(null, {
     status: 302,

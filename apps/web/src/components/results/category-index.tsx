@@ -1,7 +1,7 @@
 import type { Department, RawSearchParams, Subcategory } from '@hucxter/contracts';
-import { DEFAULT_RADIUS_MI, filtersFor, parseListingQuery } from '@hucxter/contracts';
+import { DEFAULT_RADIUS_MI, filtersFor } from '@hucxter/contracts';
 import { track } from '@/lib/analytics';
-import { searchListings } from '@/lib/listings';
+import { resultsPage } from '@/lib/listings';
 import { getViewerLocation } from '@/lib/viewer-location';
 import { Breadcrumb, CategoryHero, ResultsLayout, SubcategoryRow } from './results-layout';
 
@@ -16,15 +16,12 @@ export async function CategoryIndex({
   searchParams: RawSearchParams;
 }) {
   const filters = filtersFor(department, subcategory?.slug);
-  const query = parseListingQuery(searchParams, filters);
-  const location = await getViewerLocation();
-  const page = await searchListings({
-    query,
-    departmentSlug: department.slug,
-    ...(subcategory === undefined ? {} : { subcategorySlug: subcategory.slug }),
-    zip: location?.zip ?? null,
-    limit: 24,
-  });
+  const scope = { departmentSlug: department.slug, subcategorySlug: subcategory?.slug };
+  const [page, location] = await Promise.all([
+    resultsPage(scope, searchParams),
+    getViewerLocation(),
+  ]);
+  const { query } = page;
   track({
     name: 'category_viewed',
     department: department.slug,
@@ -62,6 +59,8 @@ export async function CategoryIndex({
         viewerRadiusMi={location?.radiusMi ?? DEFAULT_RADIUS_MI}
         surface="category"
         listings={page.items}
+        nextCursor={page.nextCursor}
+        scope={scope}
         areaLabel={location?.areaLabel ?? null}
         empty={{
           title: `Nothing in ${name} ${near} yet`,

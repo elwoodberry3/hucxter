@@ -1,4 +1,10 @@
-import { navDepartments, parseFeedItems } from '@hucxter/contracts';
+import {
+  DEFAULT_RADIUS_MI,
+  navDepartments,
+  parseFeedItems,
+  parseListingQuery,
+} from '@hucxter/contracts';
+import type { FeedItem } from '@hucxter/contracts';
 import { CategoryGrid } from '@/components/home/category-grid';
 import { FeedItemView } from '@/components/home/feed-item';
 import { HeroCarousel } from '@/components/home/hero-carousel';
@@ -6,10 +12,14 @@ import { PromoStrip } from '@/components/home/promo-strip';
 import { Rail } from '@/components/home/rail';
 import styles from '@/components/home/home.module.css';
 import { PROMO_STRIP, activeSlides, homeFeed } from '@/lib/house-content';
+import { searchListings } from '@/lib/listings';
+import type { ListingSearch } from '@/lib/listings';
 import { getTaxonomy } from '@/lib/taxonomy';
 import { getViewerLocation } from '@/lib/viewer-location';
 
 const FEATURED_RAILS = 3;
+const RAIL_SIZE = 12;
+const COMPACT_RAIL_SIZE = 8;
 
 /** Home = Feed = All (ADR-0009). Looks full with zero listings, and never shows fake ones. */
 export default async function HomePage() {
@@ -22,8 +32,28 @@ export default async function HomePage() {
     .slice(0, FEATURED_RAILS);
   const free = taxonomy.departments.find((department) => department.attributes.free_only === true);
 
-  // Listings arrive with Brief 04; until then every rail shows its invitation card.
-  const listingItems = feed.filter((item) => item.type === 'listing');
+  // Real listings near the viewer; an empty rail shows its invitation card instead.
+  const base: Omit<ListingSearch, 'query' | 'limit'> = {
+    zip: location?.zip ?? null,
+    radiusMi: location?.radiusMi ?? DEFAULT_RADIUS_MI,
+  };
+  const defaults = parseListingQuery({});
+  const [newest, freeStuff, ...byDepartment] = await Promise.all([
+    searchListings({ ...base, query: defaults, limit: RAIL_SIZE }),
+    searchListings({ ...base, query: { ...defaults, free: true }, limit: RAIL_SIZE }),
+    ...featured.map((department) =>
+      searchListings({
+        ...base,
+        query: defaults,
+        departmentSlug: department.slug,
+        limit: COMPACT_RAIL_SIZE,
+      }),
+    ),
+  ]);
+  // The New rail goes through the typed feed envelope (hucxter-event-taxonomy §1).
+  const listingItems = parseFeedItems(
+    newest.items.map((listing): FeedItem => ({ type: 'listing', id: listing.id, listing })),
+  ).flatMap((item) => (item.type === 'listing' ? [item.listing] : []));
   const promoItems = feed.filter((item) => item.type !== 'listing');
 
   return (
@@ -36,7 +66,7 @@ export default async function HomePage() {
         id="new"
         title={`New ${near}`}
         seeAll={{ label: 'Browse all', href: '/search' }}
-        listings={listingItems.map((item) => item.listing)}
+        listings={listingItems}
         invitation={{
           title: `Be the first to list something ${near}`,
           body: 'New listings from people in your area will show up here. Post a short video of something you’re not using.',
@@ -54,8 +84,8 @@ export default async function HomePage() {
         <Rail
           id="free"
           title={`Free stuff ${near}`}
-          seeAll={{ label: `See ${free.name}`, href: `/c/${free.slug}` }}
-          listings={[]}
+          seeAll={{ label: 'See all free stuff', href: '/search?free=true' }}
+          listings={freeStuff.items}
           invitation={{
             title: `Giving something away? Be the first ${near}`,
             body: 'Post something you’re giving away and a neighbor can pick it up.',
@@ -67,14 +97,14 @@ export default async function HomePage() {
       )}
 
       <div className={styles.railGrid}>
-        {featured.map((department) => (
+        {featured.map((department, index) => (
           <Rail
             compact
             key={department.slug}
             id={department.slug}
             title={`${department.name} ${near}`}
             seeAll={{ label: `See ${department.name}`, href: `/c/${department.slug}` }}
-            listings={[]}
+            listings={byDepartment[index]?.items ?? []}
             invitation={{
               title: `Be the first to list ${department.name.toLowerCase()} ${near}`,
               body: `Nobody nearby has posted in ${department.name} yet. Your listing could be the first one buyers see.`,

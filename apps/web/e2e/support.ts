@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext, BrowserContext } from '@playwright/test';
 
 /** Second test server: same build with APP_ENV=production (see playwright.config.ts). */
 export const PRODUCTION_URL = 'http://localhost:3101';
@@ -8,6 +8,25 @@ export const INVITE_OFF_URL = 'http://localhost:3102';
 
 /** Fourth test server: APP_ENV=local, VIDEO_PROVIDER=fake, invite gate off. */
 export const LOCAL_URL = 'http://localhost:3103';
+
+/**
+ * A viewer area more than 100 mi from every e2e fixture (listings are seeded in Portland 97205,
+ * and 75009 is the "outside the radius" viewer), so empty-state checks stay empty while other
+ * specs seed listings in parallel.
+ */
+export const EMPTY_AREA = { zip: '59001', label: 'Absarokee' } as const;
+
+/** Sets the confirmed-location cookie (hx_loc: ZIP + radius); localhost cookies span ports. */
+export async function viewFrom(context: BrowserContext, zip: string, radiusMi = 25) {
+  await context.addCookies([
+    { name: 'hx_loc', value: `${zip}.${String(radiusMi)}`, domain: 'localhost', path: '/' },
+  ]);
+}
+
+/** The same cookie as a request header, for APIRequestContext checks. */
+export const locationHeader = (zip: string, radiusMi = 25) => ({
+  Cookie: `hx_loc=${zip}.${String(radiusMi)}`,
+});
 
 export const GATED_ROUTES = ['/sell', '/messages', '/saved', '/listings', '/profile', '/settings'];
 

@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { DESKTOP_ONLY, SERVER_ONLY, categoryUrls } from './support';
+import {
+  DESKTOP_ONLY,
+  EMPTY_AREA,
+  SERVER_ONLY,
+  categoryUrls,
+  locationHeader,
+  viewFrom,
+} from './support';
 
 test.describe('category index and search', () => {
   test('every department and subcategory renders with filters and an empty state', async ({
@@ -10,7 +17,7 @@ test.describe('category index and search', () => {
     expect(urls.filter((url) => url.split('/').length === 3)).toHaveLength(14);
     expect(urls.length).toBeGreaterThan(80);
     for (const url of urls) {
-      const response = await request.get(url);
+      const response = await request.get(url, { headers: locationHeader(EMPTY_AREA.zip) });
       expect(response.status(), url).toBe(200);
       const html = await response.text();
       expect(html, url).toContain('id="filters-heading"');
@@ -84,10 +91,11 @@ test.describe('category index and search', () => {
     await expect(page).toHaveURL('/c/electronics/phones-tablets');
   });
 
-  test('empty state offers Sell, a wider radius, and all categories', async ({ page }) => {
+  test('empty state offers Sell, a wider radius, and all categories', async ({ page, context }) => {
+    await viewFrom(context, EMPTY_AREA.zip);
     await page.goto('/c/home/furniture?distance=10');
     await expect(
-      page.getByRole('heading', { name: 'Nothing in Furniture near Portland yet' }),
+      page.getByRole('heading', { name: `Nothing in Furniture near ${EMPTY_AREA.label} yet` }),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sell in Furniture' })).toHaveAttribute(
       'href',

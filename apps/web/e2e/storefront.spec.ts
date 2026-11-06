@@ -1,6 +1,6 @@
 import { HealthResponse } from '@hucxter/contracts';
 import { expect, test } from '@playwright/test';
-import { DESKTOP_ONLY } from './support';
+import { DESKTOP_ONLY, EMPTY_AREA, viewFrom } from './support';
 
 test.describe('storefront shell', () => {
   test('has no app sidebar and exactly one search field', async ({ page, isMobile }) => {
@@ -49,7 +49,11 @@ test.describe('storefront shell', () => {
     );
   });
 
-  test('home looks complete with zero listings and never shows fake ones', async ({ page }) => {
+  test('home looks complete with zero listings and never shows fake ones', async ({
+    page,
+    context,
+  }) => {
+    await viewFrom(context, EMPTY_AREA.zip);
     await page.goto('/');
     await expect(page).toHaveTitle('Hucxter');
     await expect(page.getByRole('region', { name: 'Featured' })).toBeVisible();
@@ -57,8 +61,10 @@ test.describe('storefront shell', () => {
     await expect(
       page.getByRole('region', { name: 'Shop by category' }).getByRole('listitem'),
     ).toHaveCount(14);
-    await expect(page.getByRole('heading', { name: /^New near Portland$/ })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /^Free stuff near Portland$/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `New near ${EMPTY_AREA.label}` })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: `Free stuff near ${EMPTY_AREA.label}` }),
+    ).toBeVisible();
     await expect(page.getByRole('heading', { name: /^Be the first/ }).first()).toBeVisible();
     const promo = page.getByRole('complementary', { name: 'Promoted by Hucxter' });
     await expect(promo).toBeVisible();
