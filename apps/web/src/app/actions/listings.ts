@@ -2,6 +2,7 @@
 
 import { ListingIdInput, StatusChangeInput } from '@hucxter/contracts';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { GENERIC_ERROR, ORIGIN_ERROR } from '@/server/auth/errors';
 import { loadMember } from '@/server/auth/member';
 import { requestIsSameOrigin } from '@/server/auth/origin';
@@ -61,6 +62,7 @@ export async function setListingStatus(input: unknown): Promise<OwnerResult> {
   return { status: 'ok' };
 }
 
+/** On success it navigates to /listings?deleted=1 (a client push would race the revalidation). */
 export async function deleteListing(input: unknown): Promise<OwnerResult> {
   const userId = await verifiedUserId();
   if (typeof userId !== 'string') return userId;
@@ -74,5 +76,5 @@ export async function deleteListing(input: unknown): Promise<OwnerResult> {
   if (error !== null) return { status: 'error', message: 'We couldn’t delete that listing.' };
   revalidatePath('/listings');
   revalidatePath('/');
-  return { status: 'ok' };
+  redirect('/listings?deleted=1');
 }

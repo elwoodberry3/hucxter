@@ -1,7 +1,9 @@
 import 'server-only';
+import { CONDITION_LABELS } from '@hucxter/contracts';
 import type { ListingCondition } from '@hucxter/contracts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import type { DetailsValues } from '@/components/sell/details-form';
 
 /**
  * The member's own listings, read under RLS (listings_select_own: own rows, not deleted; no point
@@ -120,34 +122,130 @@ export async function loadOwnListing(
   return toOwnListing(row, (await mediaFor(session, [row.id])).get(row.id));
 }
 
-/** Newest first, at most `limit` (keyset on updated_at, id). */
+/** /listings tabs (Brief 03C.1 §3.6). Every own listing is in exactly one. */
+export const OWN_TABS = ['drafts', 'processing', 'live', 'review', 'sold'] as const;
+export type OwnTab = (typeof OWN_TABS)[number];
+
+export interface OwnCursor {
+  updatedAt: string;
+  id: string;
+}
+
+export function encodeOwnCursor(cursor: OwnCursor): string {
+  return Buffer.from(`${cursor.updatedAt}|${cursor.id}`).toString('base64url');
+}
+
+export function decodeOwnCursor(value: string | undefined): OwnCursor | null {
+  if (value === undefined || value.length > 200) return null;
+  const [updatedAt, id] = Buffer.from(value, 'base64url').toString().split('|');
+  if (
+    !z.iso.datetime({ offset: true }).safeParse(updatedAt).success ||
+    !z.uuid().safeParse(id).success
+  ) {
+    return null;
+  }
+  return { updatedAt: updatedAt ?? '', id: id ?? '' };
+}
+
+/**
+ * One tab of the member's listings, newest edit first, keyset on (updated_at, id).
+ * - drafts: not published, video not processing
+ * - processing: not published, video processing (incl. "Publish when ready")
+ * - live: available or pending, approved, not removed
+ * - review: published but waiting for review, or removed by Hucxter
+ * - sold
+ */
 export async function loadOwnListings(
   session: SupabaseClient,
-  { limit = 50, before }: { limit?: number; before?: { updatedAt: string; id: string } } = {},
-): Promise<OwnListing[]> {
+  {
+    tab,
+    limit = 20,
+    before,
+  }: { tab: OwnTab; limit?: number; before?: OwnCursor | null | undefined },
+): Promise<{ items: OwnListing[]; nextCursor: string | null }> {
+  const pageSize = Math.min(Math.max(limit, 1), 50);
+  // Video-processing drafts: an inner join for the tab, an anti-join (no such row) for Drafts.
+  const columns =
+    tab === 'processing'
+      ? `${COLUMNS}, processing:listing_media!inner(status)`
+      : tab === 'drafts'
+        ? `${COLUMNS}, processing:listing_media(status)`
+        : COLUMNS;
   let query = session
     .from('listings')
-    .select(COLUMNS)
+    .select(columns)
     .order('updated_at', { ascending: false })
     .order('id', { ascending: false })
-    .limit(Math.min(limit, 100));
-  if (before !== undefined) {
-    if (
-      !z.iso.datetime({ offset: true }).safeParse(before.updatedAt).success ||
-      !z.uuid().safeParse(before.id).success
-    ) {
-      throw new Error('own_listings:bad_cursor');
-    }
-    query = query.or(
-      `updated_at.lt.${before.updatedAt},and(updated_at.eq.${before.updatedAt},id.lt.${before.id})`,
-    );
+    .limit(pageSize + 1);
+  const keyset =
+    before === null || before === undefined
+      ? null
+      : `updated_at.lt."${before.updatedAt}",and(updated_at.eq."${before.updatedAt}",id.lt.${before.id})`;
+  switch (tab) {
+    case 'drafts':
+      query = query
+        .eq('status', 'draft')
+        .eq('processing.status', 'processing')
+        .is('processing', null);
+      break;
+    case 'processing':
+      query = query.eq('status', 'draft').eq('processing.status', 'processing');
+      break;
+    case 'live':
+      query = query
+        .in('status', ['available', 'pending'])
+        .eq('review_state', 'ok')
+        .is('removed_at', null);
+      break;
+    case 'review':
+      query = query.neq('status', 'draft');
+      break;
+    case 'sold':
+      query = query.eq('status', 'sold').eq('review_state', 'ok').is('removed_at', null);
+      break;
+  }
+  // One `or` parameter: the review condition and the keyset combined.
+  const review = 'review_state.eq.needs_review,removed_at.not.is.null';
+  if (tab === 'review') {
+    query = query.or(keyset === null ? review : `and(or(${review}),or(${keyset}))`);
+  } else if (keyset !== null) {
+    query = query.or(keyset);
   }
   const { data, error } = await query;
   if (error !== null) throw new Error(`own_listings:${error.code}`);
   const rows = z.array(OwnListingRow).parse(data);
+  const page = rows.slice(0, pageSize);
   const media = await mediaFor(
     session,
-    rows.map((r) => r.id),
+    page.map((r) => r.id),
   );
-  return rows.map((row) => toOwnListing(row, media.get(row.id)));
+  const last = page.at(-1);
+  return {
+    items: page.map((row) => toOwnListing(row, media.get(row.id))),
+    nextCursor:
+      rows.length > pageSize && last !== undefined
+        ? encodeOwnCursor({ updatedAt: last.updated_at, id: last.id })
+        : null,
+  };
+}
+
+/** The details form's values for an own listing (/sell drafts and /listings/[id]/edit). */
+export function ownDetailsValues(own: OwnListing, fallbackZip: string | null): DetailsValues {
+  return {
+    title: own.title ?? '',
+    departmentSlug: own.departmentSlug ?? '',
+    categorySlug: own.categorySlug ?? '',
+    condition: own.condition !== null && own.condition in CONDITION_LABELS ? own.condition : '',
+    free: own.priceCents === 0,
+    price: own.priceCents === null || own.priceCents === 0 ? '' : String(own.priceCents / 100),
+    attributes: own.attributes,
+    description: own.description,
+    pickupZip: own.pickupZip ?? fallbackZip ?? '',
+  };
+}
+
+/** "Portland, OR" for an own listing's pickup area, or null. */
+export function ownAreaLabel(own: OwnListing): string | null {
+  if (own.areaLabel === null) return null;
+  return own.state === null ? own.areaLabel : `${own.areaLabel}, ${own.state}`;
 }

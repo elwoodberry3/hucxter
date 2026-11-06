@@ -1,12 +1,12 @@
 'use client';
 
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import { deleteListing, setListingStatus } from '@/app/actions/listings';
-import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { setListingStatus } from '@/app/actions/listings';
 import { cx } from '@/lib/cx';
+import { DeleteListingButton } from './delete-listing';
 import styles from './template.module.css';
 
 type Status = 'available' | 'pending' | 'sold';
@@ -29,7 +29,6 @@ export function OwnerControls({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
 
   const change = (next: Status) => {
     setError(null);
@@ -37,19 +36,6 @@ export function OwnerControls({
       const result = await setListingStatus({ listingId, status: next });
       if (result.status === 'error') setError(result.message);
       else router.refresh();
-    });
-  };
-
-  const remove = () => {
-    startTransition(async () => {
-      const result = await deleteListing({ listingId });
-      if (result.status === 'error') {
-        setError(result.message);
-        setConfirming(false);
-        return;
-      }
-      setConfirming(false);
-      router.push('/listings?deleted=1');
     });
   };
 
@@ -104,51 +90,11 @@ export function OwnerControls({
             Mark sold
           </button>
         )}
-        <button
-          type="button"
-          className={cx(styles.secondary, styles.destructiveText)}
-          disabled={pending}
-          onClick={() => {
-            setConfirming(true);
-          }}
-        >
-          <Trash2 size={16} aria-hidden="true" /> Delete
-        </button>
+        <DeleteListingButton listingId={listingId} onError={setError} />
       </div>
       <p role="alert" className={styles.ownerError}>
         {error}
       </p>
-      <BottomSheet
-        open={confirming}
-        onClose={() => {
-          setConfirming(false);
-        }}
-        title="Delete listing?"
-        size="peek"
-        footer={
-          <div className={styles.sheetActions}>
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={() => {
-                setConfirming(false);
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className={styles.destructive}
-              disabled={pending}
-              onClick={remove}
-            >
-              {pending ? 'Deleting…' : 'Delete listing'}
-            </button>
-          </div>
-        }
-      >
-        <p>Buyers won’t see it any more, and its video is deleted. This can’t be undone.</p>
-      </BottomSheet>
     </div>
   );
 }

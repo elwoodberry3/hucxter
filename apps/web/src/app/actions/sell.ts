@@ -138,7 +138,10 @@ export async function reportUpload(input: unknown): Promise<void> {
 }
 
 /** Step 3 (and later edits): title, category, condition, price, attributes, description, ZIP. */
-export async function saveDetails(input: unknown): Promise<{ status: 'saved' } | SellError> {
+/** `inReview`: an edit to a published listing matched the prohibited-item check (now hidden). */
+export async function saveDetails(
+  input: unknown,
+): Promise<{ status: 'saved'; inReview: boolean } | SellError> {
   const userId = await verifiedUserId();
   if (typeof userId !== 'string') return userId;
   const parsed = ListingDetailsInput.safeParse(input);
@@ -179,6 +182,9 @@ export async function saveDetails(input: unknown): Promise<{ status: 'saved' } |
   const supabase = await sessionClient();
   const before = await loadOwnListing(supabase, details.listingId);
   if (before === null) return { status: 'error', message: NOT_FOUND };
+  // Published listings are re-checked on every edit (drafts are checked when they publish).
+  const flagged =
+    before.status !== 'draft' && prohibitedMatches(details.title, details.description).length > 0;
   const { error } = await supabase.rpc('listing_update_details', {
     p_id: details.listingId,
     p_title: details.title,
@@ -188,6 +194,7 @@ export async function saveDetails(input: unknown): Promise<{ status: 'saved' } |
     p_attributes: attributes.data,
     p_description: details.description,
     p_pickup_zip: details.pickupZip,
+    p_needs_review: flagged,
   });
   if (error !== null) {
     if (error.code === '23503') {
@@ -207,8 +214,11 @@ export async function saveDetails(input: unknown): Promise<{ status: 'saved' } |
       { listingId: before.id, actor: userId },
     );
   }
-  if (before.status !== 'draft') revalidatePath(`/l/${before.id}`);
-  return { status: 'saved' };
+  if (before.status !== 'draft') {
+    revalidatePath(`/l/${before.id}`);
+    revalidatePath('/listings');
+  }
+  return { status: 'saved', inReview: flagged || before.reviewState === 'needs_review' };
 }
 
 export type PublishOutcome = 'published' | 'in_review' | 'scheduled' | 'not_ready';

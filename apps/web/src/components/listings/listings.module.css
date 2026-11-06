@@ -1,0 +1,207 @@
+/* My Listings (Brief 03C.1 §3.6): tabs, then one row per listing. */
+
+.page {
+  display: grid;
+  /* minmax(0, …): the tab strip scrolls inside the page instead of widening it. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--hx-space-4);
+  max-width: 56rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hx-space-3);
+}
+
+.heading {
+  font-size: var(--hx-text-large-title);
+  font-weight: 800;
+}
+
+.notice {
+  padding: var(--hx-space-3) var(--hx-space-4);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-accent-subtle);
+  color: var(--hx-label);
+  font-weight: 600;
+}
+
+.tabs ul {
+  display: flex;
+  gap: var(--hx-space-2);
+  margin: 0;
+  padding: 0 0 var(--hx-space-1);
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.tabs li {
+  flex: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-pill);
+  color: var(--hx-label);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: var(--hx-fill-hover);
+}
+
+.tab[aria-current='page'] {
+  border-color: var(--hx-accent);
+  background: var(--hx-accent-subtle);
+}
+
+.list {
+  display: grid;
+  gap: var(--hx-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--hx-space-4);
+  padding: var(--hx-space-3);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-art-1);
+  color: var(--hx-label-secondary);
+}
+
+.thumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.body {
+  display: grid;
+  gap: var(--hx-space-1);
+  justify-items: start;
+  min-width: 0;
+}
+
+.title {
+  max-width: 100%;
+  font-size: var(--hx-text-headline);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.title a {
+  color: var(--hx-label);
+  text-decoration: none;
+}
+
+.title a:hover {
+  text-decoration: underline;
+}
+
+.meta,
+.note {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+}
+
+.note[data-tone='warning'] {
+  color: var(--hx-warning-label);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--hx-space-2);
+  max-width: 24rem;
+}
+
+.primary,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hx-space-1);
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border-radius: var(--hx-radius-control);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.primary {
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+}
+
+.button {
+  border: 1px solid var(--hx-separator-strong);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+}
+
+.button:hover {
+  background: var(--hx-fill-hover);
+}
+
+.error:empty {
+  display: none;
+}
+
+.error {
+  flex-basis: 100%;
+  color: var(--hx-destructive);
+  font-size: var(--hx-text-subheadline);
+  text-align: right;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--hx-space-4);
+}
+
+/* Phones: actions wrap under the listing. */
+@media (width < 40rem) {
+  .row {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .error {
+    text-align: left;
+  }
+}

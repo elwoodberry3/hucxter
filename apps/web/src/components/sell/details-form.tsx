@@ -123,7 +123,8 @@ export function DetailsForm({
   departments: Department[];
   initial: DetailsValues;
   submitLabel: string;
-  onSaved: (values: DetailsValues) => void;
+  /** `inReview`: the saved edit (or an earlier one) holds a published listing for review. */
+  onSaved: (values: DetailsValues, outcome: { inReview: boolean }) => void;
 }) {
   const [values, setValues] = useState(initial);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -174,7 +175,7 @@ export function DetailsForm({
       });
       if (result.status === 'saved') {
         setFields({});
-        onSaved({ ...values, free });
+        onSaved({ ...values, free }, { inReview: result.inReview });
         return;
       }
       setFields(result.fields ?? {});

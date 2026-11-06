@@ -24,6 +24,10 @@ export interface SeedOptions {
   priceChangedDaysAgo?: number;
   /** When it went live, in days ago (default: now). */
   publishedDaysAgo?: number;
+  /** Stop before publishing: a draft with no video, or one whose video is processing. */
+  stage?: 'draft' | 'processing';
+  /** An existing e2e account to own it (default: a new throwaway seller). */
+  owner?: { id: string; email: string };
 }
 
 export interface SeededListing {
@@ -47,21 +51,22 @@ export async function seedListing(
   options: SeedOptions = {},
 ): Promise<SeededListing> {
   const db = localAdmin();
-  const sellerEmail = testEmail(testInfo, 'seller');
-  const created = await db.auth.admin.createUser({ email: sellerEmail, email_confirm: true });
-  if (created.error !== null) throw new Error('could not create the fixture seller');
-  const sellerId = created.data.user.id;
-  await check(
-    'profile',
-    db
-      .from('profiles')
-      .update({
-        display_name: 'Test Seller',
-        home_zip: options.zip ?? '97205',
-        age_attested_at: new Date().toISOString(),
-      })
-      .eq('id', sellerId),
-  );
+  const { sellerId, sellerEmail } =
+    options.owner === undefined
+      ? await newSeller(testInfo)
+      : { sellerId: options.owner.id, sellerEmail: options.owner.email };
+  if (options.owner === undefined)
+    await check(
+      'profile',
+      db
+        .from('profiles')
+        .update({
+          display_name: 'Test Seller',
+          home_zip: options.zip ?? '97205',
+          age_attested_at: new Date().toISOString(),
+        })
+        .eq('id', sellerId),
+    );
   const category = await check(
     'category',
     db
@@ -87,6 +92,7 @@ export async function seedListing(
       pickup_zip: options.zip ?? '97205',
     }),
   );
+  if (options.stage === 'draft') return { id, sellerEmail, sellerId };
   const mediaId = randomUUID();
   await check(
     'media',
@@ -103,6 +109,7 @@ export async function seedListing(
       })
       .eq('id', mediaId),
   );
+  if (options.stage === 'processing') return { id, sellerEmail, sellerId };
   await check(
     'media ready',
     db
@@ -170,6 +177,16 @@ export async function seedListing(
     }
   }
   return { id, sellerEmail, sellerId };
+}
+
+async function newSeller(testInfo: TestInfo): Promise<{ sellerId: string; sellerEmail: string }> {
+  const sellerEmail = testEmail(testInfo, 'seller');
+  const created = await localAdmin().auth.admin.createUser({
+    email: sellerEmail,
+    email_confirm: true,
+  });
+  if (created.error !== null) throw new Error('could not create the fixture seller');
+  return { sellerId: created.data.user.id, sellerEmail };
 }
 
 export async function deleteSeeded(listings: SeededListing[]): Promise<void> {

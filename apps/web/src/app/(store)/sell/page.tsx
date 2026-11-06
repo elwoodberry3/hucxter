@@ -1,4 +1,3 @@
-import { CONDITION_LABELS } from '@hucxter/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { SellFlow } from '@/components/sell/sell-flow';
@@ -6,7 +5,7 @@ import type { SellDraft } from '@/components/sell/sell-flow';
 import { mediaConfig } from '@/lib/env';
 import { getTaxonomy } from '@/lib/taxonomy';
 import { requireVerifiedMember } from '@/server/auth/gate';
-import { loadOwnListing } from '@/server/listings/owner';
+import { loadOwnListing, ownAreaLabel, ownDetailsValues } from '@/server/listings/owner';
 import { sessionClient } from '@/server/supabase-server';
 
 export const metadata: Metadata = { title: 'Sell', robots: { index: false } };
@@ -32,19 +31,8 @@ export default async function Page({ searchParams }: PageProps<'/sell'>) {
       listingId: own.id,
       media: own.media?.status ?? null,
       publishWhenReady: own.publishWhenReady,
-      areaLabel:
-        own.areaLabel === null ? null : `${own.areaLabel}, ${own.state ?? ''}`.replace(/, $/, ''),
-      details: {
-        title: own.title ?? '',
-        departmentSlug: own.departmentSlug ?? '',
-        categorySlug: own.categorySlug ?? '',
-        condition: own.condition !== null && own.condition in CONDITION_LABELS ? own.condition : '',
-        free: own.priceCents === 0,
-        price: own.priceCents === null || own.priceCents === 0 ? '' : String(own.priceCents / 100),
-        attributes: own.attributes,
-        description: own.description,
-        pickupZip: own.pickupZip ?? member.homeZip ?? '',
-      },
+      areaLabel: ownAreaLabel(own),
+      details: ownDetailsValues(own, member.homeZip),
     };
   }
 
