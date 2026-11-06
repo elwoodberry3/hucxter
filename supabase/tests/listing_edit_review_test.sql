@@ -2,7 +2,7 @@
 -- moves a live listing into review; a clean edit never clears review; drafts are unaffected.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(9);
 
 insert into auth.users (id, email, aud, role, email_confirmed_at, phone_confirmed_at, phone) values
   ('00000000-0000-4000-8000-00000000e201', 'editor@example.test', 'authenticated', 'authenticated', now(), now(), '15035550193');
@@ -14,7 +14,10 @@ values
   ('00000000-0000-4000-8000-0000000e0001', '00000000-0000-4000-8000-00000000e201', '97205', 'Lamp',
    (select id from public.categories where slug = 'lighting'), 'good', 1000),
   ('00000000-0000-4000-8000-0000000e0002', '00000000-0000-4000-8000-00000000e201', '97205', 'Draft lamp',
+   (select id from public.categories where slug = 'lighting'), 'good', 1000),
+  ('00000000-0000-4000-8000-0000000e0003', '00000000-0000-4000-8000-00000000e201', '97205', 'Scheduled lamp',
    (select id from public.categories where slug = 'lighting'), 'good', 1000);
+update public.listings set publish_when_ready = true where id = '00000000-0000-4000-8000-0000000e0003';
 insert into public.listing_media (owner_id, listing_id, status)
 values ('00000000-0000-4000-8000-00000000e201', '00000000-0000-4000-8000-0000000e0001', 'awaiting_upload');
 update public.listing_media set status = 'processing' where listing_id = '00000000-0000-4000-8000-0000000e0001';
@@ -42,6 +45,12 @@ select is((select review_state::text from public.listings where id = '00000000-0
 
 select public.listing_update_details('00000000-0000-4000-8000-0000000e0002', 'Draft lamp', 'lighting', 'good', 1000, '{}', 'Flagged', '97205', true);
 select is((select review_state::text from public.listings where id = '00000000-0000-4000-8000-0000000e0002'), 'ok', 'drafts are checked at publish, not on edit');
+
+-- Trust-safety H1: the ready webhook publishes a scheduled draft without another check.
+select public.listing_update_details('00000000-0000-4000-8000-0000000e0003', 'Scheduled lamp', 'lighting', 'good', 1000, '{}', 'Clean', '97205', false);
+select is((select review_state::text from public.listings where id = '00000000-0000-4000-8000-0000000e0003'), 'ok', 'a clean edit leaves a scheduled draft ok');
+select public.listing_update_details('00000000-0000-4000-8000-0000000e0003', 'Scheduled lamp', 'lighting', 'good', 1000, '{}', 'Flagged', '97205', true);
+select is((select review_state::text from public.listings where id = '00000000-0000-4000-8000-0000000e0003'), 'needs_review', 'a flagged edit holds a scheduled draft for review');
 
 reset role;
 select is(

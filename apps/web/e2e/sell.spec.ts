@@ -112,6 +112,44 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
     await expect(page.getByText('Available', { exact: true })).toBeVisible();
   });
 
+  test('an edit with a prohibited word after "Publish when ready" publishes into review, not live', async ({
+    page,
+    context,
+    browser,
+  }, testInfo) => {
+    created.push(await signUpVerified(page, testInfo, { base: LOCAL_URL }));
+    await fakeOutcome(context, 'slow');
+    const listingId = await draftWithDetails(page);
+    await page.getByRole('button', { name: 'Publish when ready' }).click();
+    await expect(
+      page.getByRole('status').filter({ hasText: 'We’ll publish it as soon' }),
+    ).toBeVisible();
+
+    await page.goto(`${LOCAL_URL}/sell?draft=${listingId}&step=details`);
+    await page.getByLabel(/Description/).fill('Comes with a rifle rack.');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('heading', { name: 'Review and publish' })).toBeVisible();
+
+    const ready = await page.request.post(
+      `${LOCAL_URL}/api/dev/fake-video/ready/${await mediaIdOf(listingId)}`,
+      { headers: { Origin: LOCAL_URL } },
+    );
+    expect(ready.status()).toBe(204);
+    await expect
+      .poll(async () => {
+        const { data } = await localAdmin()
+          .from('listings')
+          .select('status, review_state')
+          .eq('id', listingId)
+          .single();
+        return data;
+      })
+      .toEqual({ status: 'available', review_state: 'needs_review' });
+    const guest = await browser.newContext();
+    expect((await (await guest.newPage()).goto(`${LOCAL_URL}/l/${listingId}`))?.status()).toBe(404);
+    await guest.close();
+  });
+
   for (const outcome of ['error', 'overlong'] as const) {
     test(`a video that fails processing (${outcome}) can't be published`, async ({
       page,

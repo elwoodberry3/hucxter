@@ -182,9 +182,10 @@ export async function saveDetails(
   const supabase = await sessionClient();
   const before = await loadOwnListing(supabase, details.listingId);
   if (before === null) return { status: 'error', message: NOT_FOUND };
-  // Published listings are re-checked on every edit (drafts are checked when they publish).
-  const flagged =
-    before.status !== 'draft' && prohibitedMatches(details.title, details.description).length > 0;
+  // Published and scheduled ("Publish when ready") listings are re-checked on every edit: the ready
+  // webhook publishes a scheduled draft without another check. Other drafts are checked at publish.
+  const recheck = before.status !== 'draft' || before.publishWhenReady;
+  const flagged = recheck && prohibitedMatches(details.title, details.description).length > 0;
   const { error } = await supabase.rpc('listing_update_details', {
     p_id: details.listingId,
     p_title: details.title,
