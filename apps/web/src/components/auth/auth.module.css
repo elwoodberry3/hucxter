@@ -35,7 +35,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--hx-space-2);
-  height: 2.75rem;
+  min-height: var(--hx-target-min);
   border: 1px solid var(--hx-separator-strong);
   border-radius: var(--hx-radius-control);
   background: var(--hx-bg-elevated);
@@ -45,14 +45,101 @@
   cursor: pointer;
 }
 
+.method {
+  text-decoration: none;
+}
+
 .method:hover {
   background: var(--hx-fill-hover);
 }
 
-.availability {
-  color: var(--hx-label-secondary);
-  font-size: var(--hx-text-footnote);
-  text-align: center;
+/* Email/code forms here and the /welcome steps share these controls. */
+.form {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.input {
+  /* Fill the grid track; never widen it to the input's default size (overflowed 320 px phones). */
+  width: 100%;
+  min-width: 0;
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-3);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  /* 16px minimum so iOS Safari doesn't zoom into the field. */
+  font-size: max(1rem, var(--hx-text-body));
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--hx-destructive);
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3em;
+}
+
+.primary {
+  min-height: var(--hx-target-min);
+  margin-top: var(--hx-space-2);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.textButton {
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-2);
+  border: 0;
+  background: none;
+  color: var(--hx-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.textButton:hover {
+  text-decoration: underline;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--hx-space-2);
+}
+
+.error:empty {
+  display: none;
+}
+
+.error {
+  color: var(--hx-destructive);
+  font-size: var(--hx-text-subheadline);
+}
+
+.closed {
+  padding: var(--hx-space-3) var(--hx-space-4);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-warning-bg);
+  color: var(--hx-warning-label);
+  font-weight: 600;
 }
 
 .message:empty {
@@ -101,6 +188,34 @@
   padding: var(--hx-space-8);
 }
 
+/* Phones, and short viewports (an open on-screen keyboard): tighter, so the field and its button
+   stay in view together. */
+@media (width < 40rem), (height < 32rem) {
+  .sheetBody {
+    gap: var(--hx-space-3);
+    padding: var(--hx-space-6) var(--hx-space-4) var(--hx-space-4);
+  }
+
+  /* Keep the title clear of the close button. */
+  .sheetBody > .title {
+    padding-inline-end: var(--hx-space-10);
+  }
+}
+
+/* Very short (a small phone with the keyboard open): drop the supporting lines while typing; they
+   come back when the keyboard closes. */
+@media (height < 22rem) {
+  .sheet {
+    max-height: calc(100dvh - var(--hx-space-4));
+    margin-block: var(--hx-space-2) auto;
+  }
+
+  .sheet .lede,
+  .sheet .switch {
+    display: none;
+  }
+}
+
 .close {
   position: absolute;
   top: var(--hx-space-3);
@@ -108,8 +223,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
   border: 0;
   border-radius: var(--hx-radius-control);
   background: none;
@@ -119,4 +234,135 @@
 
 .close:hover {
   background: var(--hx-fill-hover);
+}
+
+.hint {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--hx-space-3);
+  min-height: var(--hx-target-min);
+  font-weight: 600;
+}
+
+.check input {
+  width: 1.375rem;
+  height: 1.375rem;
+  accent-color: var(--hx-accent);
+}
+
+.progress {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.steps {
+  display: flex;
+  gap: var(--hx-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  flex: 1;
+  height: 0.25rem;
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-separator-strong);
+}
+
+.steps li[data-done='true'] {
+  background: var(--hx-accent);
+}
+
+.secondaryButton {
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: var(--hx-fill-hover);
+}
+
+/* Phones: the card fills the width and sits near the top, so the keyboard doesn't cover it. */
+@media (width < 64rem) {
+  .page {
+    align-content: start;
+    padding: var(--hx-space-4) 0;
+  }
+
+  .card {
+    padding: var(--hx-space-4);
+    box-shadow: none;
+  }
+}
+
+.destructive {
+  background: var(--hx-destructive);
+  color: var(--hx-on-accent);
+}
+
+/* Settings page sections. */
+.settings {
+  display: grid;
+  gap: var(--hx-space-6);
+  width: min(100%, 36rem);
+  margin: 0 auto;
+  padding: var(--hx-space-6) 0;
+}
+
+.section {
+  display: grid;
+  gap: var(--hx-space-3);
+  padding: var(--hx-space-6);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.sectionTitle {
+  font-size: var(--hx-text-title-3);
+  font-weight: 700;
+}
+
+.sessions {
+  display: grid;
+  gap: var(--hx-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sessions li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--hx-space-2);
+  padding: var(--hx-space-2) 0;
+  border-bottom: 1px solid var(--hx-separator);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hx-space-2);
+}
+
+@media (width < 64rem) {
+  .section {
+    padding: var(--hx-space-4);
+  }
 }

@@ -44,6 +44,13 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   `service_areas` (Portland–Vancouver launch area), default ZIP 97205. Playwright runs 4 projects
   (desktop 1440/1280, mobile Chromium, mobile WebKit). Reference data migrations: 33,774 ZCTAs
   (50 states + DC + PR), taxonomy, `service_areas`; postal lookups cache hits only.
+- **3B (branch `brief-03b-accounts`):** email-code and Google sign-in (Facebook/TikTok removed),
+  `/welcome` onboarding (phone SMS, 18+, home ZIP, display name), `requireVerifiedMember()` in
+  `src/server/auth/gate.ts`, Origin check on every mutation, QA invite gate (`INVITE_ONLY` +
+  `before_user_created` hook, off locally), app-level OTP limits (`otp_send_attempts`), `/settings`
+  (sessions, sign out everywhere, delete). `SUPABASE_SECRET_KEY` is read only in
+  `src/server/admin-db.ts`. Runbook: `docs/runbooks/accounts.md`. e2e uses Mailpit and three
+  local servers (:3100 invite-only, :3101 production + Turnstile test keys, :3102 invite gate off).
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages

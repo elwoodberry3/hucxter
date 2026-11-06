@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authHref, safeNextPath } from './next-path';
+import { authHref, safeNextPath, welcomeHref } from './next-path';
 
 describe('safeNextPath', () => {
   it.each([
@@ -10,6 +10,8 @@ describe('safeNextPath', () => {
       '/c/electronics/gaming?condition=good#results',
     ],
     ['/search?q=red%20bike', '/search?q=red%20bike'],
+    ['/authors', '/authors'],
+    ['/welcome-pack', '/welcome-pack'],
   ])('accepts same-origin path %s', (input, expected) => {
     expect(safeNextPath(input)).toBe(expected);
   });
@@ -47,6 +49,13 @@ describe('safeNextPath', () => {
     '/%73ign-in',
     '/SIGN-IN',
     '/sign-in%2F',
+    '/welcome',
+    '/welcome?next=/sell',
+    '/Welcome/',
+    '/auth/callback?code=x',
+    '/auth/google',
+    '/AUTH/callback',
+    '/%61uth/callback',
     '',
   ])('rejects %j', (input) => {
     expect(safeNextPath(input)).toBeNull();
@@ -69,5 +78,14 @@ describe('authHref', () => {
     expect(authHref('//evil.example')).toBe('/sign-in');
     expect(authHref('/')).toBe('/sign-in');
     expect(authHref(null)).toBe('/sign-in');
+  });
+});
+
+describe('welcomeHref', () => {
+  it('keeps a safe next and drops unsafe ones', () => {
+    expect(welcomeHref('/sell')).toBe('/welcome?next=%2Fsell');
+    expect(welcomeHref('https://evil.example')).toBe('/welcome');
+    expect(welcomeHref('/welcome')).toBe('/welcome');
+    expect(welcomeHref('/')).toBe('/welcome');
   });
 });

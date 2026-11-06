@@ -42,9 +42,7 @@ test.describe('sign-in gating', () => {
     await expect(trigger).toBeFocused();
   });
 
-  test('gated actions open the sign-in sheet; methods say "Available in the next release"', async ({
-    page,
-  }) => {
+  test('gated actions open the sign-in sheet with Google and email (D-34)', async ({ page }) => {
     await page.goto('/dev/templates/listing');
     for (const [button, prompt] of [
       ['Is this still available?', 'Sign in to message this seller'],
@@ -61,27 +59,31 @@ test.describe('sign-in gating', () => {
       await page.keyboard.press('Enter');
       const sheet = page.getByRole('dialog', { name: prompt });
       await expect(sheet).toBeVisible();
-      for (const method of ['email', 'Facebook', 'TikTok']) {
-        await expect(sheet.getByRole('button', { name: `Continue with ${method}` })).toBeVisible();
-      }
-      await expect(sheet).toContainText('Available in the next release');
+      await expect(sheet.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
+        'href',
+        '/auth/google?next=%2Fdev%2Ftemplates%2Flisting',
+      );
+      await expect(sheet.getByRole('button', { name: 'Continue with email' })).toBeVisible();
+      await expect(sheet).not.toContainText(/Facebook|TikTok|next release/);
       await page.keyboard.press('Escape');
       await expect(sheet).toBeHidden();
       await expect(trigger).toBeFocused();
     }
   });
 
-  test('each sign-in method explains it is not available yet', async ({ page }) => {
+  test('sign-in offers only Google and email; email asks for a 6-digit code', async ({ page }) => {
     await page.goto('/sign-up?next=%2Fsell');
-    for (const method of ['email', 'Facebook', 'TikTok']) {
-      await page
-        .getByRole('main')
-        .getByRole('button', { name: `Continue with ${method}` })
-        .click();
-      await expect(page.getByRole('main').getByRole('status')).toHaveText(
-        `Signing in with ${method} is available in the next release.`,
-      );
-    }
+    const main = page.getByRole('main');
+    await expect(main.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
+      'href',
+      '/auth/google?next=%2Fsell',
+    );
+    await expect(main).not.toContainText(/Facebook|TikTok/);
+    await main.getByRole('button', { name: 'Continue with email' }).click();
+    const email = main.getByLabel('Email');
+    await expect(email).toHaveAttribute('type', 'email');
+    await expect(email).toHaveAttribute('autocomplete', 'email');
+    await expect(email).toBeFocused();
   });
 
   test('hostile next values are dropped', async ({ page }) => {

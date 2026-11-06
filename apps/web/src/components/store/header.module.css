@@ -301,3 +301,25 @@
     white-space: nowrap;
   }
 }
+
+/* Member avatar in the account control (initial of the display name). */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font-size: var(--hx-text-subheadline);
+  font-weight: 700;
+}
+
+button.popoverLink {
+  width: 100%;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

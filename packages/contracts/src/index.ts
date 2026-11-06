@@ -5,3 +5,4 @@ export * from './events';
 export * from './feed';
 export * from './search';
 export * from './listing';
+export * from './account';

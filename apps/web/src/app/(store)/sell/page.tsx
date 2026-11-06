@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { requireMember } from '@/lib/auth-gate';
+import { requireVerifiedMember } from '@/server/auth/gate';
 
 export const metadata: Metadata = { title: 'Sell' };
 
-/** Members only: guests are redirected to /sign-in?next=/sell. */
+/** Verified members only: guests go to /sign-in, unverified members to /welcome (D-34). */
 export default async function Page() {
-  await requireMember('/sell', 'sell');
+  await requireVerifiedMember('/sell', 'sell');
   return <h1>Sell</h1>;
 }

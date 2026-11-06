@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useViewer } from '@/components/auth/viewer-context';
 import { authHref } from '@/lib/next-path';
 import { isProductPath } from '@/lib/routes';
 import styles from './tab-bar.module.css';
@@ -37,6 +38,7 @@ export function TabBar() {
   const query = useSearchParams().toString();
   const here = query === '' ? pathname : `${pathname}?${query}`;
   const [typing, setTyping] = useState(false);
+  const viewer = useViewer();
 
   useEffect(() => {
     const update = () => {
@@ -64,9 +66,15 @@ export function TabBar() {
     { label: 'Inbox', href: '/messages', icon: Inbox, match: (p) => p === '/messages' },
     {
       label: 'Account',
-      href: pathname === '/sign-in' || pathname === '/sign-up' ? '/sign-in' : authHref(here),
+      // Members: Settings (unverified members are sent on to /welcome by its gate).
+      href:
+        viewer.status !== 'guest'
+          ? '/settings'
+          : pathname === '/sign-in' || pathname === '/sign-up'
+            ? '/sign-in'
+            : authHref(here),
       icon: CircleUser,
-      match: (p) => p === '/sign-in' || p === '/sign-up' || p === '/profile' || p === '/settings',
+      match: (p) => ['/sign-in', '/sign-up', '/profile', '/settings', '/welcome'].includes(p),
     },
   ];
 

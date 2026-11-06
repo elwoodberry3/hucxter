@@ -3,6 +3,9 @@ import type { APIRequestContext } from '@playwright/test';
 /** Second test server: same build with APP_ENV=production (see playwright.config.ts). */
 export const PRODUCTION_URL = 'http://localhost:3101';
 
+/** Third test server: APP_ENV=qa with INVITE_ONLY=false (see playwright.config.ts). */
+export const INVITE_OFF_URL = 'http://localhost:3102';
+
 export const GATED_ROUTES = ['/sell', '/messages', '/saved', '/listings', '/profile', '/settings'];
 
 /** Pages covered by the axe and CSP checks. */
