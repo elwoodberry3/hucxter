@@ -187,6 +187,9 @@ importers:
       '@hucxter/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@mux/ts':
+        specifier: 15.6.1
+        version: 15.6.1
       '@supabase/ssr':
         specifier: 0.12.7
         version: 0.12.7(@supabase/supabase-js@2.118.0)
@@ -600,6 +603,9 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
+
+  '@mux/ts@15.6.1':
+    resolution: {integrity: sha512-+ROK5NhkLiDibaipcc5KpgK+btbAU7CnJWAwJRmE2aDxjQBJSPJ4xwTSN/bZ2aTaNCt95kr63AWhsZ7/Jm/KRQ==}
 
   '@napi-rs/wasm-runtime@1.2.5':
     resolution: {integrity: sha512-HshSvXzmBxNzqejd3k/KemgQ3hdREUYFRRrgxOZ+gPljDIsO2SDZrVZMd4Z/HsxudQbE62OVyVFE8z9BCurfjA==}
@@ -2749,6 +2755,8 @@ snapshots:
       keyv: 5.6.0
 
   '@keyv/serialize@1.1.1': {}
+
+  '@mux/ts@15.6.1': {}
 
   '@napi-rs/wasm-runtime@1.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:

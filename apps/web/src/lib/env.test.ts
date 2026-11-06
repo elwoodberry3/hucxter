@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authConfig, serverConfig, supabaseConfig } from './env';
+import { authConfig, mediaConfig, serverConfig, supabaseConfig } from './env';
 
 describe('serverConfig', () => {
   it('defaults the origin in development', () => {
@@ -114,5 +114,35 @@ describe('authConfig', () => {
       authConfig({ ...production, ...testKeys, SUPABASE_URL: 'http://127.0.0.1:54321' })
         .allowTestPhoneNumbers,
     ).toBe(false);
+  });
+});
+
+describe('mediaConfig', () => {
+  const prod = { NODE_ENV: 'production', APP_ORIGIN: 'https://hucxter.app' };
+
+  it('defaults to the fake provider locally and Mux elsewhere', () => {
+    expect(mediaConfig({}).provider).toBe('fake');
+    expect(mediaConfig({ ...prod, APP_ENV: 'qa' }).provider).toBe('mux');
+    expect(mediaConfig(prod).provider).toBe('mux');
+  });
+
+  it('refuses the fake provider in qa, production, and a production build without APP_ENV', () => {
+    for (const APP_ENV of ['qa', 'production', undefined]) {
+      expect(() => mediaConfig({ ...prod, APP_ENV, VIDEO_PROVIDER: 'fake' }), APP_ENV).toThrow(
+        /VIDEO_PROVIDER=fake/,
+      );
+    }
+  });
+
+  it('allows the fake provider in a local production build', () => {
+    expect(mediaConfig({ ...prod, APP_ENV: 'local', VIDEO_PROVIDER: 'fake' }).provider).toBe(
+      'fake',
+    );
+  });
+
+  it('defaults the limits to 60 s and 500 MiB', () => {
+    expect(mediaConfig({})).toMatchObject({ maxSeconds: 60, maxBytes: 524_288_000 });
+    expect(mediaConfig({ MEDIA_MAX_SECONDS: '30' }).maxSeconds).toBe(30);
+    expect(() => mediaConfig({ MEDIA_MAX_SECONDS: '3600' })).toThrow();
   });
 });
