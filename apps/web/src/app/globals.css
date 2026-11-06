@@ -32,6 +32,8 @@
 
   /* Placeholder art palette (D-28): soft fills and a contrasting ink for illustrations. */
   --hx-art-1: #e9e4ff;
+  /* Video stage behind a letterboxed player (both modes stay dark, like a viewer). */
+  --hx-stage: #1c1b22;
   --hx-art-2: #dff3ea;
   --hx-art-3: #ffe9d9;
   --hx-art-4: #dcecff;
@@ -137,6 +139,7 @@
     --hx-success-label: #7ddcae;
     --hx-fill-strong: rgb(255 255 255 / 12%);
     --hx-art-1: #2b2745;
+    --hx-stage: #000000;
     --hx-art-2: #1d3329;
     --hx-art-3: #3a2a1f;
     --hx-art-4: #1d2a3d;
@@ -171,6 +174,7 @@
   --hx-success-label: #7ddcae;
   --hx-fill-strong: rgb(255 255 255 / 12%);
   --hx-art-1: #2b2745;
+  --hx-stage: #000000;
   --hx-art-2: #1d3329;
   --hx-art-3: #3a2a1f;
   --hx-art-4: #1d2a3d;

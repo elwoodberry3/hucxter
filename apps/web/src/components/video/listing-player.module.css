@@ -1,0 +1,9 @@
+.player {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  aspect-ratio: 9 / 16;
+  background: var(--hx-stage);
+  --media-object-fit: contain;
+  --media-accent-color: var(--hx-accent);
+}

@@ -1,14 +1,9 @@
 import 'server-only';
+import type { PlayerSource } from '@/components/video/listing-player';
 import { mediaConfig } from '@/lib/env';
 
 /** What the listing page's player needs: signed Mux playback, or a local file (fake provider). */
-export type PlaybackSource =
-  | {
-      kind: 'mux';
-      playbackId: string;
-      tokens: { playback: string; thumbnail: string; storyboard: string };
-    }
-  | { kind: 'file'; src: string; poster: string };
+export type PlaybackSource = PlayerSource;
 
 /**
  * The video seam (Brief 03C.1 §3.3, hucxter-video-pipeline). Mux in qa and production; the fake
