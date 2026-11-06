@@ -81,7 +81,7 @@ export async function fakeReady(request: Request, mediaId: string): Promise<Resp
   return new Response(null, { status: 204 });
 }
 
-const POSTER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="640" viewBox="0 0 360 640"><rect width="360" height="640" fill="#3a3a3c"/><text x="180" y="330" fill="#d1d1d6" font-family="system-ui,sans-serif" font-size="28" text-anchor="middle">Test video</text></svg>`;
+const POSTER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="640" viewBox="0 0 360 640"><rect width="360" height="640" fill="#3a3a3c"/><text x="180" y="200" fill="#d1d1d6" font-family="system-ui,sans-serif" font-size="28" text-anchor="middle">Test video</text></svg>`;
 
 /** GET the local test video (with Range support, which Safari needs) or the poster. */
 export async function fakeFile(request: Request, name: string): Promise<Response> {
