@@ -131,3 +131,36 @@ export function activeFilterKeys(query: ListingQuery): string[] {
     (key) => key !== 'q' && key !== 'sort',
   );
 }
+
+/**
+ * Keyset cursor for result pages: the sort key, published time and id of the last row. Opaque in
+ * URLs (base64url JSON). Anything malformed means "first page".
+ */
+export interface ListingCursor {
+  k: number;
+  t: string;
+  id: string;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function encodeCursor(cursor: ListingCursor): string {
+  const json = JSON.stringify({ k: cursor.k, t: cursor.t, id: cursor.id });
+  return btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export function decodeCursor(value: string | undefined): ListingCursor | null {
+  if (value === undefined || value.length > 200 || !/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  try {
+    const json = atob(value.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed: unknown = JSON.parse(json);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const { k, t, id } = parsed as Record<string, unknown>;
+    if (typeof k !== 'number' || !Number.isFinite(k)) return null;
+    if (typeof t !== 'string' || Number.isNaN(Date.parse(t))) return null;
+    if (typeof id !== 'string' || !UUID.test(id)) return null;
+    return { k, t, id };
+  } catch {
+    return null;
+  }
+}

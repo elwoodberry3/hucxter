@@ -15,6 +15,9 @@ export function demoListing(status: ListingStatus = 'available'): ListingDetail 
     status,
     distance_bucket: '1–5 mi',
     area_label: 'Portland',
+    state: 'OR',
+    category_name: 'Furniture',
+    department_name: 'Home & Living',
     posted_at: '2026-10-24T15:00:00Z',
     poster_url: '/demo/listing-poster.svg',
     category_slug: 'furniture',
@@ -25,8 +28,9 @@ export function demoListing(status: ListingStatus = 'available'): ListingDetail 
     attributes: { material: 'Wood', color: 'Brown', room: 'Office', has_dimensions: true },
     seller: {
       display_name: 'Demo Seller',
-      member_since: '2026-10-01',
-      verified: { phone: true, email: true },
+      joined_month: '2026-10-01',
+      phone_verified: true,
+      items_sold: 0,
     },
   });
 }

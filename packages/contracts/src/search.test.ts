@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { activeFilterKeys, listingQueryParams, parseListingQuery } from './search';
+import {
+  activeFilterKeys,
+  decodeCursor,
+  encodeCursor,
+  listingQueryParams,
+  parseListingQuery,
+} from './search';
 import type { AttributeFilter } from './taxonomy';
 
 const filters: AttributeFilter[] = [
@@ -94,5 +100,20 @@ describe('parseListingQuery', () => {
       filters,
     );
     expect(activeFilterKeys(query)).toEqual(['free', 'brand']);
+  });
+});
+
+describe('result cursors', () => {
+  it('round-trips and rejects anything malformed', () => {
+    const cursor = {
+      k: -5000,
+      t: '2026-11-01T12:00:00.000Z',
+      id: '3f1c2b9a-6d4e-4f7a-9b2c-1e8d7a6b5c4d',
+    };
+    expect(decodeCursor(encodeCursor(cursor))).toEqual(cursor);
+    expect(decodeCursor(undefined)).toBeNull();
+    expect(decodeCursor('not json')).toBeNull();
+    expect(decodeCursor(encodeCursor({ ...cursor, id: 'x' }))).toBeNull();
+    expect(decodeCursor('a'.repeat(300))).toBeNull();
   });
 });

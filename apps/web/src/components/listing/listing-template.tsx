@@ -8,9 +8,9 @@ import { ShareButton } from './share-button';
 import { StatusBadge } from './status-badge';
 import styles from './template.module.css';
 
-function formatMemberSince(isoDate: string): string {
+function formatJoined(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-US', {
-    month: 'long',
+    month: 'short',
     year: 'numeric',
     timeZone: 'UTC',
   });
@@ -95,7 +95,7 @@ export function ListingTemplate({
             </h1>
             <p className={styles.price}>{formatPrice(listing.price_cents)}</p>
             <p className={styles.meta}>
-              {CONDITION_LABELS[listing.condition]} · {listing.distance_bucket} ·{' '}
+              {CONDITION_LABELS[listing.condition]} · {listing.distance_bucket ?? 'Over 100 mi'} ·{' '}
               {listing.area_label} · {postedAgo(listing.posted_at)}
             </p>
           </div>
@@ -166,18 +166,11 @@ export function ListingTemplate({
               Seller
             </h2>
             <p className={styles.sellerName}>{listing.seller.display_name}</p>
-            <p className={styles.metaSmall}>
-              Member since {formatMemberSince(listing.seller.member_since)}
-            </p>
+            <p className={styles.metaSmall}>Joined {formatJoined(listing.seller.joined_month)}</p>
             <ul className={styles.badges}>
-              {listing.seller.verified.phone ? (
+              {listing.seller.phone_verified ? (
                 <li>
                   <BadgeCheck size={16} aria-hidden="true" /> Phone verified
-                </li>
-              ) : null}
-              {listing.seller.verified.email ? (
-                <li>
-                  <BadgeCheck size={16} aria-hidden="true" /> Email verified
                 </li>
               ) : null}
             </ul>
