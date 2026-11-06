@@ -45,6 +45,25 @@ Table `events` (append-only) or a vendor SDK behind `track()` — ADR-0006. Rule
   to first seller reply, share of messages unread after 24 h.
 - Every event carries `consent_version`.
 
+### Built in 3C.1: `events` table and `listing_viewed`
+- Rows are written only server-side through `apps/web/src/server/events.ts` `recordEvent()` →
+  the `events_insert` RPC (service role; browsers and `authenticated` have no access). Payloads are
+  validated against `ServerEvent` in `packages/contracts`. A failed insert is logged and never
+  breaks the user action.
+- **Actor hash, not an id.** `actor_hash = HMAC(daily_salt, subject)`, where
+  `daily_salt = HMAC(server secret, 'listing_viewed:' || UTC date)` (`dailyActorHash` in
+  `server/admin-db.ts`). The salt is derived, never stored, so hashes can't be linked across days.
+  Subject is `member:<user id>` for members and `guest:<hx_vid>` for guests. No IP is stored.
+- **`hx_vid` cookie** (guests only): 16 random bytes, base64url, httpOnly, `SameSite=Lax`, `Secure`
+  on https, path `/`, expires at the **next UTC midnight** (a fresh id each day). Used only to count
+  one `listing_viewed` per guest per listing per day; nothing else reads it.
+- `listing_viewed` is sent by a same-origin beacon (`POST /api/listings/[id]/view`, Origin-checked)
+  after the page renders in a browser, so prefetches and crawlers don't count. A unique index on
+  (listing_id, actor_hash, day) dedupes. Owner views are never recorded, and the owner-only count
+  (`listing_owner_view_count`) filters them out too.
+- Events and reports keep `listing_id` / `target_id` without a foreign key, so history survives
+  listing and account deletion.
+
 ## 4. Consent & preferences record (build now)
 `user_consents` (user_id, purpose, granted, version, timestamp). Purposes: `analytics`,
 `personalization`, later `ads_contextual`. Default for anything ads-related is off until the

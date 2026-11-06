@@ -51,6 +51,15 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   (sessions, sign out everywhere, delete). `SUPABASE_SECRET_KEY` is read only in
   `src/server/admin-db.ts`. Runbook: `docs/runbooks/accounts.md`. e2e uses Mailpit and three
   local servers (:3100 invite-only, :3101 production + Turnstile test keys, :3102 invite gate off).
+- **3C.1 (branch `brief-03c1-listings`, spec `docs/kickoff/brief-03c.md`):** listings, media,
+  jobs, reports, events and action-limit migrations; discovery only through `listings_nearby` /
+  `listing_public` (radius allowlist 1/5/10/25/50/100 mi, display points only). Sell flow `/sell`
+  (Mux direct upload via UpChunk, Publish when ready), `/l/[id]` with Mux Player (signed playback;
+  inline styles allowed on `/l/*` only), My Listings, report sheet, `/admin` moderation queue,
+  email-code lockout with `hx_ec` / `hx_kd` cookies, `hx_vid` view dedupe. Video seam
+  `src/server/media/provider.ts`: `MUX_*` read only in `server/media/mux.ts`; the fake provider
+  is local-only. `/dev/templates/listing` is gone. Runbook: `docs/runbooks/video.md`. e2e adds
+  :3103 (local, fake video).
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
