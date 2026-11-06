@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
+import { LOCAL_URL } from './support';
 
 /** PR screenshots (CI uploads apps/web/test-results/screenshots). */
 const shot = (name: string, fullPage = false) => ({
@@ -7,6 +10,11 @@ const shot = (name: string, fullPage = false) => ({
   fullPage,
 });
 const SCHEMES = ['light', 'dark'] as const;
+
+const seeded: SeededListing[] = [];
+test.afterEach(async () => {
+  await deleteSeeded(seeded.splice(0));
+});
 
 async function ready(page: Page) {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -16,10 +24,12 @@ test.describe('screenshots', () => {
   // Capture settled states (no sheet/carousel animation mid-flight).
   test.use({ reducedMotion: 'reduce' });
 
-  test('desktop 1440: home, category, mega menu, template, sign-in sheet', async ({
+  test('desktop 1440: home, category, mega menu, listing page, sign-in sheet', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-1440', 'one desktop set, at 1440×900');
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
     for (const scheme of SCHEMES) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
       await page.goto('/');
@@ -36,12 +46,13 @@ test.describe('screenshots', () => {
         .getByRole('tab', { name: 'Sports & Outdoors' })
         .hover();
       await page.screenshot(shot(`1440-mega-menu-${scheme}`));
-      await page.goto('/dev/templates/listing');
+      // :3103 plays the local test video (fake provider).
+      await page.goto(`${LOCAL_URL}/l/${listing.id}`);
       await ready(page);
-      await page.screenshot(shot(`1440-template-${scheme}`));
+      await page.screenshot(shot(`1440-listing-guest-${scheme}`));
     }
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.getByRole('button', { name: 'Is this still available?' }).click();
+    await page.getByRole('button', { name: 'Report' }).filter({ visible: true }).click();
     await page.screenshot(shot('1440-sign-in-sheet-light'));
   });
 
@@ -52,7 +63,7 @@ test.describe('screenshots', () => {
     await page.screenshot(shot('1280-home-light'));
   });
 
-  test('phone 390: home, category with FilterDrawer, all-categories sheet, template', async ({
+  test('phone 390: home, category with FilterDrawer, all-categories sheet, listing page', async ({
     page,
   }, testInfo) => {
     test.skip(
@@ -60,6 +71,8 @@ test.describe('screenshots', () => {
       'one phone set (iPhone 15 profile at 390 px)',
     );
     await page.setViewportSize({ width: 390, height: 844 });
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
     for (const scheme of SCHEMES) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
       await page.goto('/');
@@ -75,19 +88,21 @@ test.describe('screenshots', () => {
       await expect(page.getByRole('dialog', { name: 'All categories' })).toBeVisible();
       await page.screenshot(shot(`390-all-categories-${scheme}`));
       await page.keyboard.press('Escape');
-      await page.goto('/dev/templates/listing');
+      await page.goto(`${LOCAL_URL}/l/${listing.id}`);
       await ready(page);
-      await page.screenshot(shot(`390-template-${scheme}`));
+      await page.screenshot(shot(`390-listing-guest-${scheme}`));
     }
   });
 
-  test('phone 393×659 (iPhone 15): template above the fold', async ({ page }, testInfo) => {
+  test('phone 393×659 (iPhone 15): listing page above the fold', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-webkit', 'iPhone 15 viewport only');
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
     for (const scheme of SCHEMES) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
-      await page.goto('/dev/templates/listing');
+      await page.goto(`${LOCAL_URL}/l/${listing.id}`);
       await ready(page);
-      await page.screenshot(shot(`393x659-template-${scheme}`));
+      await page.screenshot(shot(`393x659-listing-guest-${scheme}`));
     }
   });
 

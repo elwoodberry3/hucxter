@@ -11,7 +11,7 @@ export const LOCAL_URL = 'http://localhost:3103';
 
 export const GATED_ROUTES = ['/sell', '/messages', '/saved', '/listings', '/profile', '/settings'];
 
-/** Pages covered by the axe and CSP checks. */
+/** Pages covered by the axe and CSP checks (listing pages: listing-page.spec.ts). */
 export const KEY_PAGES = [
   '/',
   '/c/electronics',
@@ -20,7 +20,6 @@ export const KEY_PAGES = [
   '/sign-in?next=%2Fsell',
   '/sign-up',
   '/terms',
-  '/dev/templates/listing',
   '/discover',
 ];
 

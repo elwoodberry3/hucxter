@@ -1,12 +1,26 @@
 import { expect, test } from '@playwright/test';
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, TestInfo } from '@playwright/test';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
 import { MOBILE_ONLY, isWebKitSelectNoise } from './support';
+
+const seeded: SeededListing[] = [];
+test.afterEach(async () => {
+  await deleteSeeded(seeded.splice(0));
+});
 
 /** Phone layout (ADR-0011). Runs on mobile-chromium (Pixel 7) and mobile-webkit (iPhone 15). */
 test.describe('mobile web', () => {
   test.skip(({ isMobile }) => !isMobile, MOBILE_ONLY);
 
   const sheet = (page: Page, name: string | RegExp) => page.getByRole('dialog', { name });
+
+  /** A live listing page (no video on this server; the player is covered on :3103). */
+  async function listingPage(page: Page, testInfo: TestInfo) {
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
+    await page.goto(`/l/${listing.id}`);
+  }
 
   async function expectMinTarget(locator: Locator, label: string) {
     const box = await locator.boundingBox();
@@ -16,13 +30,8 @@ test.describe('mobile web', () => {
     expect(box?.height ?? 0, `${label} height`).toBeGreaterThanOrEqual(43.5);
   }
 
-  for (const path of [
-    '/',
-    '/c/home/furniture',
-    '/search?q=lamp',
-    '/dev/templates/listing',
-    '/sign-in',
-  ]) {
+  // Listing pages: listing-page.spec.ts (with the player loaded).
+  for (const path of ['/', '/c/home/furniture', '/search?q=lamp', '/sign-in']) {
     test(`no horizontal overflow at 320–430 px: ${path}`, async ({ page }) => {
       await page.goto(path);
       for (const width of [320, 360, 375, 390, 414, 430]) {
@@ -65,7 +74,7 @@ test.describe('mobile web', () => {
     await expect(page).toHaveURL('/sign-in?next=%2Fmessages');
   });
 
-  test('primary controls are at least 44×44 CSS px', async ({ page }) => {
+  test('primary controls are at least 44×44 CSS px', async ({ page }, testInfo) => {
     await page.goto('/c/home/furniture');
     const tabs = page.getByRole('navigation', { name: 'Main' });
     for (const name of ['Home', 'Discover', 'Sell', 'Inbox', 'Account']) {
@@ -75,14 +84,16 @@ test.describe('mobile web', () => {
     await expectMinTarget(page.getByRole('button', { name: /Near Portland/ }), 'location chip');
     await expectMinTarget(page.getByRole('button', { name: 'All', exact: true }), 'All categories');
     await expectMinTarget(page.getByRole('button', { name: /^Filters/ }), 'Filters');
-    await page.goto('/dev/templates/listing');
+    await listingPage(page, testInfo);
     await expectMinTarget(page.getByRole('button', { name: 'Back' }), 'Back');
     await expectMinTarget(
       page.getByRole('button', { name: 'Is this still available?' }),
       'primary',
     );
-    await expectMinTarget(page.getByRole('button', { name: 'Save' }), 'Save');
-    await expectMinTarget(page.getByRole('button', { name: 'Share' }), 'Share');
+    // The sticky bar's Share and Report (the desktop rail is hidden on phones).
+    for (const name of ['Share', 'Report']) {
+      await expectMinTarget(page.getByRole('button', { name }).filter({ visible: true }), name);
+    }
   });
 
   test('search sheet: one search field, submits, closes, and Back returns in one press', async ({
@@ -189,12 +200,12 @@ test.describe('mobile web', () => {
 
   test('product page: no tab bar, a Back button, and price + primary action visible without scrolling', async ({
     page,
-  }) => {
-    await page.goto('/dev/templates/listing');
+  }, testInfo) => {
+    await listingPage(page, testInfo);
     await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
     const viewport = page.viewportSize();
-    const price = await page.getByText('$125', { exact: true }).boundingBox();
+    const price = await page.getByText('$45', { exact: true }).boundingBox();
     const primary = await page
       .getByRole('button', { name: 'Is this still available?' })
       .boundingBox();
@@ -205,7 +216,9 @@ test.describe('mobile web', () => {
     // Primary action (sticky bar) is on screen, and the price sits fully above it.
     expect((primary?.y ?? 0) + (primary?.height ?? 0)).toBeLessThanOrEqual(height);
     expect((price?.y ?? 0) + (price?.height ?? 0)).toBeLessThanOrEqual(primary?.y ?? 0);
-    await expect(page.getByRole('button', { name: 'Report this listing' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Report' }).filter({ visible: true }),
+    ).toHaveCount(1);
   });
 
   test('footer columns are accordions', async ({ page }) => {
@@ -233,7 +246,10 @@ test.describe('mobile web', () => {
     expect(durations.every((seconds) => seconds <= 0.00001)).toBe(true);
   });
 
-  test('sheets and pages run under the CSP with no violations', async ({ page, browserName }) => {
+  test('sheets and pages run under the CSP with no violations', async ({
+    page,
+    browserName,
+  }, testInfo) => {
     const violations: string[] = [];
     page.on('console', (message) => {
       const text = message.text();
@@ -251,8 +267,9 @@ test.describe('mobile web', () => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Search Hucxter' }).click();
     await page.keyboard.press('Escape');
-    await page.goto('/dev/templates/listing');
-    await page.getByRole('button', { name: 'Is this still available?' }).click();
+    await listingPage(page, testInfo);
+    await page.getByRole('button', { name: 'Report' }).filter({ visible: true }).click();
+    await expect(sheet(page, 'Sign in to report a listing')).toBeVisible();
     await page.keyboard.press('Escape');
     expect(violations).toEqual([]);
   });

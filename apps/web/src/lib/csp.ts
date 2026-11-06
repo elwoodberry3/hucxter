@@ -8,6 +8,7 @@ export function contentSecurityPolicy({
   upgradeInsecure,
   turnstile = false,
   mux = false,
+  inlineStyles = false,
 }: {
   nonce: string;
   isDev: boolean;
@@ -21,6 +22,12 @@ export function contentSecurityPolicy({
    * Mux Data tracking off.
    */
   mux?: boolean;
+  /**
+   * Listing pages only (Founder decision 2026-11-06): Mux Player's shadow-DOM <style> elements
+   * have no nonce support, so these pages allow inline styles. The style nonce is dropped there,
+   * because browsers ignore 'unsafe-inline' next to a nonce. Scripts are unaffected.
+   */
+  inlineStyles?: boolean;
 }): string {
   const challenge = turnstile ? ' https://challenges.cloudflare.com' : '';
   const muxConnect = mux ? ' https://*.mux.com https://storage.googleapis.com' : '';
@@ -29,7 +36,9 @@ export function contentSecurityPolicy({
     // React's dev tooling needs eval; production never gets it.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${challenge}${isDev ? " 'unsafe-eval'" : ''}`,
     // The dev error overlay injects inline styles; browsers ignore 'unsafe-inline' next to a nonce.
-    isDev ? "style-src 'self' 'unsafe-inline'" : `style-src 'self' 'nonce-${nonce}'`,
+    isDev || inlineStyles
+      ? "style-src 'self' 'unsafe-inline'"
+      : `style-src 'self' 'nonce-${nonce}'`,
     `img-src 'self' data: blob:${mux ? ' https://image.mux.com' : ''}`,
     ...(mux ? ["media-src 'self' blob: https://*.mux.com", "worker-src 'self' blob:"] : []),
     "font-src 'self'",

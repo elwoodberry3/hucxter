@@ -176,3 +176,16 @@ export async function signUpVerified(
   await expect(page).toHaveURL(`${base}/settings`);
   return email;
 }
+
+/** The local user id for an e2e address. */
+export async function userIdFor(email: string): Promise<string> {
+  if (!isE2eEmail(email)) throw new Error('Only e2e addresses');
+  for (let page = 1; page < 100; page += 1) {
+    const { data, error } = await localAdmin().auth.admin.listUsers({ page, perPage: 200 });
+    if (error !== null) throw new Error('Could not list local users');
+    const user = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (user !== undefined) return user.id;
+    if (data.users.length < 200) break;
+  }
+  throw new Error('e2e user not found');
+}

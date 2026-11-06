@@ -3,7 +3,7 @@
 import { Share2 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 
-/** Copies the page link. Sharing doesn't need an account. */
+/** Web Share where the browser has it (phones), else copies the link. No account needed. */
 export function ShareButton({
   className,
   labelClassName,
@@ -18,7 +18,12 @@ export function ShareButton({
         type="button"
         className={className}
         onClick={() => {
-          navigator.clipboard.writeText(window.location.href).then(
+          const url = window.location.href;
+          if (typeof navigator.share === 'function' && navigator.maxTouchPoints > 0) {
+            navigator.share({ title: document.title, url }).catch(() => undefined);
+            return;
+          }
+          navigator.clipboard.writeText(url).then(
             () => {
               toast('Link copied');
             },

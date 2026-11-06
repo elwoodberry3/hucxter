@@ -9,11 +9,15 @@ import {
   testEmail,
   testPhone,
 } from './helpers/accounts';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
 
 // Accounts created here are deleted after each test (local stack, e2e addresses only).
 const created: string[] = [];
+const seeded: SeededListing[] = [];
 test.afterEach(async () => {
   await deleteE2eUsers(created.splice(0));
+  await deleteSeeded(seeded.splice(0));
 });
 
 const SCHEMES = ['light', 'dark'] as const;
@@ -148,8 +152,10 @@ test('sign-in sheet and each onboarding step: axe, phone layout with the keyboar
   created.push(email);
   await invite(email);
 
-  await page.goto('/dev/templates/listing');
-  await page.getByRole('button', { name: 'Is this still available?' }).click();
+  const listing = await seedListing(testInfo);
+  seeded.push(listing);
+  await page.goto(`/l/${listing.id}`);
+  await page.getByRole('button', { name: 'Report' }).filter({ visible: true }).click();
   const sheet = page.getByRole('dialog', { name: /Sign in/ });
   await expect(sheet).toBeVisible();
   await checkStage(page, project, {
@@ -225,5 +231,5 @@ test('sign-in sheet and each onboarding step: axe, phone layout with the keyboar
 
   await page.getByLabel('What should people call you?').fill('Sam');
   await page.getByRole('button', { name: 'Finish' }).click();
-  await expect(page).toHaveURL('/dev/templates/listing');
+  await expect(page).toHaveURL(`/l/${listing.id}`);
 });

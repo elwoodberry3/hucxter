@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { contentSecurityPolicy, createNonce } from '@/lib/csp';
 import { authConfig, mediaConfig, serverConfig, supabaseConfig } from '@/lib/env';
+import { isProductPath } from '@/lib/routes';
 import { authCookieOptions, hardenCookie } from '@/server/auth/cookies';
 
 export async function proxy(request: NextRequest) {
@@ -14,6 +15,8 @@ export async function proxy(request: NextRequest) {
     upgradeInsecure: isHttpsOrigin(process.env.APP_ORIGIN),
     turnstile: captcha.provider === 'turnstile',
     mux: mediaConfig().provider === 'mux',
+    // Mux Player needs inline shadow-DOM styles; only listing pages load it.
+    inlineStyles: isProductPath(request.nextUrl.pathname),
   });
 
   // Next.js reads the nonce from the request's CSP header and applies it to its own scripts.

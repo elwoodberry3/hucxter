@@ -50,6 +50,16 @@ describe('contentSecurityPolicy', () => {
     expect(on).not.toContain('unsafe-inline');
   });
 
+  it('allows inline styles only when asked (listing pages), never inline scripts', () => {
+    const base = { nonce: 'n', isDev: false, upgradeInsecure: true, mux: true };
+    expect(contentSecurityPolicy(base)).toContain("style-src 'self' 'nonce-n'");
+    const listing = contentSecurityPolicy({ ...base, inlineStyles: true });
+    expect(listing).toContain("style-src 'self' 'unsafe-inline'");
+    expect(listing).not.toMatch(/style-src[^;]*nonce/);
+    expect(listing).toContain("script-src 'self' 'nonce-n' 'strict-dynamic'");
+    expect(listing).not.toMatch(/script-src[^;]*unsafe-inline/);
+  });
+
   it('creates distinct 128-bit base64 nonces', () => {
     const a = createNonce();
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);

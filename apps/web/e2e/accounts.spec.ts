@@ -11,12 +11,16 @@ import {
   testEmail,
   testPhone,
 } from './helpers/accounts';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
 import { GATED_ROUTES, INVITE_OFF_URL } from './support';
 
 // Accounts created here are deleted after each test (local stack, e2e addresses only).
 const created: string[] = [];
+const seeded: SeededListing[] = [];
 test.afterEach(async () => {
   await deleteE2eUsers(created.splice(0));
+  await deleteSeeded(seeded.splice(0));
 });
 
 /** A non-empty alert inside the page content (Next's route announcer is also role=alert). */
@@ -114,7 +118,7 @@ test.describe('accounts (D-34)', () => {
     await expect(page).toHaveURL('/welcome?next=%2Fsell');
     await completeOnboarding(page, testPhone(testInfo));
     await expect(page).toHaveURL('/sell');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sell');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Add a video');
   });
 
   test('onboarding inputs use the right types and autofill hints', async ({ page }, testInfo) => {
@@ -165,9 +169,15 @@ test.describe('accounts (D-34)', () => {
     }
     expect((await page.request.get('/admin')).status()).toBe(404);
 
-    await page.goto('/dev/templates/listing');
-    await page.getByRole('main').getByRole('button', { name: 'Save', exact: true }).click();
-    await expect(page).toHaveURL('/welcome?next=%2Fdev%2Ftemplates%2Flisting');
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
+    await page.goto(`/l/${listing.id}`);
+    await page
+      .getByRole('main')
+      .getByRole('button', { name: 'Report' })
+      .filter({ visible: true })
+      .click();
+    await expect(page).toHaveURL(`/welcome?next=${encodeURIComponent(`/l/${listing.id}`)}`);
   });
 
   test('a number already on another account gets a neutral error', async ({

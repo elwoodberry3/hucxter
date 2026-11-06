@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
 import { DESKTOP_ONLY, KEY_PAGES, SERVER_ONLY } from './support';
+
+const seeded: SeededListing[] = [];
+test.afterEach(async () => {
+  await deleteSeeded(seeded.splice(0));
+});
 
 const STATIC_HEADERS = {
   'strict-transport-security': 'max-age=63072000; includeSubDomains',
@@ -53,7 +60,7 @@ test.describe('security headers', () => {
     );
   });
 
-  test('pages run under the CSP with no violations', async ({ page, isMobile }) => {
+  test('pages run under the CSP with no violations', async ({ page, isMobile }, testInfo) => {
     test.skip(isMobile, DESKTOP_ONLY);
     const violations: string[] = [];
     page.on('console', (message) => {
@@ -62,12 +69,15 @@ test.describe('security headers', () => {
     });
     for (const path of KEY_PAGES) await page.goto(path);
     // Interactive surfaces too: mega menu, location popover, sign-in sheet, client navigation.
-    await page.goto('/dev/templates/listing');
+    // (The listing page with the player loaded: listing-page.spec.ts on :3103.)
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
+    await page.goto(`/l/${listing.id}`);
     await page.getByRole('button', { name: 'All Categories' }).click();
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: /Near Portland/ }).click();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Is this still available?' }).click();
+    await page.getByRole('button', { name: 'Report' }).filter({ visible: true }).click();
     await page.keyboard.press('Escape');
     await page
       .getByRole('navigation', { name: 'Categories', exact: true })
