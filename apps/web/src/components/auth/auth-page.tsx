@@ -4,7 +4,7 @@ import { authConfig } from '@/lib/env';
 import { authHref, safeNextPath } from '@/lib/next-path';
 import { destinationAfterSignIn } from '@/server/auth/destination';
 import { CLOSED_TEST_MESSAGE, GOOGLE_FAILED } from '@/server/auth/errors';
-import { loadMember } from '@/server/auth/member';
+import { loadMemberForDisplay } from '@/server/auth/member';
 import { AuthMethods } from './auth-methods';
 import styles from './auth.module.css';
 
@@ -25,7 +25,7 @@ export async function AuthPage({
 }) {
   const safeNext = safeNextPath(next);
   // Already signed in: carry on (verified → next, otherwise onboarding).
-  const member = await loadMember();
+  const member = await loadMemberForDisplay();
   if (member !== null) redirect(destinationAfterSignIn(member, safeNext));
 
   const { captcha } = authConfig();

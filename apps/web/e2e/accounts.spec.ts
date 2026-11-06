@@ -481,6 +481,23 @@ test.describe('CSRF and redirects', () => {
     expect(await emailCount(email)).toBe(0);
   });
 
+  test('location and launch-notice actions with a mismatched Origin set no cookie', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', 'One HTTP-level check is enough');
+    const action = await captureAction(page, async () => {
+      await page.goto('/');
+      await page.getByRole('button', { name: /Near Portland 97205\?/ }).click();
+      const popover = page.getByRole('dialog', { name: 'Your location' });
+      await popover.getByLabel('ZIP code').fill('76102');
+      await popover.getByRole('button', { name: 'Update location' }).click();
+    });
+    const sameHost = action.url.replace('localhost', '127.0.0.1');
+    const mismatched = await replay(page, action, 'http://127.0.0.1:3100', sameHost);
+    expect(await mismatched.text()).toContain('This request didn’t come from Hucxter');
+    expect(mismatched.headers()['set-cookie'] ?? '').not.toContain('hx_loc');
+  });
+
   test('sign out everywhere replayed cross-origin keeps the session', async ({
     page,
   }, testInfo) => {

@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { serverConfig } from '@/lib/env';
 import { LOCATION_COOKIE, locationCookieOptions, serializeLocation } from '@/lib/location-cookie';
 import { lookupPostalArea, nearestPostalArea } from '@/lib/postal-areas';
+import { ORIGIN_ERROR } from '@/server/auth/errors';
+import { requestIsSameOrigin } from '@/server/auth/origin';
 
 export type LocationResult =
   { ok: true; zip: string; areaLabel: string } | { ok: false; error: string };
@@ -26,6 +28,7 @@ async function remember(zip: string, radiusMi: RadiusMi): Promise<void> {
 
 /** Saves a ZIP + radius chosen in the location popover (also confirms a guess). */
 export async function setLocationByZip(input: unknown): Promise<LocationResult> {
+  if (!(await requestIsSameOrigin())) return { ok: false, error: ORIGIN_ERROR };
   const parsed = ZipInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'Enter a 5-digit ZIP code.' };
   const area = await lookupPostalArea(parsed.data.zip);
@@ -44,6 +47,7 @@ export async function setLocationByZip(input: unknown): Promise<LocationResult> 
  * ZIP is kept; the coordinates are never stored, logged, or sent to analytics.
  */
 export async function setLocationFromCoordinates(input: unknown): Promise<LocationResult> {
+  if (!(await requestIsSameOrigin())) return { ok: false, error: ORIGIN_ERROR };
   const parsed = CoordinatesInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'We couldn’t read your location.' };
   try {
