@@ -3,7 +3,7 @@ import type { APIRequestContext, BrowserContext } from '@playwright/test';
 /** Second test server: same build with APP_ENV=production (see playwright.config.ts). */
 export const PRODUCTION_URL = 'http://localhost:3101';
 
-/** Third test server: APP_ENV=qa with INVITE_ONLY=false (see playwright.config.ts). */
+/** Third test server: APP_ENV=qa, INVITE_ONLY=false, AVATAR_UPLOADS=off (playwright.config.ts). */
 export const INVITE_OFF_URL = 'http://localhost:3102';
 
 /** Fourth test server: APP_ENV=local, VIDEO_PROVIDER=fake, invite gate off. */

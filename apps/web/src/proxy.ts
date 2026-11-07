@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { contentSecurityPolicy, createNonce } from '@/lib/csp';
-import { authConfig, mediaConfig, serverConfig, supabaseConfig } from '@/lib/env';
+import { authConfig, mediaConfig, profileConfig, serverConfig, supabaseConfig } from '@/lib/env';
 import { isProductPath } from '@/lib/routes';
 import { authCookieOptions, hardenCookie } from '@/server/auth/cookies';
 
@@ -17,6 +17,7 @@ export async function proxy(request: NextRequest) {
     mux: mediaConfig().provider === 'mux',
     // Mux Player needs inline shadow-DOM styles; only listing pages load it.
     inlineStyles: isProductPath(request.nextUrl.pathname),
+    avatarOrigin: profileConfig().avatarOrigin,
   });
 
   // Next.js reads the nonce from the request's CSP header and applies it to its own scripts.

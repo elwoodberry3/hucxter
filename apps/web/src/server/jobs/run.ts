@@ -2,16 +2,19 @@ import 'server-only';
 import { z } from 'zod';
 import { adminDb } from '@/server/admin-db';
 import { videoProvider } from '@/server/media/provider';
+import { deleteAvatarObject } from '@/server/profile/avatar';
 
 /**
  * Postgres job queue runner (ADR-0004): Mux deletions and cancellations queued by deletes,
- * takedowns, replaced videos and account deletion, plus the 24 h orphan-upload sweep. Claimed
+ * takedowns, replaced videos and account deletion, profile photos of deleted accounts (3C.2),
+ * plus the 24 h orphan-upload sweep. Claimed
  * jobs are locked, so overlapping runs are safe; failures back off (jobs_fail).
  */
 const Job = z.object({ id: z.number(), kind: z.string(), payload: z.unknown() });
 const AssetPayload = z.object({ asset_id: z.string().min(1).max(200) });
 const PlaybackPayload = AssetPayload.extend({ playback_id: z.string().min(1).max(200) });
 const UploadPayload = z.object({ upload_id: z.string().min(1).max(200) });
+const AvatarPayload = z.object({ path: z.string().regex(/^[0-9a-f-]{36}\.webp$/) });
 
 const BATCH = 20;
 const LOCK_SECONDS = 120;
@@ -59,6 +62,11 @@ export async function runJobs(): Promise<JobRunSummary> {
         }
         case 'mux_cancel_upload':
           await provider.cancelUpload(UploadPayload.parse(job.payload).upload_id);
+          break;
+        case 'storage_delete_avatar':
+          if (!(await deleteAvatarObject(AvatarPayload.parse(job.payload).path))) {
+            throw new Error('storage_delete_failed');
+          }
           break;
         default:
           throw new Error('unknown_job_kind');
