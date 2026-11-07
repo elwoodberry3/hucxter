@@ -68,6 +68,10 @@ const sharedEnv = {
   SUPABASE_SECRET_KEY: supabase.SUPABASE_SECRET_KEY,
   GIT_COMMIT_SHA: process.env.GITHUB_SHA ?? 'e2e',
   DEFAULT_AREA_ZIP: '97205',
+  // `next start` also loads apps/web/.env.local when a developer has one. Variables already set
+  // win over the file, and '' means "use the default", so a local VIDEO_PROVIDER=fake can't
+  // leak into the qa and production servers.
+  VIDEO_PROVIDER: '',
 };
 
 export default defineConfig({

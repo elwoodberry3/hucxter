@@ -118,9 +118,9 @@ async function capture3c1(
     await page.goto(`${LOCAL_URL}/l/${listingId}`);
     await ready(page);
     await page.screenshot(shot(`${size}-listing-owner-${scheme}`));
-    await page.goto(`${LOCAL_URL}/listings`);
+    await page.goto(`${LOCAL_URL}/profile`);
     await ready(page);
-    await page.screenshot(shot(`${size}-my-listings-${scheme}`, true));
+    await page.screenshot(shot(`${size}-profile-owner-${scheme}`, true));
   }
   const guestContext = await page
     .context()

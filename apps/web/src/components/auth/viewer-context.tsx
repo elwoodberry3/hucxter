@@ -7,10 +7,20 @@ import type { ReactNode } from 'react';
 export interface ViewerSummary {
   status: 'guest' | 'unverified' | 'verified';
   displayName: string | null;
+  /** Public @handle, for "View profile"; null until the name step is done. */
+  handle: string | null;
+  /** Public photo URL, or null for the initials avatar. */
+  avatarUrl: string | null;
   isStaff: boolean;
 }
 
-const GUEST: ViewerSummary = { status: 'guest', displayName: null, isStaff: false };
+const GUEST: ViewerSummary = {
+  status: 'guest',
+  displayName: null,
+  handle: null,
+  avatarUrl: null,
+  isStaff: false,
+};
 const ViewerContext = createContext<ViewerSummary>(GUEST);
 
 export function ViewerProvider({

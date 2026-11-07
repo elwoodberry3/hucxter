@@ -12,6 +12,9 @@ const ProfileRow = z.object({
   home_zip: z.string().nullable(),
   age_attested_at: z.string().nullable(),
   deleted_at: z.string().nullable(),
+  handle: z.string().nullable(),
+  avatar_path: z.string().nullable(),
+  name_reset_required_at: z.string().nullable(),
 });
 const RoleRows = z.array(z.object({ role: z.string() }));
 
@@ -30,7 +33,9 @@ export const loadMember = cache(async (): Promise<MemberState | null> => {
   const [profile, roles, invited] = await Promise.all([
     supabase
       .from('profiles')
-      .select('display_name, home_zip, age_attested_at, deleted_at')
+      .select(
+        'display_name, home_zip, age_attested_at, deleted_at, handle, avatar_path, name_reset_required_at',
+      )
       .eq('id', user.id)
       .maybeSingle(),
     supabase.from('app_roles').select('role').eq('user_id', user.id),
@@ -54,6 +59,9 @@ export const loadMember = cache(async (): Promise<MemberState | null> => {
       displayName: row.display_name,
       homeZip: row.home_zip,
       ageAttestedAt: row.age_attested_at,
+      handle: row.handle,
+      avatarPath: row.avatar_path,
+      nameResetRequiredAt: row.name_reset_required_at,
     },
     roles: RoleRows.parse(roles.data).map(({ role }) => role),
     invited: invited.data === true,

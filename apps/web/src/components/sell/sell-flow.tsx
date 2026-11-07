@@ -523,7 +523,7 @@ function ReviewStep({
       {result === 'scheduled' ? (
         <p className={styles.notice} role="status">
           We’ll publish it as soon as the video is ready. You can leave this page.{' '}
-          <Link href="/listings">Go to My listings</Link>
+          <Link href="/profile">Go to your listings</Link>
         </p>
       ) : null}
       <p role="alert" className={styles.error}>
@@ -553,7 +553,7 @@ function ReviewStep({
             {result === 'scheduled' ? 'Will publish when ready' : 'Publish when ready'}
           </button>
         )}
-        <Link href="/listings" className={styles.secondary}>
+        <Link href="/profile?filter=drafts" className={styles.secondary}>
           Save draft
         </Link>
       </div>

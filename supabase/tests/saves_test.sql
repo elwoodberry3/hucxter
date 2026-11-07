@@ -2,7 +2,7 @@
 -- live listing, not your own, rate limit), and the saved list shows live listings only.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(22);
 
 insert into auth.users (id, email, aud, role, email_confirmed_at, phone_confirmed_at, phone, created_at) values
   ('00000000-0000-4000-8000-0000000c2c01', 'saver@example.test', 'authenticated', 'authenticated', now(), now(), '15035550181', now()),
@@ -60,6 +60,10 @@ select is(
       (select cursor from public.my_saved_listings('price_asc', null, 1)), 10)) r),
   array['00000000-0000-4000-8000-0000000c2d03', '00000000-0000-4000-8000-0000000c2d02']::uuid[],
   'the keyset cursor continues after the first row');
+select ok(
+  (select bool_and((cursor ->> 'k')::numeric = trunc((cursor ->> 'k')::numeric))
+   from public.my_saved_listings('newest', null, 10)),
+  'time cursor keys are whole milliseconds (round-trip safely through JSON numbers)');
 
 -- Another member sees none of them
 set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000c2c03", "role": "authenticated"}';

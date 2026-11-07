@@ -7,7 +7,7 @@ import type { DetailsValues } from '@/components/sell/details-form';
 
 /**
  * The member's own listings, read under RLS (listings_select_own: own rows, not deleted; no point
- * columns). Used by /sell drafts and /listings.
+ * columns). Used by /sell drafts and /listings/[id]/edit.
  */
 const OwnListingRow = z.object({
   id: z.uuid(),
@@ -120,113 +120,6 @@ export async function loadOwnListing(
   if (data === null) return null;
   const row = OwnListingRow.parse(data);
   return toOwnListing(row, (await mediaFor(session, [row.id])).get(row.id));
-}
-
-/** /listings tabs (Brief 03C.1 §3.6). Every own listing is in exactly one. */
-export const OWN_TABS = ['drafts', 'processing', 'live', 'review', 'sold'] as const;
-export type OwnTab = (typeof OWN_TABS)[number];
-
-export interface OwnCursor {
-  updatedAt: string;
-  id: string;
-}
-
-export function encodeOwnCursor(cursor: OwnCursor): string {
-  return Buffer.from(`${cursor.updatedAt}|${cursor.id}`).toString('base64url');
-}
-
-export function decodeOwnCursor(value: string | undefined): OwnCursor | null {
-  if (value === undefined || value.length > 200) return null;
-  const [updatedAt, id] = Buffer.from(value, 'base64url').toString().split('|');
-  if (
-    !z.iso.datetime({ offset: true }).safeParse(updatedAt).success ||
-    !z.uuid().safeParse(id).success
-  ) {
-    return null;
-  }
-  return { updatedAt: updatedAt ?? '', id: id ?? '' };
-}
-
-/**
- * One tab of the member's listings, newest edit first, keyset on (updated_at, id).
- * - drafts: not published, video not processing
- * - processing: not published, video processing (incl. "Publish when ready")
- * - live: available or pending, approved, not removed
- * - review: published but waiting for review, or removed by Hucxter
- * - sold
- */
-export async function loadOwnListings(
-  session: SupabaseClient,
-  {
-    tab,
-    limit = 20,
-    before,
-  }: { tab: OwnTab; limit?: number; before?: OwnCursor | null | undefined },
-): Promise<{ items: OwnListing[]; nextCursor: string | null }> {
-  const pageSize = Math.min(Math.max(limit, 1), 50);
-  // Video-processing drafts: an inner join for the tab, an anti-join (no such row) for Drafts.
-  const columns =
-    tab === 'processing'
-      ? `${COLUMNS}, processing:listing_media!inner(status)`
-      : tab === 'drafts'
-        ? `${COLUMNS}, processing:listing_media(status)`
-        : COLUMNS;
-  let query = session
-    .from('listings')
-    .select(columns)
-    .order('updated_at', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(pageSize + 1);
-  const keyset =
-    before === null || before === undefined
-      ? null
-      : `updated_at.lt."${before.updatedAt}",and(updated_at.eq."${before.updatedAt}",id.lt.${before.id})`;
-  switch (tab) {
-    case 'drafts':
-      query = query
-        .eq('status', 'draft')
-        .eq('processing.status', 'processing')
-        .is('processing', null);
-      break;
-    case 'processing':
-      query = query.eq('status', 'draft').eq('processing.status', 'processing');
-      break;
-    case 'live':
-      query = query
-        .in('status', ['available', 'pending'])
-        .eq('review_state', 'ok')
-        .is('removed_at', null);
-      break;
-    case 'review':
-      query = query.neq('status', 'draft');
-      break;
-    case 'sold':
-      query = query.eq('status', 'sold').eq('review_state', 'ok').is('removed_at', null);
-      break;
-  }
-  // One `or` parameter: the review condition and the keyset combined.
-  const review = 'review_state.eq.needs_review,removed_at.not.is.null';
-  if (tab === 'review') {
-    query = query.or(keyset === null ? review : `and(or(${review}),or(${keyset}))`);
-  } else if (keyset !== null) {
-    query = query.or(keyset);
-  }
-  const { data, error } = await query;
-  if (error !== null) throw new Error(`own_listings:${error.code}`);
-  const rows = z.array(OwnListingRow).parse(data);
-  const page = rows.slice(0, pageSize);
-  const media = await mediaFor(
-    session,
-    page.map((r) => r.id),
-  );
-  const last = page.at(-1);
-  return {
-    items: page.map((row) => toOwnListing(row, media.get(row.id))),
-    nextCursor:
-      rows.length > pageSize && last !== undefined
-        ? encodeOwnCursor({ updatedAt: last.updated_at, id: last.id })
-        : null,
-  };
 }
 
 /** The details form's values for an own listing (/sell drafts and /listings/[id]/edit). */

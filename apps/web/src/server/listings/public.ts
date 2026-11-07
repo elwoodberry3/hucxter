@@ -3,6 +3,7 @@ import { DistanceBucket, ListingCondition, priceDrop } from '@hucxter/contracts'
 import type { ListingDetail, PriceDrop } from '@hucxter/contracts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { avatarUrl } from '@/lib/avatar';
 
 /**
  * One listing for /l/[id] through listing_public (definer; distance bucket only, never points).
@@ -34,6 +35,8 @@ const Row = z.object({
   seller_joined_at: z.string(),
   seller_phone_verified: z.boolean(),
   seller_items_sold: z.number().int(),
+  seller_handle: z.string().nullable(),
+  seller_avatar_path: z.string().nullable(),
   publish_when_ready: z.boolean().nullable(),
   pickup_zip: z.string().nullable(),
 });
@@ -109,6 +112,8 @@ export async function loadListingView(
         joined_month: monthOf(row.seller_joined_at),
         phone_verified: row.seller_phone_verified,
         items_sold: row.seller_items_sold,
+        handle: row.seller_handle,
+        avatar_url: avatarUrl(row.seller_avatar_path),
       },
     },
   };

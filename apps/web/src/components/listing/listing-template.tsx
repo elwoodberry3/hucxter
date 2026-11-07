@@ -1,7 +1,9 @@
 import type { AttributeFilter, Department, ListingDetail, PriceDrop } from '@hucxter/contracts';
 import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
 import { BadgeCheck, Heart, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 import { Breadcrumb, SubcategoryRow } from '@/components/results/results-layout';
+import { Avatar } from '@/components/ui/avatar';
 import { ListingPlayer } from '@/components/video/listing-player';
 import type { PlayerSource } from '@/components/video/listing-player';
 import { cx } from '@/lib/cx';
@@ -33,14 +35,6 @@ export function listedAgo(iso: string, now: Date = new Date()): string {
   if (days < 14) return plural(days, 'day');
   if (days < 60) return plural(Math.round(days / 7), 'week');
   return plural(Math.round(days / 30), 'month');
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
 }
 
 export interface OwnerView {
@@ -230,11 +224,18 @@ export function ListingTemplate({
               Seller
             </h2>
             <div className={styles.seller}>
-              <span className={styles.avatar} aria-hidden="true">
-                {initials(listing.seller.display_name)}
-              </span>
+              <Avatar name={listing.seller.display_name} src={listing.seller.avatar_url} />
               <div>
-                <p className={styles.sellerName}>{listing.seller.display_name}</p>
+                {listing.seller.handle === null || listing.seller.handle === undefined ? (
+                  <p className={styles.sellerName}>{listing.seller.display_name}</p>
+                ) : (
+                  <p className={styles.sellerName}>
+                    <Link href={`/u/${listing.seller.handle}`} className={styles.sellerLink}>
+                      {listing.seller.display_name}
+                      <span className={styles.sellerHandle}>@{listing.seller.handle}</span>
+                    </Link>
+                  </p>
+                )}
                 <ul className={styles.sellerFacts}>
                   {listing.seller.phone_verified ? (
                     <li className={styles.verified}>

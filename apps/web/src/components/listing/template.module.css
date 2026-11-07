@@ -373,20 +373,27 @@
   gap: var(--hx-space-3);
 }
 
-.avatar {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: var(--hx-brand);
-  color: var(--hx-on-brand);
+.sellerName {
   font-weight: 700;
 }
 
-.sellerName {
-  font-weight: 700;
+.sellerLink {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--hx-space-2);
+  min-height: var(--hx-target-min);
+  color: inherit;
+  text-decoration: none;
+}
+
+.sellerLink:hover {
+  text-decoration: underline;
+}
+
+.sellerHandle {
+  color: var(--hx-label-secondary);
+  font-weight: 400;
 }
 
 .sellerFacts {

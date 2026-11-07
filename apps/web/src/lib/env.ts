@@ -37,6 +37,8 @@ const ServerEnv = z.object({
   VIDEO_PROVIDER: optional(z.enum(['mux', 'fake'])),
   MEDIA_MAX_SECONDS: optional(z.coerce.number().int().min(5).max(180)),
   MEDIA_MAX_BYTES: optional(z.coerce.number().int().min(1_000_000).max(2_000_000_000)),
+  // Profile photos (Brief 03C.2 §4.5). `off` hides uploads and shows initials everywhere.
+  AVATAR_UPLOADS: optional(z.enum(['on', 'off'])),
 });
 
 export type AppEnv = 'local' | 'qa' | 'production';
@@ -161,5 +163,25 @@ export function mediaConfig(env: Record<string, string | undefined> = process.en
     provider,
     maxSeconds: parsed.MEDIA_MAX_SECONDS ?? 60,
     maxBytes: parsed.MEDIA_MAX_BYTES ?? 524_288_000,
+  };
+}
+
+export interface ProfileConfig {
+  /** AVATAR_UPLOADS (default on). Off: no upload control, initials everywhere, no CSP change. */
+  avatarUploads: boolean;
+  /** The Supabase origin serving public avatars (CSP img-src), or null when photos are off. */
+  avatarOrigin: string | null;
+}
+
+/** Profile photo settings (Brief 03C.2 §4.5; Founder note 2026-11-07). */
+export function profileConfig(
+  env: Record<string, string | undefined> = process.env,
+): ProfileConfig {
+  const parsed = ServerEnv.parse(env);
+  const avatarUploads = parsed.AVATAR_UPLOADS !== 'off';
+  const supabaseUrl = parsed.SUPABASE_URL;
+  return {
+    avatarUploads,
+    avatarOrigin: avatarUploads && supabaseUrl !== undefined ? new URL(supabaseUrl).origin : null,
   };
 }
