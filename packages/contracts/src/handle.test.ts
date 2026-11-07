@@ -1,0 +1,82 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  BLOCKED_TERMS,
+  HANDLE_RESERVED,
+  Handle,
+  containsBlockedTerm,
+  handleProblem,
+  normalizeHandle,
+} from './handle';
+
+describe('normalizeHandle', () => {
+  it('trims, drops a leading @ and lowercases', () => {
+    expect(normalizeHandle('  @Alex.B ')).toBe('alex.b');
+  });
+});
+
+describe('handleProblem', () => {
+  it.each(['alex', 'a_b.c9', 'a'.repeat(24), 'x9z'])('accepts %s', (handle) => {
+    expect(handleProblem(handle)).toBeNull();
+  });
+
+  it.each([
+    ['al', 'length'],
+    ['a'.repeat(25), 'length'],
+    ['al-ex', 'characters'],
+    ['Alex', 'characters'],
+    ['.alex', 'dots'],
+    ['alex.', 'dots'],
+    ['al..ex', 'dots'],
+    ['503.555.0100', 'letter'],
+    ['1234', 'letter'],
+    ['settings', 'reserved'],
+    ['me', 'length'],
+    ['the_official_bob', 'reserved'],
+    ['hucxterfan', 'reserved'],
+    ['admin2', 'reserved'],
+    ['support.team', 'reserved'],
+  ] as const)('rejects %s (%s)', (handle, problem) => {
+    expect(handleProblem(handle)).toBe(problem);
+  });
+});
+
+describe('Handle schema', () => {
+  it('normalizes before validating', () => {
+    expect(Handle.parse('@Quill.Zed')).toBe('quill.zed');
+  });
+
+  it('explains the first broken rule', () => {
+    const result = Handle.safeParse('@Admin');
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe('That handle isn’t available.');
+  });
+});
+
+describe('containsBlockedTerm', () => {
+  it.each(['Hucxter fan', 'ADMIN', 'Tech Support', 'Official Bob'])('blocks %s', (value) => {
+    expect(containsBlockedTerm(value)).toBe(true);
+  });
+
+  it('allows ordinary names', () => {
+    expect(containsBlockedTerm('Alex B')).toBe(false);
+  });
+});
+
+describe('the database mirrors these lists', () => {
+  const dir = join(__dirname, '..', '..', '..', 'supabase', 'migrations');
+  const file = readdirSync(dir).find((name) => name.endsWith('_add_profile_handles.sql'));
+  const sql = readFileSync(join(dir, file ?? ''), 'utf8');
+
+  it('has the same exact reserved handles', () => {
+    const array = /select p_handle = any \(array\[([\s\S]*?)\]::text\[\]\)/.exec(sql)?.[1] ?? '';
+    const words = [...array.matchAll(/'([^']+)'/g)].map((match) => match[1]);
+    expect(words).toEqual([...HANDLE_RESERVED]);
+  });
+
+  it('has the same blocked terms', () => {
+    const terms = /p_handle ~ '\(([a-z|]+)\)'/.exec(sql)?.[1]?.split('|') ?? [];
+    expect(terms).toEqual([...BLOCKED_TERMS]);
+  });
+});
