@@ -1,61 +1,105 @@
-import type { AttributeFilter, Department, ListingDetail } from '@hucxter/contracts';
+import type { AttributeFilter, Department, ListingDetail, PriceDrop } from '@hucxter/contracts';
 import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
-import { BadgeCheck, Flag, Heart, MapPin, MessageCircle, Play, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Heart, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
 import { Breadcrumb, SubcategoryRow } from '@/components/results/results-layout';
+import { ListingPlayer } from '@/components/video/listing-player';
+import type { PlayerSource } from '@/components/video/listing-player';
 import { cx } from '@/lib/cx';
-import { GatedActionButton } from './gated-action';
+import { ListingDescription } from './description';
+import { OwnerControls } from './owner-panel';
+import { ReportButton } from './report-button';
 import { ShareButton } from './share-button';
 import { StatusBadge } from './status-badge';
 import styles from './template.module.css';
+import { ViewBeacon } from './view-beacon';
 
-function formatMemberSince(isoDate: string): string {
+function formatJoined(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-US', {
-    month: 'long',
+    month: 'short',
     year: 'numeric',
     timeZone: 'UTC',
   });
 }
 
-function postedAgo(iso: string, now: Date = new Date()): string {
-  const hours = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 3_600_000));
-  if (hours < 1) return 'Posted just now';
-  if (hours < 24) return `Posted ${String(hours)} h ago`;
+/** "just now", "3 hours ago", "2 days ago", "5 weeks ago" … (from published_at). */
+export function listedAgo(iso: string, now: Date = new Date()): string {
+  const minutes = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 60_000));
+  const plural = (n: number, unit: string) => `${String(n)} ${unit}${n === 1 ? '' : 's'} ago`;
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return plural(minutes, 'minute');
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return plural(hours, 'hour');
   const days = Math.round(hours / 24);
-  return `Posted ${String(days)} ${days === 1 ? 'day' : 'days'} ago`;
+  if (days < 14) return plural(days, 'day');
+  if (days < 60) return plural(Math.round(days / 7), 'week');
+  return plural(Math.round(days / 30), 'month');
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+export interface OwnerView {
+  views: number | null;
+  inReview: boolean;
 }
 
 /**
- * Product page template (storefront-ia §5): vertical video left, detail column right. Used by
- * /dev/templates/listing now and by /l/[id] once listings exist (Brief 04).
+ * Listing page (Brief 03C.1 §3.4). Desktop: dark video stage with the action rail (Share,
+ * Report, Save soon) + detail column. Phones: video on top, details below, sticky action bar.
+ * No counts, ratings or chat box; the message action is disabled until messaging ships.
  */
 export function ListingTemplate({
   listing,
   department,
   filters,
+  player,
+  drop,
+  owner,
+  verified,
 }: {
   listing: ListingDetail;
   department: Department;
   filters: AttributeFilter[];
+  player: PlayerSource | null;
+  drop: PriceDrop | null;
+  owner: OwnerView | null;
+  /** A verified member (may report); guests and unverified members get the gated action. */
+  verified: boolean;
 }) {
   const subcategory = department.subcategories.find((sub) => sub.slug === listing.category_slug);
-  const attributeRows = filters.flatMap((filter) => {
-    const value = listing.attributes[filter.key];
-    if (value === undefined) return [];
-    const shown =
-      typeof value === 'boolean'
-        ? value
-          ? 'Yes'
-          : 'No'
-        : `${String(value)}${filter.type === 'enum' && filter.unit !== undefined ? ` ${filter.unit}` : ''}`;
-    return [{ label: filter.label, value: shown }];
-  });
+  const attributeRows = [
+    { label: 'Condition', value: CONDITION_LABELS[listing.condition] },
+    ...filters.flatMap((filter) => {
+      const value = listing.attributes[filter.key];
+      if (value === undefined) return [];
+      const shown =
+        typeof value === 'boolean'
+          ? value
+            ? 'Yes'
+            : 'No'
+          : `${String(value)}${filter.type === 'enum' && filter.unit !== undefined ? ` ${filter.unit}` : ''}`;
+      return [{ label: filter.label, value: shown }];
+    }),
+  ];
+  const sold = listing.status === 'sold';
+  const isOwner = owner !== null;
 
-  const primary =
-    listing.status === 'sold'
-      ? null
-      : listing.status === 'pending'
-        ? 'Let me know if it falls through'
-        : 'Is this still available?';
+  const saveButton = (
+    <span className={styles.railItem}>
+      <button type="button" className={styles.secondary} disabled aria-describedby="save-soon">
+        <Heart size={18} aria-hidden="true" />
+        <span className={styles.actionLabel}>Save</span>
+      </button>
+      <span id="save-soon" className={styles.railNote}>
+        Saving arrives soon
+      </span>
+    </span>
+  );
 
   return (
     <>
@@ -73,115 +117,148 @@ export function ListingTemplate({
         <SubcategoryRow department={department} activeSlug={subcategory?.slug} />
       </div>
 
+      {owner?.inReview === true ? (
+        <p className={styles.reviewBanner} role="status">
+          We’re reviewing this listing. Only you can see it until it’s approved.
+        </p>
+      ) : null}
+
       <article className={styles.layout} aria-labelledby="listing-title">
         <div className={styles.videoColumn}>
-          <div className={styles.video}>
-            {/* Mux Player arrives in Brief 05; the poster stands in for the 9:16 video. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={listing.poster_url} alt="" className={styles.poster} />
-            {listing.is_demo ? <span className={styles.demoTag}>Demo</span> : null}
-            <span className={styles.playHint}>
-              <Play size={20} aria-hidden="true" />
-              Video plays here
-            </span>
+          <div className={styles.stage}>
+            <div className={styles.video}>
+              {player === null ? (
+                <p className={styles.videoUnavailable}>This video isn’t available right now.</p>
+              ) : (
+                <ListingPlayer source={player} title={listing.title} />
+              )}
+            </div>
+            <div className={styles.rail} aria-label="Listing actions" role="group">
+              <ShareButton className={styles.secondary} labelClassName={styles.actionLabel} />
+              {isOwner ? null : (
+                <ReportButton
+                  listingId={listing.id}
+                  verified={verified}
+                  className={styles.secondary}
+                  labelClassName={styles.actionLabel}
+                />
+              )}
+              {isOwner ? null : saveButton}
+            </div>
           </div>
         </div>
 
         <div className={styles.details}>
           <div className={styles.titleBlock}>
-            <StatusBadge status={listing.status} />
             <h1 id="listing-title" className={styles.title}>
               {listing.title}
             </h1>
-            <p className={styles.price}>{formatPrice(listing.price_cents)}</p>
+            <div className={styles.priceRow}>
+              {drop === null ? (
+                <p className={styles.price}>{formatPrice(listing.price_cents)}</p>
+              ) : (
+                <p className={styles.price}>
+                  <span aria-hidden="true">{formatPrice(drop.nowCents)}</span>{' '}
+                  <s className={styles.was} aria-hidden="true">
+                    {formatPrice(drop.wasCents)}
+                  </s>
+                  <span className={styles.visuallyHidden}>
+                    Was {formatPrice(drop.wasCents)}, now {formatPrice(drop.nowCents)}
+                  </span>
+                  <span className={styles.dropTag}>Price dropped</span>
+                </p>
+              )}
+              <StatusBadge status={listing.status} />
+            </div>
             <p className={styles.meta}>
-              {CONDITION_LABELS[listing.condition]} · {listing.distance_bucket} ·{' '}
-              {listing.area_label} · {postedAgo(listing.posted_at)}
+              Listed {listedAgo(listing.posted_at)} in {listing.area_label}, {listing.state}
+              {listing.distance_bucket === null ? '' : ` · ${listing.distance_bucket} away`}
             </p>
           </div>
 
-          {/* Desktop: the actions panel. Phones: a sticky bottom bar (Save · Share · primary). */}
-          <div className={styles.actions}>
-            {primary === null ? (
-              <p className={styles.soldNote}>
-                This item has sold. The seller isn’t taking new messages.
-              </p>
-            ) : (
-              <GatedActionButton
-                action="availability"
-                prompt="Sign in to message this seller"
-                className={styles.primary}
-              >
-                <MessageCircle size={18} aria-hidden="true" />
-                {primary}
-              </GatedActionButton>
-            )}
-            <GatedActionButton
-              action="save"
-              prompt="Sign in to save items"
-              className={cx(styles.secondary, styles.save)}
-            >
-              <Heart size={18} aria-hidden="true" />
-              <span className={styles.actionLabel}>Save</span>
-            </GatedActionButton>
-            <ShareButton
-              className={cx(styles.secondary, styles.share)}
-              labelClassName={styles.actionLabel}
-            />
-            <GatedActionButton
-              action="report"
-              prompt="Sign in to report a listing"
-              className={cx(styles.secondary, styles.reportDesktop)}
-            >
-              <Flag size={18} aria-hidden="true" />
-              Report
-            </GatedActionButton>
-          </div>
-
-          {attributeRows.length === 0 ? null : (
-            <section aria-labelledby="details-heading" className={styles.panel}>
-              <h2 id="details-heading" className={styles.panelTitle}>
-                Details
-              </h2>
-              <dl className={styles.attributes}>
-                {attributeRows.map((row) => (
-                  <div key={row.label} className={styles.attributeRow}>
-                    <dt>{row.label}</dt>
-                    <dd>{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
+          {isOwner ? (
+            <OwnerControls listingId={listing.id} status={listing.status} views={owner.views} />
+          ) : (
+            <div className={styles.actions}>
+              {sold ? (
+                <p className={styles.soldNote}>This item has sold.</p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={styles.primary}
+                    disabled
+                    aria-describedby="messaging-soon"
+                  >
+                    <MessageCircle size={18} aria-hidden="true" />
+                    Is this still available?
+                  </button>
+                  <p id="messaging-soon" className={styles.primaryNote}>
+                    Messaging arrives in the next QA build
+                  </p>
+                </>
+              )}
+              <ShareButton
+                className={cx(styles.secondary, styles.barOnly)}
+                labelClassName={styles.actionLabel}
+              />
+              <ReportButton
+                listingId={listing.id}
+                verified={verified}
+                className={cx(styles.secondary, styles.barOnly)}
+                labelClassName={styles.actionLabel}
+              />
+            </div>
           )}
 
-          <section aria-labelledby="description-heading" className={styles.panel}>
-            <h2 id="description-heading" className={styles.panelTitle}>
-              Description
+          <section aria-labelledby="details-heading" className={styles.panel}>
+            <h2 id="details-heading" className={styles.panelTitle}>
+              Details
             </h2>
-            <p className={styles.description}>{listing.description}</p>
+            <dl className={styles.attributes}>
+              {attributeRows.map((row) => (
+                <div key={row.label} className={styles.attributeRow}>
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
           </section>
 
           <section aria-labelledby="seller-heading" className={styles.panel}>
             <h2 id="seller-heading" className={styles.panelTitle}>
               Seller
             </h2>
-            <p className={styles.sellerName}>{listing.seller.display_name}</p>
-            <p className={styles.metaSmall}>
-              Member since {formatMemberSince(listing.seller.member_since)}
-            </p>
-            <ul className={styles.badges}>
-              {listing.seller.verified.phone ? (
-                <li>
-                  <BadgeCheck size={16} aria-hidden="true" /> Phone verified
-                </li>
-              ) : null}
-              {listing.seller.verified.email ? (
-                <li>
-                  <BadgeCheck size={16} aria-hidden="true" /> Email verified
-                </li>
-              ) : null}
-            </ul>
+            <div className={styles.seller}>
+              <span className={styles.avatar} aria-hidden="true">
+                {initials(listing.seller.display_name)}
+              </span>
+              <div>
+                <p className={styles.sellerName}>{listing.seller.display_name}</p>
+                <ul className={styles.sellerFacts}>
+                  {listing.seller.phone_verified ? (
+                    <li className={styles.verified}>
+                      <BadgeCheck size={16} aria-hidden="true" /> Phone verified
+                    </li>
+                  ) : null}
+                  <li>Joined {formatJoined(listing.seller.joined_month)}</li>
+                  <li>
+                    {listing.seller.items_sold} {listing.seller.items_sold === 1 ? 'item' : 'items'}{' '}
+                    sold
+                  </li>
+                </ul>
+              </div>
+            </div>
           </section>
+
+          {listing.description === '' ? null : (
+            <section aria-labelledby="description-heading" className={styles.panel}>
+              <h2 id="description-heading" className={styles.panelTitle}>
+                Description
+              </h2>
+              <ListingDescription text={listing.description} />
+            </section>
+          )}
 
           <section aria-labelledby="meet-heading" className={styles.panel}>
             <h2 id="meet-heading" className={styles.panelTitle}>
@@ -199,29 +276,9 @@ export function ListingTemplate({
               <li>Check the item before you pay. Never pay ahead or send gift cards.</li>
             </ul>
           </section>
-          <GatedActionButton
-            action="report"
-            prompt="Sign in to report a listing"
-            className={cx(styles.secondary, styles.reportCompact)}
-          >
-            <Flag size={18} aria-hidden="true" />
-            Report this listing
-          </GatedActionButton>
         </div>
       </article>
-
-      <section aria-labelledby="more-seller" className={styles.rail}>
-        <h2 id="more-seller" className={styles.railTitle}>
-          More from this seller
-        </h2>
-        <p className={styles.railEmpty}>No other listings from this seller yet.</p>
-      </section>
-      <section aria-labelledby="similar" className={styles.rail}>
-        <h2 id="similar" className={styles.railTitle}>
-          Similar near {listing.area_label}
-        </h2>
-        <p className={styles.railEmpty}>No similar listings nearby yet.</p>
-      </section>
+      {isOwner ? null : <ViewBeacon listingId={listing.id} />}
     </>
   );
 }

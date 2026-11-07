@@ -81,6 +81,7 @@
 
 .handleArea {
   display: flex;
+  flex: none;
   justify-content: center;
   padding: var(--hx-space-2) 0 var(--hx-space-1);
   touch-action: none;
@@ -96,6 +97,7 @@
 
 .header {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--hx-space-2);
   padding: 0 var(--hx-space-2) var(--hx-space-2) var(--hx-space-4);
@@ -135,7 +137,9 @@
 }
 
 .body {
+  /* Only the body scrolls; header and footer keep their size in a short (peek) sheet. */
   flex: 1;
+  min-height: 0;
   padding: var(--hx-space-4);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -143,6 +147,7 @@
 
 .footer {
   display: flex;
+  flex: none;
   gap: var(--hx-space-2);
   padding: var(--hx-space-3) var(--hx-space-4) calc(var(--hx-space-3) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--hx-separator);

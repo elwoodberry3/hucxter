@@ -1,7 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
 import { DESKTOP_ONLY, KEY_PAGES } from './support';
+
+const seeded: SeededListing[] = [];
+test.afterEach(async () => {
+  await deleteSeeded(seeded.splice(0));
+});
 
 async function blockingViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -31,13 +38,18 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(await blockingViolations(page)).toEqual([]);
   });
 
-  test(`axe: open location popover and sign-in sheet (${colorScheme})`, async ({ page }) => {
+  test(`axe: open location popover and sign-in sheet (${colorScheme})`, async ({
+    page,
+  }, testInfo) => {
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
     await page.emulateMedia({ colorScheme });
-    await page.goto('/dev/templates/listing');
+    await page.goto(`/l/${listing.id}`);
     await page.getByRole('button', { name: /Near Portland/ }).click();
     expect(await blockingViolations(page)).toEqual([]);
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Is this still available?' }).click();
+    await page.getByRole('button', { name: 'Report' }).filter({ visible: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Sign in to report a listing' })).toBeVisible();
     expect(await blockingViolations(page)).toEqual([]);
   });
 }

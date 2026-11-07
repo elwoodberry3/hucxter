@@ -1,0 +1,179 @@
+/* Moderation queue (Brief 03C.1 §3.6). */
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--hx-space-6);
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.heading {
+  font-size: var(--hx-text-large-title);
+  font-weight: 800;
+}
+
+.section {
+  display: grid;
+  gap: var(--hx-space-3);
+}
+
+.sectionTitle {
+  font-size: var(--hx-text-title-2);
+  font-weight: 700;
+}
+
+.list {
+  display: grid;
+  gap: var(--hx-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--hx-space-4);
+  padding: var(--hx-space-4);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+.thumb {
+  flex: none;
+  width: 4.5rem;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-art-1);
+}
+
+.thumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.body {
+  display: grid;
+  flex: 1 1 18rem;
+  gap: var(--hx-space-1);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--hx-text-headline);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+}
+
+.meta a {
+  color: var(--hx-accent);
+}
+
+.flag {
+  color: var(--hx-warning-label);
+  font-weight: 600;
+}
+
+.description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hx-space-2);
+}
+
+.button,
+.destructive,
+.destructiveText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border-radius: var(--hx-radius-control);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button,
+.destructiveText {
+  border: 1px solid var(--hx-separator-strong);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+}
+
+.destructiveText {
+  color: var(--hx-destructive);
+}
+
+.button:not(:disabled):hover,
+.destructiveText:not(:disabled):hover {
+  background: var(--hx-fill-hover);
+}
+
+.destructive {
+  flex: 1;
+  border: 0;
+  background: var(--hx-destructive);
+  color: var(--hx-on-accent);
+}
+
+.button:disabled,
+.destructive:disabled,
+.destructiveText:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sheetActions {
+  display: flex;
+  gap: var(--hx-space-2);
+}
+
+.label {
+  display: block;
+  margin-top: var(--hx-space-3);
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  margin-top: var(--hx-space-1);
+  padding: var(--hx-space-2) var(--hx-space-3);
+  border: 1px solid var(--hx-separator-strong);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  font: inherit;
+  font-size: max(1rem, var(--hx-text-body));
+}
+
+.error:empty {
+  display: none;
+}
+
+.error {
+  flex-basis: 100%;
+  color: var(--hx-destructive);
+  font-size: var(--hx-text-subheadline);
+}

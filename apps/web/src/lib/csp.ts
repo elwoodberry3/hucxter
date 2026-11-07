@@ -1,29 +1,48 @@
 /**
- * Content-Security-Policy for HTML responses. Third-party origins (Mux, Supabase, the bot
- * challenge) are added by the brief that introduces each one.
+ * Content-Security-Policy for HTML responses. Third-party origins (Mux, the bot challenge) are
+ * added only when the feature that needs them is configured.
  */
 export function contentSecurityPolicy({
   nonce,
   isDev,
   upgradeInsecure,
   turnstile = false,
+  mux = false,
+  inlineStyles = false,
 }: {
   nonce: string;
   isDev: boolean;
   upgradeInsecure: boolean;
   /** Cloudflare Turnstile (CAPTCHA_PROVIDER=turnstile): its script and challenge iframe only. */
   turnstile?: boolean;
+  /**
+   * Mux video (VIDEO_PROVIDER=mux), per https://www.mux.com/docs/core/content-security-policy:
+   * playback and thumbnails from *.mux.com (several CDN hosts), direct uploads to
+   * storage.googleapis.com, and blob: media and workers for HLS. No litix.io: the player runs with
+   * Mux Data tracking off.
+   */
+  mux?: boolean;
+  /**
+   * Listing pages only (Founder decision 2026-11-06): Mux Player's shadow-DOM <style> elements
+   * have no nonce support, so these pages allow inline styles. The style nonce is dropped there,
+   * because browsers ignore 'unsafe-inline' next to a nonce. Scripts are unaffected.
+   */
+  inlineStyles?: boolean;
 }): string {
   const challenge = turnstile ? ' https://challenges.cloudflare.com' : '';
+  const muxConnect = mux ? ' https://*.mux.com https://storage.googleapis.com' : '';
   const directives = [
     "default-src 'self'",
     // React's dev tooling needs eval; production never gets it.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${challenge}${isDev ? " 'unsafe-eval'" : ''}`,
     // The dev error overlay injects inline styles; browsers ignore 'unsafe-inline' next to a nonce.
-    isDev ? "style-src 'self' 'unsafe-inline'" : `style-src 'self' 'nonce-${nonce}'`,
-    "img-src 'self' data: blob:",
+    isDev || inlineStyles
+      ? "style-src 'self' 'unsafe-inline'"
+      : `style-src 'self' 'nonce-${nonce}'`,
+    `img-src 'self' data: blob:${mux ? ' https://image.mux.com' : ''}`,
+    ...(mux ? ["media-src 'self' blob: https://*.mux.com", "worker-src 'self' blob:"] : []),
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${muxConnect}`,
     "manifest-src 'self'",
     ...(turnstile ? [`frame-src${challenge}`] : []),
     "frame-ancestors 'none'",

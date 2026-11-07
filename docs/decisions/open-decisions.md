@@ -9,6 +9,11 @@
 | D-38 | Styling approach for the mobile standard (its §9 assumes Tailwind) | **Keep CSS Modules + CSS custom-property tokens** (no Tailwind migration); meet §9's intent with tokens and variants | Brief 03 |
 | D-39 | Transactional email provider (custom SMTP for Supabase Auth) | Founder chooses a provider; SPF/DKIM/DMARC on the sending domain | Brief 03E |
 | D-40 | QA URL and hosting plan | `qa.hucxter.app` on a Vercel **Pro** team | Brief 03E |
+| D-42 | Members get a unique public **@handle** (profile URL `/u/[handle]`), auto-generated when onboarding completes, editable in settings | Approve (Chair default, `docs/kickoff/brief-03c.md` §1) | Brief 03C.2 |
+| D-43 | Followers, following, likes, reposts, favorites, comments and public engagement counts are **deferred to Phase II** (creators). Phase I profiles show only real marketplace facts | Approve (Chair default) | Brief 03C |
+| D-44 | Profile photos: optional upload, re-encoded server-side (metadata stripped), stored in Supabase Storage; initials avatar by default | Approve (Chair default) | Brief 03C.2 |
+| D-45 | A struck-through earlier price shows only for a **real price drop on Hucxter** (live at that price ≥ 7 consecutive days, dropped within 30 days); never an MSRP or "compare at" price | Approve (Chair default) | Brief 03C.1 |
+| D-46 | **No seller star ratings** until a transaction-confirmed review system exists. Seller cards show verified facts only | Approve (Chair default) | Brief 03C |
 | D-27 | "Pending: someone's on the way": hours before the app asks the seller to confirm Sold or Available | Configurable; start with the end of the same day and tune with QA data | Brief 07 |
 | D-28 | Placeholder hero and category art source | In-repo SVG/CSS illustrations now; Founder-supplied licensed photos later. No hotlinked stock | Brief 02 |
 | D-29 | Guests can view full listing pages (actions gated) vs. sign-in required to open a listing | Guests can view. Better discovery, sharing, and search indexing; every *action* still needs a verified account | Brief 02 |
@@ -18,7 +23,7 @@
 | D-19 | Browser support beyond Chrome for public beta (Edge, Safari, Firefox on desktop) | Chrome only for I-A; before I-B, smoke-test Edge and Safari (the main desktop browsers outside Chrome) | Phase I-B |
 | D-20 | Redirects: `hucxter.com` and `hucxster.app` → `hucxter.app` (301) | Yes. Configure at the DNS/edge level | Public beta |
 | D-21 | Vector (SVG) master of the Hx mark | Provide when available, for sharper favicons and the Phase IV app | Nice to have |
-| D-05 | Maximum video length and size; default discovery radius | Brief 03 defaults: `MEDIA_MAX_SECONDS=60`, `MEDIA_MAX_BYTES=524288000`, radius 25 mi; tune with QA data | Brief 05 |
+| D-05 | Maximum video length and size; default discovery radius | Brief 03 defaults: `MEDIA_MAX_SECONDS=60`, `MEDIA_MAX_BYTES=524288000`, radius 25 mi; tune with QA data. Brief 03C keeps these limits (the mockup's 2:36 video is illustrative) | Brief 03C |
 | D-07 | Prohibited items list, terms, privacy policy, age policy, data retention | Counsel review. **Now also blocks Facebook/TikTok app review**, which needs live Terms + Privacy URLs on hucxter.app | Brief 03 (social login), public beta |
 | D-08 | SMS provider for phone verification (Brief 03 default: **Twilio Verify** via Supabase; bot challenge **Cloudflare Turnstile**) (e.g., Twilio, MessageBird, Vonage; check Supabase's supported list), bot-challenge provider, analytics approach (ADR-0006) | Pick on cost and VoIP detection | Brief 03 |
 | D-09 | In-app payments/escrow | Not in Phase I; revisit in Phase II with dispute data | Phase II |
@@ -46,6 +51,7 @@
 | D-36 | Any valid US ZIP can be set by anyone, any time. Guest default with no other signal is the launch area (97205) | 2026-10-31 | `postal_areas` (all 2020 ZCTAs) |
 | D-37 | **Mobile web is a first-class Phase I surface** per `docs/standards/mobile-experience-standard.md`, adapted for no shipping/payments | 2026-10-31 | ADR-0011 |
 | D-41 | The next QA build is hosted on Vercel for the invite-only QA team | 2026-10-31 | Brief 03E |
+| D-47 | The 3B direct-API phone-change gap (`PUT /auth/v1/user`, `POST /auth/v1/verify` outside the app's limits) is **accepted for the closed QA only**; a Supabase Send SMS hook closes it before the Phase I-B public beta | 2026-11-06 (accepted on PR #9) | `docs/runbooks/accounts.md` §5; `docs/kickoff/brief-03c.md` |
 
 ## Superseded
 

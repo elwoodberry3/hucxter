@@ -1,0 +1,24 @@
+import { cronAuthorized } from '@/server/jobs/cron-auth';
+import { runJobs } from '@/server/jobs/run';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request): Promise<Response> {
+  if (!cronAuthorized(request.headers.get('authorization'))) {
+    return new Response('Unauthorized', { status: 401, headers: { 'Cache-Control': 'no-store' } });
+  }
+  try {
+    return Response.json(await runJobs(), { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: 'jobs_run_failed',
+        code: error instanceof Error ? error.message : 'unknown',
+      }),
+    );
+    return new Response('Job run failed', {
+      status: 500,
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  }
+}

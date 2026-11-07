@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ListingCardView } from '@/components/listing/listing-card';
 import { FilterDrawer } from './filter-drawer';
 import { FilterPanel } from './filter-panel';
+import { LoadMore } from './load-more';
 import { SortSelect } from './sort-select';
 import styles from './results.module.css';
 
@@ -26,6 +27,8 @@ export function ResultsLayout({
   viewerRadiusMi,
   surface,
   listings,
+  nextCursor,
+  scope = {},
   areaLabel,
   empty,
 }: {
@@ -36,6 +39,9 @@ export function ResultsLayout({
   viewerRadiusMi: RadiusMi;
   surface: 'category' | 'search';
   listings: ListingCard[];
+  /** Keyset cursor for the next page, or null. */
+  nextCursor: string | null;
+  scope?: { departmentSlug?: string | undefined; subcategorySlug?: string | undefined };
   areaLabel: string | null;
   empty: EmptyStateCopy;
 }) {
@@ -64,9 +70,8 @@ export function ResultsLayout({
       <section className={styles.results} aria-labelledby="results-heading">
         <div className={styles.toolbar}>
           <h2 id="results-heading" className={styles.resultCount}>
-            {listings.length === 0
-              ? `No listings ${near} yet`
-              : `${String(listings.length)} ${listings.length === 1 ? 'listing' : 'listings'} ${near}`}
+            {/* No totals: a page of results isn't a count of everything nearby. */}
+            {listings.length === 0 ? `No listings ${near} yet` : `Listings ${near}`}
           </h2>
           <div className={styles.toolbarActions}>
             <FilterDrawer
@@ -81,13 +86,24 @@ export function ResultsLayout({
           </div>
         </div>
         {listings.length > 0 ? (
-          <ul className={styles.grid}>
-            {listings.map((listing) => (
-              <li key={listing.id}>
-                <ListingCardView listing={listing} href={`/l/${listing.id}`} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className={styles.grid}>
+              {listings.map((listing) => (
+                <li key={listing.id}>
+                  <ListingCardView listing={listing} href={`/l/${listing.id}`} />
+                </li>
+              ))}
+            </ul>
+            {nextCursor === null ? null : (
+              <LoadMore
+                action={action}
+                cursor={nextCursor}
+                search={listingQueryParams(query).toString()}
+                departmentSlug={scope.departmentSlug}
+                subcategorySlug={scope.subcategorySlug}
+              />
+            )}
+          </>
         ) : (
           <ResultsEmptyState
             copy={empty}

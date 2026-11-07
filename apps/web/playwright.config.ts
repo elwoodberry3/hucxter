@@ -8,6 +8,8 @@ const baseURL = `http://localhost:${String(PORT)}`;
 const productionURL = `http://localhost:${String(PRODUCTION_PORT)}`;
 const INVITE_OFF_PORT = 3102;
 const inviteOffURL = `http://localhost:${String(INVITE_OFF_PORT)}`;
+const LOCAL_PORT = 3103;
+const localURL = `http://localhost:${String(LOCAL_PORT)}`;
 
 interface SupabaseEnv {
   SUPABASE_URL: string;
@@ -96,7 +98,8 @@ export default defineConfig({
   ],
   // Production builds, so headers and CSP are tested as they ship. Servers start in order: the
   // first builds; the second reuses that build with APP_ENV=production to prove /dev is gated;
-  // the third reuses it with the invite gate off.
+  // the third reuses it with the invite gate off; the fourth runs it as a local deployment with the
+  // fake video provider.
   webServer: [
     {
       command: `pnpm build && pnpm start -p ${String(PORT)}`,
@@ -136,6 +139,22 @@ export default defineConfig({
         APP_ORIGIN: inviteOffURL,
         INVITE_ONLY: 'false',
         CAPTCHA_PROVIDER: 'none',
+      },
+    },
+    {
+      // Same build as a local deployment with the fake video provider (refused in qa and
+      // production): the sell flow, listing pages and storefront with real listings.
+      command: `pnpm start -p ${String(LOCAL_PORT)}`,
+      url: `${localURL}/api/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        ...sharedEnv,
+        APP_ENV: 'local',
+        APP_ORIGIN: localURL,
+        INVITE_ONLY: 'false',
+        CAPTCHA_PROVIDER: 'none',
+        VIDEO_PROVIDER: 'fake',
       },
     },
   ],

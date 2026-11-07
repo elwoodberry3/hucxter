@@ -5,11 +5,18 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Brief §5: the service-role key is read only in src/server/admin-db.ts, and admin-db is imported
- * only by account deletion, audit, and abuse-limit code (later: webhooks, jobs, admin actions).
+ * only by account deletion, audit, abuse-limit, media (webhooks, playback), jobs, admin and event code.
  */
 const SRC = fileURLToPath(new URL('..', import.meta.url));
 const KEY_OWNER = 'server/admin-db.ts';
-const ALLOWED_IMPORTERS = [/^server\/account\//, /^server\/auth\/otp-limits\.ts$/];
+const ALLOWED_IMPORTERS = [
+  /^server\/account\//,
+  /^server\/auth\/otp-limits\.ts$/,
+  /^server\/media\//,
+  /^server\/jobs\//,
+  /^server\/admin\//,
+  /^server\/events\.ts$/,
+];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

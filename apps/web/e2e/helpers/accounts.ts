@@ -149,3 +149,43 @@ export async function completeOnboarding(
   await page.getByLabel('What should people call you?').fill(name);
   await page.getByRole('button', { name: 'Finish' }).click();
 }
+
+/**
+ * Signs up a new e2e member at `base` (default: the test's baseURL) and finishes onboarding.
+ * Returns the address so the test can delete the account afterwards.
+ */
+export async function signUpVerified(
+  page: Page,
+  testInfo: TestInfo,
+  {
+    base = '',
+    slot = 0,
+    label = 'm',
+    zip,
+    name,
+  }: { base?: string; slot?: 0 | 1; label?: string; zip?: string; name?: string } = {},
+): Promise<string> {
+  const email = testEmail(testInfo, label);
+  await invite(email);
+  await page.goto(`${base}/sign-in?next=%2Fsettings`);
+  await signInWithEmail(page, email);
+  await completeOnboarding(page, testPhone(testInfo, slot), {
+    ...(zip === undefined ? {} : { zip }),
+    ...(name === undefined ? {} : { name }),
+  });
+  await expect(page).toHaveURL(`${base}/settings`);
+  return email;
+}
+
+/** The local user id for an e2e address. */
+export async function userIdFor(email: string): Promise<string> {
+  if (!isE2eEmail(email)) throw new Error('Only e2e addresses');
+  for (let page = 1; page < 100; page += 1) {
+    const { data, error } = await localAdmin().auth.admin.listUsers({ page, perPage: 200 });
+    if (error !== null) throw new Error('Could not list local users');
+    const user = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (user !== undefined) return user.id;
+    if (data.users.length < 200) break;
+  }
+  throw new Error('e2e user not found');
+}

@@ -417,3 +417,19 @@ fieldset > .legend {
     grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   }
 }
+
+.grid + .grid {
+  margin-top: var(--hx-space-6);
+}
+
+.loadMore {
+  display: grid;
+  justify-items: center;
+  gap: var(--hx-space-2);
+  margin-top: var(--hx-space-8);
+}
+
+.loadMoreError {
+  color: var(--hx-destructive);
+  font-size: var(--hx-text-subheadline);
+}

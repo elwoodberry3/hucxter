@@ -33,6 +33,10 @@ const ServerEnv = z.object({
   CAPTCHA_PROVIDER: optional(z.enum(['turnstile', 'none'])),
   TURNSTILE_SITE_KEY: optional(z.string().min(1).max(100)),
   TURNSTILE_SECRET_KEY: optional(z.string().min(1).max(200)),
+  // Video (Brief 03C.1 §3.3). `fake` is local only; Mux secrets are read in server/media/mux.ts.
+  VIDEO_PROVIDER: optional(z.enum(['mux', 'fake'])),
+  MEDIA_MAX_SECONDS: optional(z.coerce.number().int().min(5).max(180)),
+  MEDIA_MAX_BYTES: optional(z.coerce.number().int().min(1_000_000).max(2_000_000_000)),
 });
 
 export type AppEnv = 'local' | 'qa' | 'production';
@@ -132,5 +136,30 @@ export function authConfig(env: Record<string, string | undefined> = process.env
     inviteOnly: parsed.INVITE_ONLY === undefined ? appEnv === 'qa' : parsed.INVITE_ONLY === 'true',
     captcha,
     allowTestPhoneNumbers: appEnv !== 'production' && isLocalHost(parsed.SUPABASE_URL),
+  };
+}
+
+export interface MediaConfig {
+  provider: 'mux' | 'fake';
+  maxSeconds: number;
+  maxBytes: number;
+}
+
+/**
+ * Video settings (Brief 03C.1 §3.3). The fake provider defaults on, and is only allowed, when the
+ * resolved APP_ENV is local: it is refused for qa, production, and a production build without
+ * APP_ENV (fail closed, like the /dev route gate).
+ */
+export function mediaConfig(env: Record<string, string | undefined> = process.env): MediaConfig {
+  const parsed = ServerEnv.parse(env);
+  const { appEnv } = serverConfig(env);
+  const provider = parsed.VIDEO_PROVIDER ?? (appEnv === 'local' ? 'fake' : 'mux');
+  if (provider === 'fake' && appEnv !== 'local') {
+    throw new Error(`VIDEO_PROVIDER=fake is not allowed when APP_ENV=${appEnv}`);
+  }
+  return {
+    provider,
+    maxSeconds: parsed.MEDIA_MAX_SECONDS ?? 60,
+    maxBytes: parsed.MEDIA_MAX_BYTES ?? 524_288_000,
   };
 }

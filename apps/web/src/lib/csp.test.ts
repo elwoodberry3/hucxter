@@ -34,6 +34,32 @@ describe('contentSecurityPolicy', () => {
     expect(on).toContain("connect-src 'self'");
   });
 
+  it('adds Mux hosts only when the Mux provider is on', () => {
+    const base = { nonce: 'n', isDev: false, upgradeInsecure: true };
+    const off = contentSecurityPolicy(base);
+    expect(off).not.toContain('mux.com');
+    expect(off).not.toContain('media-src');
+    expect(off).not.toContain('worker-src');
+    const on = contentSecurityPolicy({ ...base, mux: true });
+    expect(on).toContain("connect-src 'self' https://*.mux.com https://storage.googleapis.com");
+    expect(on).toContain("img-src 'self' data: blob: https://image.mux.com");
+    expect(on).toContain("media-src 'self' blob: https://*.mux.com");
+    expect(on).toContain("worker-src 'self' blob:");
+    expect(on).toContain("style-src 'self' 'nonce-n'");
+    expect(on).not.toContain('litix');
+    expect(on).not.toContain('unsafe-inline');
+  });
+
+  it('allows inline styles only when asked (listing pages), never inline scripts', () => {
+    const base = { nonce: 'n', isDev: false, upgradeInsecure: true, mux: true };
+    expect(contentSecurityPolicy(base)).toContain("style-src 'self' 'nonce-n'");
+    const listing = contentSecurityPolicy({ ...base, inlineStyles: true });
+    expect(listing).toContain("style-src 'self' 'unsafe-inline'");
+    expect(listing).not.toMatch(/style-src[^;]*nonce/);
+    expect(listing).toContain("script-src 'self' 'nonce-n' 'strict-dynamic'");
+    expect(listing).not.toMatch(/script-src[^;]*unsafe-inline/);
+  });
+
   it('creates distinct 128-bit base64 nonces', () => {
     const a = createNonce();
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);

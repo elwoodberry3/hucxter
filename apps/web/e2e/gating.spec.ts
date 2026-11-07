@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { deleteSeeded, seedListing } from './helpers/listings';
+import type { SeededListing } from './helpers/listings';
 import { DESKTOP_ONLY, GATED_ROUTES, SERVER_ONLY } from './support';
+
+const seeded: SeededListing[] = [];
+test.afterEach(async () => {
+  await deleteSeeded(seeded.splice(0));
+});
 
 test.describe('sign-in gating', () => {
   for (const route of GATED_ROUTES) {
@@ -42,33 +49,31 @@ test.describe('sign-in gating', () => {
     await expect(trigger).toBeFocused();
   });
 
-  test('gated actions open the sign-in sheet with Google and email (D-34)', async ({ page }) => {
-    await page.goto('/dev/templates/listing');
-    for (const [button, prompt] of [
-      ['Is this still available?', 'Sign in to message this seller'],
-      ['Save', 'Sign in to save items'],
-      ['Report', 'Sign in to report a listing'],
-    ] as const) {
-      // Desktop: "Report"; phones: "Report this listing" (outside the sticky bar).
-      const trigger = page.getByRole('main').getByRole('button', {
-        name: button === 'Report' ? /^Report/ : button,
-        exact: button !== 'Report',
-      });
-      // Keyboard activation: WebKit doesn't focus buttons on click, and focus return is the point.
-      await trigger.focus();
-      await page.keyboard.press('Enter');
-      const sheet = page.getByRole('dialog', { name: prompt });
-      await expect(sheet).toBeVisible();
-      await expect(sheet.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
-        'href',
-        '/auth/google?next=%2Fdev%2Ftemplates%2Flisting',
-      );
-      await expect(sheet.getByRole('button', { name: 'Continue with email' })).toBeVisible();
-      await expect(sheet).not.toContainText(/Facebook|TikTok|next release/);
-      await page.keyboard.press('Escape');
-      await expect(sheet).toBeHidden();
-      await expect(trigger).toBeFocused();
-    }
+  test('gated actions open the sign-in sheet with Google and email (D-34)', async ({
+    page,
+  }, testInfo) => {
+    const listing = await seedListing(testInfo);
+    seeded.push(listing);
+    await page.goto(`/l/${listing.id}`);
+    // Report is the listing page's gated action (messaging and saving are disabled until they
+    // ship). Desktop: the rail; phones: the sticky bar.
+    const trigger = page.getByRole('main').getByRole('button', { name: 'Report' }).filter({
+      visible: true,
+    });
+    // Keyboard activation: WebKit doesn't focus buttons on click, and focus return is the point.
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const sheet = page.getByRole('dialog', { name: 'Sign in to report a listing' });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
+      'href',
+      `/auth/google?next=${encodeURIComponent(`/l/${listing.id}`)}`,
+    );
+    await expect(sheet.getByRole('button', { name: 'Continue with email' })).toBeVisible();
+    await expect(sheet).not.toContainText(/Facebook|TikTok|next release/);
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    await expect(trigger).toBeFocused();
   });
 
   test('sign-in offers only Google and email; email asks for a 6-digit code', async ({ page }) => {

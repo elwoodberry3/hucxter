@@ -67,3 +67,52 @@ export function envelope(event: AnalyticsEvent, now: Date = new Date()): Tracked
     occurred_at: now.toISOString(),
   };
 }
+
+const status = z.enum(['draft', 'available', 'pending', 'sold']);
+
+/**
+ * First-party events stored server-side in the `events` table (Brief 03C.1 §3.6). The listing id
+ * travels in its own column; properties never include personal data. `listing_viewed` is
+ * deduplicated per viewer per listing per UTC day and never recorded for the owner.
+ */
+export const ServerEvent = z.discriminatedUnion('name', [
+  z.object({ name: z.literal('sell_started') }).strict(),
+  z.object({ name: z.literal('upload_started') }).strict(),
+  z.object({ name: z.literal('upload_completed') }).strict(),
+  z
+    .object({
+      name: z.literal('upload_failed'),
+      reason: z.enum([
+        'too_large',
+        'too_long',
+        'wrong_type',
+        'network',
+        'cancelled',
+        'server',
+        'processing',
+      ]),
+    })
+    .strict(),
+  z
+    .object({
+      name: z.literal('listing_published'),
+      department: slug,
+      category: slug,
+      free: z.boolean(),
+      outcome: z.enum(['published', 'in_review', 'scheduled']),
+    })
+    .strict(),
+  z.object({ name: z.literal('listing_status_changed'), from: status, to: status }).strict(),
+  z
+    .object({ name: z.literal('listing_price_changed'), direction: z.enum(['down', 'up']) })
+    .strict(),
+  z.object({ name: z.literal('listing_viewed') }).strict(),
+  z
+    .object({
+      name: z.literal('report_submitted'),
+      target: z.enum(['listing', 'profile']),
+      reason: z.string().regex(/^[a-z_]{1,40}$/),
+    })
+    .strict(),
+]);
+export type ServerEvent = z.infer<typeof ServerEvent>;

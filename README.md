@@ -56,8 +56,9 @@ pnpm --filter @hucxter/web exec playwright install chromium webkit
 
 ```
 apps/web/             Next.js App Router: UI, API route handlers, /admin
-  src/app/(shell)/    Sidebar + toolbar shell and its pages
-  src/app/api/        Route handlers (/api/health)
+  src/app/(store)/    Storefront pages (home, categories, search, /l, /sell, /listings, /admin)
+  src/server/         Server-only code: auth, listings, media (Mux seam), jobs, events
+  src/app/api/        Route handlers (health, Mux webhooks, cron jobs, view beacon)
   src/proxy.ts        Per-request nonce Content-Security-Policy
   e2e/                Playwright tests
 packages/contracts/   zod schemas and types shared by the web app and future clients
@@ -93,9 +94,9 @@ never the secret/service-role key), `APP_ENV=local`, and `DEFAULT_AREA_ZIP` (see
 | `/search?q=`                                     | Search results (same layout)                                                       |
 | `/sign-in`, `/sign-up`                           | Email code or Google (3B); new accounts continue to `/welcome`                     |
 | `/sell`, `/messages`, `/saved`, `/listings`, ... | Guests → `/sign-in?next=…`; unverified members → `/welcome?next=…`                 |
-| `/dev/templates/listing`                         | Product page template with a **Demo** fixture; 404 when `APP_ENV=production`       |
+| `/l/[id]`                                        | Listing page (3C.1); hidden, removed or unknown listings are 404                   |
 
-Never add fake listings, counts, ratings, or scale claims. Demo data lives only under `/dev`.
+Never add fake listings, counts, ratings, or scale claims.
 
 ## Mobile web and nationwide ZIPs (Brief 03, Milestone 3A)
 
@@ -129,3 +130,22 @@ Never add fake listings, counts, ratings, or scale claims. Demo data lives only 
   for account deletion, audit entries and OTP limits), `INVITE_ONLY`, `CAPTCHA_PROVIDER`
   (`turnstile` | `none`; `none` is refused in production), `TURNSTILE_SITE_KEY`,
   `TURNSTILE_SECRET_KEY`.
+
+## Listings and selling (Brief 03, Milestone 3C.1)
+
+- **Sell** (`/sell`): record or choose a video (up to 60 s), describe the item, review, publish.
+  "Publish when ready" posts it as soon as the video finishes processing. The draft is saved in
+  the database, so a reload resumes the same step.
+- **Listing page** (`/l/[id]`): Mux Player with signed playback, price (with "Price dropped" only
+  under the D-45 rule), status, distance bucket and area, seller card, Meet safely. Messaging is
+  still disabled ("Is this still available?" arrives in 3C.2). Owners get Edit, Mark pending,
+  Mark sold and Delete.
+- **My Listings** (`/listings`): Drafts · Processing · Live · In review · Sold. **Report** sheet on
+  every listing; staff review reports and held listings in `/admin`.
+- **Discovery:** home rails, categories and search read live listings within the viewer's radius
+  (1, 5, 10, 25, 50 or 100 mi). Browsers never see a precise location.
+- **Video locally** uses a fake provider (no Mux account needed). Real Mux setup, variables, manual
+  phone QA and troubleshooting: [`docs/runbooks/video.md`](docs/runbooks/video.md).
+- **Variables** (server only, never committed): `VIDEO_PROVIDER`, `MUX_TOKEN_ID`,
+  `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`, `MUX_SIGNING_KEY_ID`, `MUX_SIGNING_PRIVATE_KEY`,
+  `MEDIA_MAX_SECONDS`, `MEDIA_MAX_BYTES`, `CRON_SECRET`.

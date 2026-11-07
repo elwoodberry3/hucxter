@@ -33,6 +33,9 @@ function isEditable(element: Element | null): boolean {
  * by CSS, hidden on product pages (the sticky action bar takes its place), and hidden while a text
  * field has focus so it never covers the on-screen keyboard.
  */
+/** About the on-screen keyboard's closing animation. */
+const SHOW_AFTER_BLUR_MS = 300;
+
 export function TabBar() {
   const pathname = usePathname();
   const query = useSearchParams().toString();
@@ -41,12 +44,24 @@ export function TabBar() {
   const viewer = useViewer();
 
   useEffect(() => {
+    // Hide at once when a field gets focus; come back only after the keyboard has had time to
+    // close. Showing it on blur straight away put the bar under a tap that was still landing
+    // (tapping "Continue" just after typing hit the bar instead).
+    let timer: number | undefined;
     const update = () => {
-      setTyping(isEditable(document.activeElement));
+      window.clearTimeout(timer);
+      if (isEditable(document.activeElement)) {
+        setTyping(true);
+        return;
+      }
+      timer = window.setTimeout(() => {
+        setTyping(isEditable(document.activeElement));
+      }, SHOW_AFTER_BLUR_MS);
     };
     document.addEventListener('focusin', update);
     document.addEventListener('focusout', update);
     return () => {
+      window.clearTimeout(timer);
       document.removeEventListener('focusin', update);
       document.removeEventListener('focusout', update);
     };

@@ -62,3 +62,17 @@ export const loadMember = cache(async (): Promise<MemberState | null> => {
 });
 
 export type { MemberState, OnboardingStep };
+
+/**
+ * For rendering only (header, menus, location default): a failed profile read degrades to "signed
+ * out" for this request instead of breaking every page (PR #9 review L5). Gates and actions keep
+ * using `loadMember()`, which throws, so they still fail closed.
+ */
+export const loadMemberForDisplay = cache(async (): Promise<MemberState | null> => {
+  try {
+    return await loadMember();
+  } catch {
+    console.error('member_load_failed');
+    return null;
+  }
+});

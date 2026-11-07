@@ -1,6 +1,6 @@
 import 'server-only';
 import type { ViewerSummary } from '@/components/auth/viewer-context';
-import { loadMember } from '@/server/auth/member';
+import { loadMemberForDisplay } from '@/server/auth/member';
 
 export type Viewer =
   | { kind: 'guest' }
@@ -26,7 +26,7 @@ export async function getViewerSummary(): Promise<ViewerSummary> {
 
 /** The current viewer for rendering (header, menus). Gates use `requireVerifiedMember()`. */
 export async function getViewer(): Promise<Viewer> {
-  const member = await loadMember();
+  const member = await loadMemberForDisplay();
   if (member === null) return { kind: 'guest' };
   return {
     kind: 'member',

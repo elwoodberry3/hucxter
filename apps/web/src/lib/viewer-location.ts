@@ -5,7 +5,7 @@ import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { serverConfig } from './env';
 import { LOCATION_COOKIE, parseLocationCookie } from './location-cookie';
-import { loadMember } from '@/server/auth/member';
+import { loadMemberForDisplay } from '@/server/auth/member';
 import { lookupPostalArea } from './postal-areas';
 
 export interface ViewerLocation {
@@ -50,7 +50,7 @@ export const getViewerLocation = cache(async (): Promise<ViewerLocation | null> 
     }
   }
 
-  const member = await loadMember();
+  const member = await loadMemberForDisplay();
   if (member?.homeZip != null) {
     const area = await lookupPostalArea(member.homeZip);
     if (area !== null) {

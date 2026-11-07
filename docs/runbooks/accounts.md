@@ -110,17 +110,33 @@ defaults and need Founder sign-off.
 | Phone-code sends per account per hour | 5 |
 | Phone-code sends per number per hour | 3 |
 | Distinct phone numbers per account per day | 3 |
-| Email-code sends per address per hour | 5 |
-| Code checks (right or wrong) per email address per hour | 10 |
 | Phone-code checks per account per hour | 10 |
 
-Over the limit, people see "Too many codes requested. Try again in N minutes." (sends) or "Too
-many tries. Try again in N minutes." (checks). Counters store a keyed hash of the email or number,
-never the value itself. They outlive account deletion, so deleting and re-creating an account
-doesn't reset the per-number limits. To clear a member's limits, delete their rows from
+Over a phone limit, people see "Too many codes requested. Try again in N minutes." (sends) or "Too
+many tries. Try again in N minutes." (checks). Counters store a keyed hash of the number, never
+the number itself. They outlive account deletion, so deleting and re-creating an account doesn't
+reset the per-number limits. To clear a member's limits, delete their rows from
 `public.otp_send_attempts` with the service role.
 
-**Known gap (accepted risk, needs Founder sign-off):** a signed-in member can call Supabase Auth's
+**Email codes (Brief 03C.1 §3.0).** The 3B rule (10 wrong codes per address per hour, then a
+one-hour lock) let anyone who knew an address lock its owner out. Email-code checks are now bound
+to the browser that asked for the code, and wrong codes never start a timed lock:
+
+| Limit (`EMAIL_CODE_LIMITS`) | Value | When exceeded |
+|---|---|---|
+| Checks per code, from the browser that asked for it | 5 | "That code has expired or was replaced. Send a new code." |
+| Wrong checks per address per hour, all browsers (ceiling) | 15 | Every outstanding code for the address is invalidated; a fresh code works at once. Written to `audit_log` as `auth.email_code_ceiling` (hash prefix only) |
+| Sends per browser per hour | 3 | Neutral "We sent a code if…" answer, nothing sent |
+| Sends per address per hour (shared pool) | 6 | Overflow: one send per 10 minutes, 3 checks each (Turnstile is required on every send outside local) |
+| Known-device sends per hour | 3 | Own allowance outside the pool, for a browser that signed in to this address before (`hx_kd`, 180 days) |
+
+- **Cookies:** `hx_ec` (the code-requesting browser, 1 h, SameSite=Strict) and `hx_kd` (known device, 180 days, SameSite=Lax), both httpOnly, 32 random bytes. The database stores only a keyed hash of each, bound to the address hash, in `email_code_sessions` and `email_known_devices`.
+- **Guessing bound per address per hour:** every check needs a send, so wrong checks ≤ 6 × 5 + 6 × 3 = **48**, P ≤ 48 / 10⁶ = **4.8 × 10⁻⁵** (about 1 in 20,800; ≤ 1.2 × 10⁻³ if sustained for a day, with up to 12 bot checks an hour). Known-device sends need a cookie that only a past sign-in sets.
+- **Residual risk:** on a brand-new device, an attacker who keeps requesting codes can use up the pool and keep replacing the owner's newest code, so the owner may wait up to 10 minutes for an overflow slot. A known device, or Google sign-in with the same address, isn't affected.
+- **To clear an address's state:** with the service role, delete its rows from `email_code_sessions` (cascades to `email_code_checks`) and `email_code_ceilings`.
+
+**Known gap (D-47: accepted by the Founder on PR #9 for the closed QA only; a Supabase Send SMS hook
+must close it before the Phase I-B public beta):** a signed-in member can call Supabase Auth's
 `PUT /auth/v1/user` with their own session and the publishable key, changing their phone without
 going through the app. That skips the app's Turnstile check, these limits and the US-only number
 rules. Until a Supabase "Send SMS" hook enforces them at the source, the **Twilio Verify US-only
