@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { profileConfig } from '@/lib/env';
 import { loadMember } from '@/server/auth/member';
 import { rejectCrossOrigin } from '@/server/auth/origin';
-import { removeAvatar, saveAvatar } from '@/server/profile/avatar';
+import { removeAvatar, saveAvatar, takeAvatarAttempt } from '@/server/profile/avatar';
 import {
   AVATAR_MAX_BYTES,
   AVATAR_TYPES,
@@ -47,6 +47,21 @@ export async function POST(request: Request) {
   if (who instanceof Response) return who;
   const type = (request.headers.get('content-type') ?? '').split(';')[0]?.trim() ?? '';
   if (!(AVATAR_TYPES as readonly string[]).includes(type)) return json(415, { error: WRONG_FILE });
+  // The limit comes first: decoding is the expensive part, so every attempt counts.
+  let retryAfter: number;
+  try {
+    retryAfter = await takeAvatarAttempt(who.userId);
+  } catch {
+    console.error(JSON.stringify({ event: 'avatar_limit_failed' }));
+    return json(500, { error: 'We couldn’t save your photo. Try again.' });
+  }
+  if (retryAfter > 0) {
+    return json(
+      429,
+      { error: 'You’ve changed your photo a lot today. Try again tomorrow.' },
+      { 'Retry-After': String(retryAfter) },
+    );
+  }
   const body = await readCapped(request, AVATAR_MAX_BYTES);
   if (body === null) return json(413, { error: WRONG_FILE });
   if (body.byteLength === 0) return json(400, { error: WRONG_FILE });
@@ -58,14 +73,7 @@ export async function POST(request: Request) {
     throw error;
   }
   try {
-    const saved = await saveAvatar(who.userId, webp);
-    if (saved.status === 'limited') {
-      return json(
-        429,
-        { error: 'You’ve changed your photo a lot today. Try again tomorrow.' },
-        { 'Retry-After': String(saved.retryAfter) },
-      );
-    }
+    await saveAvatar(who.userId, webp);
   } catch {
     console.error(JSON.stringify({ event: 'avatar_save_failed' }));
     return json(500, { error: 'We couldn’t save your photo. Try again.' });

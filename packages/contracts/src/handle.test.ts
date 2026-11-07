@@ -3,7 +3,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   BLOCKED_TERMS,
+  CONFUSABLES_FROM,
+  CONFUSABLES_TO,
   HANDLE_RESERVED,
+  HIDDEN_CHARS,
   Handle,
   containsBlockedTerm,
   handleProblem,
@@ -62,6 +65,19 @@ describe('containsBlockedTerm', () => {
   it('allows ordinary names', () => {
     expect(containsBlockedTerm('Alex B')).toBe(false);
   });
+
+  it('sees through look-alike letters, fullwidth forms and invisible characters', () => {
+    expect(containsBlockedTerm('Hucxtеr Ѕupport')).toBe(true); // Cyrillic е, Ѕ
+    expect(containsBlockedTerm('ＨＵＣＸＴＥＲ')).toBe(true);
+    expect(containsBlockedTerm('Sup\u200dport')).toBe(true);
+    expect(containsBlockedTerm('Off\u00adicial')).toBe(true);
+    expect(containsBlockedTerm('Zoë Ελένη')).toBe(false);
+  });
+
+  it('maps each look-alike to one Latin letter', () => {
+    // All BMP letters, so UTF-16 length is the letter count.
+    expect(CONFUSABLES_FROM).toHaveLength(CONFUSABLES_TO.length);
+  });
 });
 
 describe('the database mirrors these lists', () => {
@@ -73,6 +89,16 @@ describe('the database mirrors these lists', () => {
     const array = /select p_handle = any \(array\[([\s\S]*?)\]::text\[\]\)/.exec(sql)?.[1] ?? '';
     const words = [...array.matchAll(/'([^']+)'/g)].map((match) => match[1]);
     expect(words).toEqual([...HANDLE_RESERVED]);
+  });
+
+  it('folds and refuses the same characters (text_fold, has_hidden_chars)', () => {
+    const fold = readFileSync(
+      join(dir, readdirSync(dir).find((name) => name.endsWith('_harden_profile_rules.sql')) ?? ''),
+      'utf8',
+    );
+    expect(fold).toContain(`'${CONFUSABLES_FROM}', '${CONFUSABLES_TO}'`);
+    const sqlClass = /select p_value ~ '(\[[^']+\])'/.exec(fold)?.[1];
+    expect(sqlClass).toBe(HIDDEN_CHARS.source);
   });
 
   it('has the same blocked terms', () => {

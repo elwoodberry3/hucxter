@@ -5,7 +5,7 @@ import { avatarUrl } from '@/lib/avatar';
 import { adminDb } from '@/server/admin-db';
 import { prohibitedMatches } from '@/server/listings/prohibited';
 import { posterUrl } from '@/server/media/playback';
-import { deleteAvatarObject } from '@/server/profile/avatar';
+import { deleteAvatarOrQueue } from '@/server/profile/avatar';
 
 /**
  * Minimal moderation queue (Brief 03C.1 §3.6): open reports and listings held for review. Read
@@ -284,8 +284,7 @@ export async function moderateProfile(
   action: ProfileAction,
   reason: string,
 ): Promise<ModerationResult> {
-  const db = adminDb();
-  const response = await db.rpc('admin_profile_action', {
+  const response = await adminDb().rpc('admin_profile_action', {
     p_actor: actorId,
     p_report_id: reportId,
     p_action: action,
@@ -293,16 +292,6 @@ export async function moderateProfile(
   });
   if (response.error !== null) return outcome(response.error);
   const path: unknown = response.data;
-  if (action === 'remove_photo' && typeof path === 'string') {
-    if (!(await deleteAvatarObject(path))) {
-      const queued = await db.rpc('jobs_enqueue', {
-        p_kind: 'storage_delete_avatar',
-        p_payload: { path },
-      });
-      if (queued.error !== null) {
-        console.error(JSON.stringify({ event: 'avatar_delete_enqueue_failed' }));
-      }
-    }
-  }
+  if (action === 'remove_photo' && typeof path === 'string') await deleteAvatarOrQueue(path);
   return 'ok';
 }

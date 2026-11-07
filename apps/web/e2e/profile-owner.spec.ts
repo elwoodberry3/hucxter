@@ -65,7 +65,7 @@ test.describe('Profile: owner view (Brief 03C.2 §4.2, replaces My Listings)', (
     await page.goto(`${LOCAL_URL}/profile`);
     await expect(page).toHaveURL(`${LOCAL_URL}/u/${owner.handle}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sam');
-    await expect(page.getByText(`@${owner.handle}`)).toBeVisible();
+    await expect(page.getByRole('main').getByText(`@${owner.handle}`)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Edit profile' })).toBeVisible();
     // Real counts: 2 live (available + pending), 1 sold.
     await expect(page.getByText('2 listed · 1 sold')).toBeVisible();

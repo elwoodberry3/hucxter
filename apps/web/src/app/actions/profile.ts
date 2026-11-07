@@ -3,6 +3,7 @@
 import {
   HANDLE_MESSAGES,
   HANDLE_STATUSES,
+  HANDLE_STATUS_MESSAGES,
   ProfileResetInput,
   handleProblem,
   normalizeHandle,
@@ -73,10 +74,11 @@ export async function completeProfileReset(input: unknown): Promise<ResetResult>
     return {
       status: 'error',
       field: 'handle',
-      message:
-        status.success && status.data === 'invalid'
+      message: !status.success
+        ? 'That handle isn’t available.'
+        : status.data === 'invalid'
           ? HANDLE_MESSAGES.reserved
-          : 'That handle isn’t available.',
+          : HANDLE_STATUS_MESSAGES[status.data],
     };
   }
   revalidatePath('/', 'layout');

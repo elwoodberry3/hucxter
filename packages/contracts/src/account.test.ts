@@ -90,6 +90,15 @@ describe('DisplayName', () => {
 });
 
 describe('Bio', () => {
+  it('turns tabs into spaces (the database allows no tabs)', () => {
+    expect(Bio.parse('Lamps\tand chairs')).toBe('Lamps and chairs');
+  });
+
+  it('refuses hidden and direction-control characters', () => {
+    expect(Bio.safeParse('Hi\u200bthere').success).toBe(false);
+    expect(DisplayName.safeParse('\u202eAlex').success).toBe(false);
+  });
+
   it.each([
     '',
     'Weekend woodworker. Selling things I no longer need.',

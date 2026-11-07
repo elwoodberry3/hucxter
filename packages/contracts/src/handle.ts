@@ -71,9 +71,38 @@ export const BLOCKED_TERMS = ['hucxter', 'admin', 'support', 'official'] as cons
 /** Set only by staff moderation ("Require new name"); members can't choose it. */
 export const PLACEHOLDER_DISPLAY_NAME = 'Hucxter member';
 
+/**
+ * Look-alike letters (Cyrillic, Greek) folded to Latin before the blocked-term check, so
+ * "Hucxtеr" with a Cyrillic е is caught. Lowercase only: folding lowercases first. SQL
+ * `text_fold` uses the same two strings (a unit test keeps them equal).
+ */
+export const CONFUSABLES_FROM = 'аеорсухіѕјԁһӏкмтвнԛԝοαρνικτυı';
+export const CONFUSABLES_TO = 'aeopcyxisjdhlkmtbhqwoapviktui';
+
+/**
+ * Invisible and direction-control characters (soft hyphen, zero-width, bidi controls, variation
+ * selectors, Hangul fillers, BOM). Never allowed in names or bios: they hide blocked terms and
+ * can reorder text. SQL `has_hidden_chars` uses the same ranges.
+ */
+export const HIDDEN_CHARS =
+  // eslint-disable-next-line no-misleading-character-class -- single code points on purpose: combining and joiner characters are exactly what this class matches
+  /[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff]/u;
+
+/** NFKC (fullwidth → ASCII), lowercase, look-alikes → Latin, invisible characters removed. */
+export function foldText(value: string): string {
+  const lower = value.normalize('NFKC').toLowerCase();
+  let out = '';
+  for (const char of lower) {
+    const i = CONFUSABLES_FROM.indexOf(char);
+    out += i === -1 ? char : (CONFUSABLES_TO[i] ?? char);
+  }
+  // eslint-disable-next-line no-misleading-character-class -- same class as HIDDEN_CHARS
+  return out.replace(new RegExp(HIDDEN_CHARS.source, 'gu'), '');
+}
+
 export function containsBlockedTerm(value: string): boolean {
-  const lower = value.toLowerCase();
-  return BLOCKED_TERMS.some((term) => lower.includes(term));
+  const folded = foldText(value);
+  return BLOCKED_TERMS.some((term) => folded.includes(term));
 }
 
 /** What people type: "@Alex.B " → "alex.b". */

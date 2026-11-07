@@ -223,22 +223,30 @@ commit;
 ```
 The jobs run on the next jobs cron tick (`docs/runbooks/video.md`).
 
-### Display-name rules on existing rows
-The 25-character limit and the blocked terms are a CHECK (`profiles_display_name_rules`). The
-migration validates it only when no existing row breaks it; otherwise it stays `NOT VALID` (new
-writes are checked, old rows aren't) and the migration prints counts only. Local count on
-2026-11-07: 0. Before 3E, run on the QA project:
+### Display-name and bio rules on existing rows
+Names (25 characters, blocked terms) and bios are checked by CHECKs on `profiles`:
+`profiles_display_name_rules`, and from the trust-safety hardening `profiles_display_name_folded`,
+`profiles_bio_folded` (blocked terms are also caught behind look-alike letters, fullwidth forms
+and invisible characters, which are refused outright) and `profiles_handle_has_name`. Each
+migration validates its CHECK only when no existing row breaks it; otherwise it stays `NOT VALID`
+(new writes are checked, old rows aren't) and the migration prints counts only. Local counts on
+2026-11-07: 0 (all validated). Before 3E, run on the QA project:
 ```sql
+select conname, convalidated from pg_constraint
+where conrelid = 'public.profiles'::regclass
+  and conname in ('profiles_display_name_rules', 'profiles_display_name_folded',
+                  'profiles_bio_folded', 'profiles_handle_has_name');
 select
   count(*) filter (where char_length(display_name) > 25) as over_25,
-  count(*) filter (where display_name ~* '(hucxter|admin|support|official)'
-                     and name_reset_required_at is null) as blocked_term,
-  (select convalidated from pg_constraint where conname = 'profiles_display_name_rules') as validated
+  count(*) filter (where public.text_fold(display_name) ~ '(hucxter|admin|support|official)'
+                     and name_reset_required_at is null) as blocked_name,
+  count(*) filter (where public.text_fold(bio) ~ '(hucxter|admin|support|official)') as blocked_bio
 from public.profiles where display_name is not null;
 ```
-A member whose row breaks the rule can't save their profile until they shorten or change the name.
-When both counts are 0, validate it:
-`alter table public.profiles validate constraint profiles_display_name_rules;`
+While a row breaks a `NOT VALID` CHECK, **every** update to it fails: the member's own profile,
+ZIP or photo changes, and staff **Remove photo** and **Clear bio**. Only **Require new name &
+handle** works on a bad name; clear a bad bio with SQL. When all counts are 0, validate each one:
+`alter table public.profiles validate constraint <name>;`
 
 ### Profile photos
 - Settings → Edit profile → Change photo. JPEG, PNG or WebP up to 5 MB; the server re-encodes it

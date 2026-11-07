@@ -42,11 +42,14 @@ export type ProfileField = 'displayName' | 'handle' | 'bio' | 'zip';
 export type ProfileResult =
   { status: 'saved'; handle: string } | { status: 'error'; message: string; field?: ProfileField };
 
+const HANDLE_NOT_SAVED = 'Your other changes were saved, but not the new handle.';
+
 const FIELDS: readonly ProfileField[] = ['displayName', 'handle', 'bio', 'zip'];
 
 /**
  * Settings → Edit profile (Brief 03C.2 §4.4): display name, @handle (at most one change per 30
- * days, checked in the database), bio and home ZIP. A refused handle saves nothing.
+ * days, checked in the database), bio and home ZIP. The other fields are saved first; a refused
+ * handle is reported on its own.
  */
 export async function updateProfile(input: unknown): Promise<ProfileResult> {
   if (!(await requestIsSameOrigin())) return { status: 'error', message: ORIGIN_ERROR };
@@ -70,16 +73,8 @@ export async function updateProfile(input: unknown): Promise<ProfileResult> {
       message: 'We couldn’t find that ZIP. Try the ZIP where you live or pick up items.',
     };
   }
+  // Fields first: if they fail, the handle (and its 30-day clock) is left alone.
   const supabase = await sessionClient();
-  if (handle !== member.handle) {
-    const result = await supabase.rpc('profile_set_handle', { p_handle: handle });
-    const data: unknown = result.data;
-    if (result.error !== null || typeof data !== 'string') {
-      return { status: 'error', message: GENERIC_ERROR };
-    }
-    const refused = handleRefusal(data);
-    if (refused !== null) return { status: 'error', field: 'handle', message: refused };
-  }
   const { error } = await supabase
     .from('profiles')
     .update({ display_name: displayName, bio, home_zip: area.zip })
@@ -87,6 +82,17 @@ export async function updateProfile(input: unknown): Promise<ProfileResult> {
   if (error !== null) return { status: 'error', message: GENERIC_ERROR };
   revalidatePath('/u/[handle]', 'page');
   revalidatePath('/settings', 'layout');
+  if (handle !== member.handle) {
+    const result = await supabase.rpc('profile_set_handle', { p_handle: handle });
+    const data: unknown = result.data;
+    if (result.error !== null || typeof data !== 'string') {
+      return { status: 'error', field: 'handle', message: HANDLE_NOT_SAVED };
+    }
+    const refused = handleRefusal(data);
+    if (refused !== null) {
+      return { status: 'error', field: 'handle', message: `${HANDLE_NOT_SAVED} ${refused}` };
+    }
+  }
   return { status: 'saved', handle };
 }
 

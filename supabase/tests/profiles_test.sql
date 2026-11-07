@@ -3,7 +3,7 @@
 -- reasons and audit, the required name reset, and account deletion holding the handle.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(54);
 
 insert into auth.users (id, email, aud, role, email_confirmed_at, phone_confirmed_at, phone, created_at) values
   ('00000000-0000-4000-8000-0000000c2e01', 'owner3@example.test', 'authenticated', 'authenticated', now(), now(), '15035550171', now()),
@@ -116,7 +116,9 @@ set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000c2e03", 
 select public.handle_status('aaa1');
 select public.handle_status('aaa2');
 select is(public.handle_status('aaa3'), 'limited', 'handle checks are rate-limited per account');
+select is(public.profile_set_handle('aaa4'), 'limited', 'saving a handle takes the same limit');
 reset role;
+update public.action_limit_config set new_account_per_window = 60 where action = 'handle_check';
 
 -- Staff moderation (service role functions)
 insert into public.reports (id, reporter_id, target_type, target_id, reason)

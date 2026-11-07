@@ -166,6 +166,10 @@ export async function saveDisplayName(input: unknown, next: unknown): Promise<St
     return { status: 'error', message: parsed.error.issues[0]?.message ?? GENERIC_ERROR };
   }
   const member = await requireSignedIn('/welcome');
+  // Last step only: the name (and with it the public handle) comes after phone, 18+ and ZIP.
+  if (member.nextStep !== 'name' || member.nameResetRequired) {
+    redirect(welcomeHref(nextOf(next)));
+  }
   const supabase = await sessionClient();
   const { error } = await supabase
     .from('profiles')

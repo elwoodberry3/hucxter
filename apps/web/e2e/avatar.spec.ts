@@ -169,6 +169,11 @@ test.describe('Profile photos (Brief 03C.2 §4.5, AVATAR_UPLOADS on)', () => {
     expect((await upload(page, LOCAL_URL, oversize)).status()).toBe(413);
     const refused = await upload(page, LOCAL_URL, svg, 'image/jpeg');
     expect(await refused.json()).toEqual({ error: 'Choose a JPEG, PNG or WebP photo up to 5 MB.' });
+    // Every attempt above counts (5 a day for new accounts), so the next is refused before the
+    // file is read or decoded.
+    const limited = await upload(page, LOCAL_URL, Buffer.from('GIF89a'), 'image/png');
+    expect(limited.status()).toBe(429);
+    expect(Number(limited.headers()['retry-after'])).toBeGreaterThan(0);
 
     const crossOrigin = await page.request.post(`${LOCAL_URL}/api/profile/avatar`, {
       headers: { Origin: 'https://evil.example', 'Content-Type': 'image/jpeg' },

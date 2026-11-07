@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Handle, containsBlockedTerm } from './handle';
+import { HIDDEN_CHARS, Handle, containsBlockedTerm } from './handle';
 import { Zip } from './location';
 import { plainText } from './sell';
 
@@ -93,10 +93,15 @@ export const DisplayName = z
     (value) => value.replace(/\D/g, '').length < DIGITS_LIMIT,
     'Don’t include a phone number.',
   )
+  .refine((value) => !HIDDEN_CHARS.test(value), 'Remove hidden or special formatting characters.')
   .refine((value) => !containsBlockedTerm(value), BLOCKED_MESSAGE);
 
 /** Profile bio: optional plain text, 0–150 characters, at most 3 line breaks, same rules. */
-export const Bio = plainText(BIO_MAX)
+export const Bio = z
+  .string()
+  // Tabs become spaces (the profiles CHECK allows no control characters but line breaks).
+  .transform((value) => value.replace(/\t/g, ' '))
+  .pipe(plainText(BIO_MAX))
   .refine(
     (value) => (value.match(/\n/g) ?? []).length <= BIO_MAX_LINE_BREAKS,
     `Use ${String(BIO_MAX_LINE_BREAKS)} line breaks or fewer.`,
@@ -106,6 +111,7 @@ export const Bio = plainText(BIO_MAX)
     'Don’t include links or emails.',
   )
   .refine((value) => !PHONE_LIKE.test(value), 'Don’t include a phone number.')
+  .refine((value) => !HIDDEN_CHARS.test(value), 'Remove hidden or special formatting characters.')
   .refine((value) => !containsBlockedTerm(value), BLOCKED_MESSAGE);
 
 export const EmailCodeRequest = z.object({
