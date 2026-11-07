@@ -4,6 +4,7 @@ import { CONDITION_LABELS, ListingCondition, filtersFor } from '@hucxter/contrac
 import type { AttributeFilter, Department } from '@hucxter/contracts';
 import { useId, useState, useTransition } from 'react';
 import { saveDetails } from '@/app/actions/sell';
+import { CharCounter } from '@/components/ui/char-counter';
 import styles from './sell.module.css';
 
 export interface DetailsValues {
@@ -20,14 +21,6 @@ export interface DetailsValues {
 
 const TITLE_MAX = 80;
 const DESCRIPTION_MAX = 2000;
-
-function Counter({ id, value, max }: { id: string; value: string; max: number }) {
-  return (
-    <span id={id} className={styles.counter} aria-live="polite">
-      {value.length}/{max}
-    </span>
-  );
-}
 
 function FieldError({ id, message }: { id: string; message: string | undefined }) {
   return (
@@ -192,7 +185,7 @@ export function DetailsForm({
           <label htmlFor={ids.title} className={styles.label}>
             Title
           </label>
-          <Counter id={`${ids.title}-count`} value={values.title} max={TITLE_MAX} />
+          <CharCounter id={`${ids.title}-count`} value={values.title} max={TITLE_MAX} />
         </div>
         <input
           id={ids.title}
@@ -360,7 +353,7 @@ export function DetailsForm({
           <label htmlFor={ids.description} className={styles.label}>
             Description <span className={styles.optional}>(optional)</span>
           </label>
-          <Counter
+          <CharCounter
             id={`${ids.description}-count`}
             value={values.description}
             max={DESCRIPTION_MAX}

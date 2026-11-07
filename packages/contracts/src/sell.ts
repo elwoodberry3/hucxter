@@ -13,7 +13,7 @@ export const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as con
 export const VideoType = z.enum(VIDEO_TYPES);
 
 /** Plain text only: control characters (except line breaks and tabs) are removed. */
-function plainText(max: number) {
+export function plainText(max: number) {
   return z
     .string()
     .transform((value) =>

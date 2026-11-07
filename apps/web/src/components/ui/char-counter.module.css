@@ -1,0 +1,5 @@
+.counter {
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-footnote);
+  font-variant-numeric: tabular-nums;
+}

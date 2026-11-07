@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DeleteAccountInput, DisplayName, Email, OtpCode, parseUsPhone } from './account';
+import { Bio, DeleteAccountInput, DisplayName, Email, OtpCode, parseUsPhone } from './account';
 
 describe('parseUsPhone', () => {
   it.each([
@@ -54,7 +54,12 @@ describe('DisplayName', () => {
 
   it.each([
     'A',
-    'x'.repeat(41),
+    'x'.repeat(26),
+    'Hucxter member',
+    'HUCXTER fan',
+    'Site Admin',
+    'Tech Support',
+    'Official Bob',
     'me@example.com',
     'see www.example.com',
     'https://x.io',
@@ -68,6 +73,38 @@ describe('DisplayName', () => {
 
   it('trims', () => {
     expect(DisplayName.parse('  Lee  ')).toBe('Lee');
+  });
+
+  it('allows exactly 25 characters', () => {
+    expect(DisplayName.safeParse('x'.repeat(25)).success).toBe(true);
+  });
+});
+
+describe('Bio', () => {
+  it.each([
+    '',
+    'Weekend woodworker. Selling things I no longer need.',
+    'Line one\nLine two\nLine three\nLine four',
+    'Selling since 2015 in 2024',
+  ])('accepts %j', (bio) => {
+    expect(Bio.safeParse(bio).success).toBe(true);
+  });
+
+  it.each([
+    'x'.repeat(151),
+    'a\nb\nc\nd\ne',
+    'me@example.com',
+    'Shop at www.example.com',
+    'Text 503-555-0100',
+    'Call (503) 555 0100 anytime',
+    'Official Hucxter seller',
+    'Ask support',
+  ])('rejects %j', (bio) => {
+    expect(Bio.safeParse(bio).success).toBe(false);
+  });
+
+  it('normalizes line endings, strips control characters and trims', () => {
+    expect(Bio.parse('  Hi\r\nthere\u0007  ')).toBe('Hi\nthere');
   });
 });
 

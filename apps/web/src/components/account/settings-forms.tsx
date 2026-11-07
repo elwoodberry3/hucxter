@@ -1,5 +1,6 @@
 'use client';
 
+import { DISPLAY_NAME_MAX } from '@hucxter/contracts';
 import { useId, useState, useTransition } from 'react';
 import { deleteAccount, updateProfile } from '@/app/actions/account';
 import { PhoneStep } from '@/components/onboarding/steps';
@@ -39,7 +40,7 @@ export function ProfileForm({ displayName, homeZip }: { displayName: string; hom
         className={styles.input}
         type="text"
         autoComplete="given-name"
-        maxLength={40}
+        maxLength={DISPLAY_NAME_MAX}
         value={name}
         aria-describedby={error === null ? undefined : errorId}
         onChange={(event) => {

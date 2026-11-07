@@ -157,7 +157,7 @@ export async function saveHomeZip(input: unknown, next: unknown): Promise<StepRe
   redirect(welcomeHref(nextOf(next)));
 }
 
-/** Display name: first name or nickname (2–40, no links, emails, or phone numbers). */
+/** Display name: first name or nickname (2–25, no links, emails, phone numbers or blocked terms). */
 export async function saveDisplayName(input: unknown, next: unknown): Promise<StepResult> {
   const gate = await invitedMember();
   if (!('ok' in gate)) return gate;
