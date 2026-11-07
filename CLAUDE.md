@@ -60,6 +60,11 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   `src/server/media/provider.ts`: `MUX_*` read only in `server/media/mux.ts`; the fake provider
   is local-only. `/dev/templates/listing` is gone. Runbook: `docs/runbooks/video.md`. e2e adds
   :3103 (local, fake video).
+- **3C.2 (branch `brief-03c2-profiles`, in progress):** handles (`/u/[handle]`), public and owner
+  profile pages (`/listings` folds into the owner view), saves, settings redesign (Edit profile /
+  Account), profile photos (sharp → 512×512 WebP, Supabase Storage `avatars`, `AVATAR_UPLOADS`),
+  member menu, profile moderation in `/admin`. D-42–D-44 decided 2026-11-07. PR #10 follow-ups
+  (M1–M3, L1–L7) stay open for a separate hardening PR.
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
