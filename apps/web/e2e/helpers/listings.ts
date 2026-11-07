@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import type { TestInfo } from '@playwright/test';
 import { deleteE2eUsers, localAdmin, testEmail } from './accounts';
 
@@ -181,9 +181,13 @@ export async function seedListing(
 
 async function newSeller(testInfo: TestInfo): Promise<{ sellerId: string; sellerEmail: string }> {
   const sellerEmail = testEmail(testInfo, 'seller');
+  // A confirmed phone like a real member's (profiles are public only after onboarding). The
+  // 555-01xx test numbers belong to signed-in workers, so fixtures use random 555-2xxx numbers.
   const created = await localAdmin().auth.admin.createUser({
     email: sellerEmail,
     email_confirm: true,
+    phone: `+1503555${String(2000 + randomInt(8000))}`,
+    phone_confirm: true,
   });
   if (created.error !== null) throw new Error('could not create the fixture seller');
   return { sellerId: created.data.user.id, sellerEmail };

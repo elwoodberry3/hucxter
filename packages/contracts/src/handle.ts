@@ -72,32 +72,44 @@ export const BLOCKED_TERMS = ['hucxter', 'admin', 'support', 'official'] as cons
 export const PLACEHOLDER_DISPLAY_NAME = 'Hucxter member';
 
 /**
- * Look-alike letters (Cyrillic, Greek) folded to Latin before the blocked-term check, so
- * "Hucxtеr" with a Cyrillic е is caught. Lowercase only: folding lowercases first. SQL
- * `text_fold` uses the same two strings (a unit test keeps them equal).
+ * Look-alike letters (Cyrillic and Greek, both cases; small capitals) folded to lowercase Latin
+ * before the blocked-term check, so "Hucxtеr" with a Cyrillic е is caught. Mapped before
+ * lowercasing, so the fold doesn't depend on the database collation. SQL `text_fold` uses the
+ * same two strings (a unit test keeps them equal).
  */
-export const CONFUSABLES_FROM = 'аеорсухіѕјԁһӏкмтвнԛԝοαρνικτυı';
-export const CONFUSABLES_TO = 'aeopcyxisjdhlkmtbhqwoapviktui';
+export const CONFUSABLES_FROM =
+  'аеорсухіѕјԁһӏкмтвнԛԝАВЕКМНОРСТУХЅІЈԚԜӀοαρνικτυΑΒΕΖΗΙΚΜΝΟΡΤΥΧıʜᴜᴄᴛᴇʀᴅᴍɪɴᴏꜰᴀʙɢʟᴘꜱᴠᴡʏᴢᴋᴊ';
+export const CONFUSABLES_TO =
+  'aeopcyxisjdhlkmtbhqwabekmhopctyxsijqwloapviktuabezhikmnoptyxihucterdminofabglpsvwyzkj';
 
 /**
  * Invisible and direction-control characters (soft hyphen, zero-width, bidi controls, variation
- * selectors, Hangul fillers, BOM). Never allowed in names or bios: they hide blocked terms and
+ * selectors, Hangul fillers, Braille blank, BOM, specials, shorthand and musical format
+ * controls, tag characters). Never allowed in names or bios: they hide blocked terms and
  * can reorder text. SQL `has_hidden_chars` uses the same ranges.
  */
 export const HIDDEN_CHARS =
   // eslint-disable-next-line no-misleading-character-class -- single code points on purpose: combining and joiner characters are exactly what this class matches
-  /[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff]/u;
+  /[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u2800\u3164\ufe00-\ufe0f\ufeff\ufff0-\ufff8\u{1bca0}-\u{1bca3}\u{1d173}-\u{1d17a}\u{e0000}-\u{e0fff}]/u;
 
-/** NFKC (fullwidth → ASCII), lowercase, look-alikes → Latin, invisible characters removed. */
+/** Combining marks (accents) dropped after NFKD, so "Hücxter" folds to "hucxter". */
+export const COMBINING_MARKS =
+  // eslint-disable-next-line no-misleading-character-class -- a class of combining marks on purpose
+  /[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/gu;
+
+/**
+ * NFKD (fullwidth → ASCII, accents split off), accents removed, look-alikes → Latin, lowercase,
+ * invisible characters removed. SQL `text_fold` does the same steps.
+ */
 export function foldText(value: string): string {
-  const lower = value.normalize('NFKC').toLowerCase();
+  const bare = value.normalize('NFKD').replace(COMBINING_MARKS, '');
   let out = '';
-  for (const char of lower) {
+  for (const char of bare) {
     const i = CONFUSABLES_FROM.indexOf(char);
     out += i === -1 ? char : (CONFUSABLES_TO[i] ?? char);
   }
   // eslint-disable-next-line no-misleading-character-class -- same class as HIDDEN_CHARS
-  return out.replace(new RegExp(HIDDEN_CHARS.source, 'gu'), '');
+  return out.toLowerCase().replace(new RegExp(HIDDEN_CHARS.source, 'gu'), '');
 }
 
 export function containsBlockedTerm(value: string): boolean {

@@ -1,7 +1,8 @@
 -- Hardening from the 3C.2 trust-safety review.
--- 1. Blocked terms can't hide behind look-alike letters, fullwidth forms or invisible characters:
---    display names and bios are checked on a folded copy (text_fold: NFKC, lowercase, Cyrillic and
---    Greek look-alikes → Latin, hidden characters removed), and hidden/bidi characters are refused.
+-- 1. Blocked terms can't hide behind look-alike letters, accents, fullwidth forms or invisible
+--    characters: display names and bios are checked on a folded copy (text_fold: NFKD, accents
+--    removed, Cyrillic/Greek/small-capital look-alikes → Latin, lowercase, hidden characters
+--    removed), and hidden/bidi/tag characters are refused.
 --    The two strings and the character class match packages/contracts handle.ts (a unit test
 --    keeps them equal).
 -- 2. Profiles are public only once onboarding is done (phone verified, 18+, home ZIP):
@@ -25,8 +26,11 @@ parallel safe
 set search_path = ''
 as $$
   select regexp_replace(
-    translate(lower(normalize(p_value, NFKC)), 'аеорсухіѕјԁһӏкмтвнԛԝοαρνικτυı', 'aeopcyxisjdhlkmtbhqwoapviktui'),
-    '[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff]', '', 'g')
+    lower(translate(
+      regexp_replace(normalize(p_value, NFKD), '[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]', '', 'g'),
+      'аеорсухіѕјԁһӏкмтвнԛԝАВЕКМНОРСТУХЅІЈԚԜӀοαρνικτυΑΒΕΖΗΙΚΜΝΟΡΤΥΧıʜᴜᴄᴛᴇʀᴅᴍɪɴᴏꜰᴀʙɢʟᴘꜱᴠᴡʏᴢᴋᴊ',
+      'aeopcyxisjdhlkmtbhqwabekmhopctyxsijqwloapviktuabezhikmnoptyxihucterdminofabglpsvwyzkj')),
+    '[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u2800\u3164\ufe00-\ufe0f\ufeff\ufff0-\ufff8\U0001bca0-\U0001bca3\U0001d173-\U0001d17a\U000e0000-\U000e0fff]', '', 'g')
 $$;
 
 create or replace function public.has_hidden_chars(p_value text)
@@ -36,7 +40,7 @@ immutable
 parallel safe
 set search_path = ''
 as $$
-  select p_value ~ '[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff]'
+  select p_value ~ '[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u206f\u2800\u3164\ufe00-\ufe0f\ufeff\ufff0-\ufff8\U0001bca0-\U0001bca3\U0001d173-\U0001d17a\U000e0000-\U000e0fff]'
 $$;
 
 -- Pure helpers. CHECK constraints run them as the writing role, so members (their own profile

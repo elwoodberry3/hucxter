@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BLOCKED_TERMS,
   CONFUSABLES_FROM,
+  COMBINING_MARKS,
   CONFUSABLES_TO,
   HANDLE_RESERVED,
   HIDDEN_CHARS,
@@ -74,6 +75,35 @@ describe('containsBlockedTerm', () => {
     expect(containsBlockedTerm('Zoë Ελένη')).toBe(false);
   });
 
+  it('also sees through accents, small capitals, tag characters and the Braille blank', () => {
+    const tag = String.fromCodePoint(0xe0061);
+    const braille = String.fromCodePoint(0x2800);
+    const acute = String.fromCodePoint(0x301);
+    expect(containsBlockedTerm('Hücxter Team')).toBe(true);
+    expect(containsBlockedTerm(`Hucxte${acute}r Team`)).toBe(true);
+    expect(containsBlockedTerm('ʜᴜᴄxᴛᴇʀ Team')).toBe(true);
+    expect(containsBlockedTerm(`Huc${tag}xter Team`)).toBe(true);
+    expect(containsBlockedTerm(`Huc${braille}xter`)).toBe(true);
+    expect(containsBlockedTerm('ЅUPPORT')).toBe(true);
+    expect(HIDDEN_CHARS.test(`Huc${tag}xter`)).toBe(true);
+    expect(HIDDEN_CHARS.test(`a${braille}b`)).toBe(true);
+    expect(containsBlockedTerm('José Núñez')).toBe(false);
+  });
+
+  it('also sees through accents, small capitals, tag characters and the Braille blank', () => {
+    const tag = String.fromCodePoint(0xe0061);
+    const braille = String.fromCodePoint(0x2800);
+    expect(containsBlockedTerm('Hücxter Team')).toBe(true);
+    expect(containsBlockedTerm('Hucxte' + String.fromCodePoint(0x301) + 'r Team')).toBe(true);
+    expect(containsBlockedTerm('ʜᴜᴄxᴛᴇʀ Team')).toBe(true);
+    expect(containsBlockedTerm(`Huc${tag}xter Team`)).toBe(true);
+    expect(containsBlockedTerm(`Huc${braille}xter`)).toBe(true);
+    expect(containsBlockedTerm('ЅUPPORT')).toBe(true);
+    expect(HIDDEN_CHARS.test(`Huc${tag}xter`)).toBe(true);
+    expect(HIDDEN_CHARS.test(`a${braille}b`)).toBe(true);
+    expect(containsBlockedTerm('José Núñez')).toBe(false);
+  });
+
   it('maps each look-alike to one Latin letter', () => {
     // All BMP letters, so UTF-16 length is the letter count.
     expect(CONFUSABLES_FROM).toHaveLength(CONFUSABLES_TO.length);
@@ -96,9 +126,13 @@ describe('the database mirrors these lists', () => {
       join(dir, readdirSync(dir).find((name) => name.endsWith('_harden_profile_rules.sql')) ?? ''),
       'utf8',
     );
-    expect(fold).toContain(`'${CONFUSABLES_FROM}', '${CONFUSABLES_TO}'`);
+    expect(fold).toContain(`'${CONFUSABLES_FROM}'`);
+    expect(fold).toContain(`'${CONFUSABLES_TO}'`);
     const sqlClass = /select p_value ~ '(\[[^']+\])'/.exec(fold)?.[1];
-    expect(sqlClass).toBe(HIDDEN_CHARS.source);
+    // SQL writes code points above U+FFFF as \\U0001xxxx, JavaScript as \\u{1xxxx}.
+    const asJs = sqlClass?.replace(/\\U0*([0-9a-f]+)/g, '\\u{$1}');
+    expect(asJs).toBe(HIDDEN_CHARS.source);
+    expect(fold).toContain(COMBINING_MARKS.source);
   });
 
   it('has the same blocked terms', () => {

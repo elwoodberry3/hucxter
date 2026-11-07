@@ -223,6 +223,8 @@ async function capture3c2(
     .getByLabel('Add photo')
     .setInputFiles(AVATAR_PHOTO);
   await expect(page.getByText('Photo updated')).toBeVisible();
+  // The photo shows once the refresh has finished; navigating earlier gets redirected by it.
+  await expect(page.getByRole('region', { name: 'Profile photo' }).locator('img')).toBeVisible();
   await page.waitForLoadState('networkidle');
   await db
     .from('profiles')

@@ -3,7 +3,7 @@
 -- reset can't end with an empty name; a member with a handle always has a name.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(25);
 
 insert into auth.users (id, email, aud, role, email_confirmed_at, phone_confirmed_at, phone, created_at) values
   ('00000000-0000-4000-8000-0000000c3e01', 'hard1@example.test', 'authenticated', 'authenticated', now(), now(), '15035550181', now()),
@@ -18,7 +18,13 @@ update public.profiles set handle = 'early.bird' where id = '00000000-0000-4000-
 
 select is(public.text_fold('ＨＵＣＸＴＥＲ'), 'hucxter', 'fullwidth letters fold to ASCII');
 select is(public.text_fold('Hucxtеr Ѕupport'), 'hucxter support', 'Cyrillic look-alikes fold to Latin');
-select is(public.text_fold(E'Sup‍port'), 'support', 'zero-width characters are dropped');
+select is(public.text_fold('Sup' || chr(8205) || 'port'), 'support', 'zero-width characters are dropped');
+select is(public.text_fold('Hücxter'), 'hucxter', 'accents are dropped');
+select is(public.text_fold('ʜᴜᴄxᴛᴇʀ'), 'hucxter', 'small capitals fold to Latin');
+select is(public.text_fold('ЅUPPORT'), 'support', 'uppercase look-alikes fold without relying on lower()');
+select ok(public.has_hidden_chars('Huc' || chr(917601) || 'xter'), 'tag characters are hidden characters');
+select ok(public.has_hidden_chars('Huc' || chr(10240) || 'xter'), 'the Braille blank is a hidden character');
+select ok(not public.has_hidden_chars('José Núñez'), 'ordinary accented names are fine');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "00000000-0000-4000-8000-0000000c3e01", "role": "authenticated"}';
@@ -26,13 +32,13 @@ select throws_ok($$update public.profiles set display_name = 'Hucxtеr Ѕupport'
   '23514', null, 'a look-alike staff name is refused');
 select throws_ok($$update public.profiles set display_name = 'ＡＤＭＩＮ' where id = auth.uid()$$,
   '23514', null, 'a fullwidth blocked term is refused');
-select throws_ok($$update public.profiles set display_name = E'Ad​min' where id = auth.uid()$$,
+select throws_ok($$update public.profiles set display_name = 'Ad' || chr(8203) || 'min' where id = auth.uid()$$,
   '23514', null, 'a blocked term split by a zero-width space is refused');
-select throws_ok($$update public.profiles set display_name = E'‮retxcuh' where id = auth.uid()$$,
+select throws_ok($$update public.profiles set display_name = chr(8238) || 'retxcuh' where id = auth.uid()$$,
   '23514', null, 'a right-to-left override is refused');
 select throws_ok($$update public.profiles set display_name = 'Нucxter member' where id = auth.uid()$$,
   '23514', null, 'a look-alike placeholder is refused');
-select throws_ok($$update public.profiles set bio = E'Off­icial seller' where id = auth.uid()$$,
+select throws_ok($$update public.profiles set bio = 'Off' || chr(173) || 'icial seller' where id = auth.uid()$$,
   '23514', null, 'a soft hyphen hiding a blocked term in a bio is refused');
 select throws_ok($$update public.profiles set bio = 'Ѕupport team' where id = auth.uid()$$,
   '23514', null, 'a look-alike blocked term in a bio is refused');
