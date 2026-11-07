@@ -81,15 +81,21 @@ export function TabBar() {
     { label: 'Inbox', href: '/messages', icon: Inbox, match: (p) => p === '/messages' },
     {
       label: 'Account',
-      // Members: Settings (unverified members are sent on to /welcome by its gate).
+      // Members: their profile (/profile redirects; unverified members go on to /welcome).
       href:
         viewer.status !== 'guest'
-          ? '/settings'
+          ? viewer.handle === null
+            ? '/profile'
+            : `/u/${viewer.handle}`
           : pathname === '/sign-in' || pathname === '/sign-up'
             ? '/sign-in'
             : authHref(here),
       icon: CircleUser,
-      match: (p) => ['/sign-in', '/sign-up', '/profile', '/settings', '/welcome'].includes(p),
+      match: (p) =>
+        ['/sign-in', '/sign-up', '/profile', '/welcome'].includes(p) ||
+        p === '/settings' ||
+        p.startsWith('/settings/') ||
+        (viewer.handle !== null && p === `/u/${viewer.handle}`),
     },
   ];
 

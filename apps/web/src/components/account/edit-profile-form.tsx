@@ -1,47 +1,21 @@
 'use client';
 
-import {
-  BIO_MAX,
-  DISPLAY_NAME_MAX,
-  HANDLE_MAX,
-  HANDLE_MESSAGES,
-  HANDLE_STATUS_MESSAGES,
-  handleProblem,
-  normalizeHandle,
-} from '@hucxter/contracts';
-import type { HandleStatus } from '@hucxter/contracts';
+import { BIO_MAX, DISPLAY_NAME_MAX, HANDLE_MAX } from '@hucxter/contracts';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState, useTransition } from 'react';
 import { updateProfile } from '@/app/actions/account';
 import type { ProfileField } from '@/app/actions/account';
-import { checkHandle } from '@/app/actions/profile';
 import styles from '@/components/auth/auth.module.css';
 import { Avatar } from '@/components/ui/avatar';
 import { CharCounter } from '@/components/ui/char-counter';
 import { useToast } from '@/components/ui/toast';
 import { cx } from '@/lib/cx';
 import settings from './settings.module.css';
+import { useHandleCheck } from './use-handle-check';
 
-const CHECK_DELAY_MS = 400;
 const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PHOTO_ERROR = 'Choose a JPEG, PNG or WebP photo up to 5 MB.';
-
-type Tone = 'good' | 'bad' | 'neutral';
-interface HandleNote {
-  tone: Tone;
-  text: string;
-}
-
-const TONES: Record<HandleStatus, Tone> = {
-  available: 'good',
-  yours: 'neutral',
-  taken: 'bad',
-  held: 'bad',
-  reserved: 'bad',
-  invalid: 'bad',
-  limited: 'neutral',
-};
 
 function formatDay(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -91,39 +65,7 @@ export function EditProfileForm({
     zip: useId(),
     error: useId(),
   };
-  const latest = useRef(0);
-
-  // Availability: format problems are answered locally; the server is asked after a pause.
-  const value = normalizeHandle(handleValue);
-  const problem = value === handle ? null : handleProblem(value);
-  const [answer, setAnswer] = useState<{ value: string; note: HandleNote } | null>(null);
-  useEffect(() => {
-    if (value === handle || handleProblem(value) !== null) return;
-    const request = ++latest.current;
-    const timer = window.setTimeout(() => {
-      checkHandle(value).then(
-        (status) => {
-          if (request !== latest.current) return;
-          setAnswer({ value, note: { tone: TONES[status], text: HANDLE_STATUS_MESSAGES[status] } });
-        },
-        () => {
-          if (request !== latest.current) return;
-          setAnswer({ value, note: { tone: 'neutral', text: HANDLE_STATUS_MESSAGES.limited } });
-        },
-      );
-    }, CHECK_DELAY_MS);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [value, handle]);
-  const note: HandleNote | null =
-    value === handle
-      ? null
-      : problem !== null
-        ? { tone: 'bad', text: HANDLE_MESSAGES[problem] }
-        : answer?.value === value
-          ? answer.note
-          : { tone: 'neutral', text: 'Checking…' };
+  const note = useHandleCheck(handleValue, handle);
 
   const fieldError = (field: ProfileField) => (error?.field === field ? error.text : null);
   const describedBy = (...parts: (string | false | null | undefined)[]) =>

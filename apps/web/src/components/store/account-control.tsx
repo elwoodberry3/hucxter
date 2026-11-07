@@ -1,27 +1,26 @@
 'use client';
 
-import { ChevronDown, CircleUser } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { signOut } from '@/app/actions/account';
 import { useViewer } from '@/components/auth/viewer-context';
+import { Avatar } from '@/components/ui/avatar';
 import { authHref } from '@/lib/next-path';
 import { moveFocusWithArrows, useDismiss } from '@/lib/use-dismiss';
 import styles from './header.module.css';
 
 const MEMBER_LINKS = [
-  { href: '/listings', label: 'My listings' },
-  { href: '/saved', label: 'Saved' },
   { href: '/messages', label: 'Messages' },
-  { href: '/profile', label: 'Profile' },
   { href: '/settings', label: 'Settings' },
 ] as const;
 
 /**
  * Account control. Guests: "Sign in" with Sign in / Create account, both returning here.
- * Members: an avatar menu (My listings, Saved, Messages, Profile, Settings, Admin for staff,
- * Sign out); unverified members also get "Finish setting up".
+ * Members (Brief 03C.2): an avatar menu headed by their photo and name (truncated; the full name
+ * is in the accessible names) with View profile, then Messages, Settings, Admin for staff and
+ * Sign out. Unverified members also get "Finish setting up".
  */
 export function AccountControl() {
   const viewer = useViewer();
@@ -43,7 +42,6 @@ export function AccountControl() {
   useDismiss(open, close, refs);
 
   const member = viewer.status !== 'guest';
-  const initial = (viewer.displayName ?? '').trim().charAt(0).toUpperCase();
 
   return (
     <div className={styles.popoverAnchor}>
@@ -66,10 +64,12 @@ export function AccountControl() {
       >
         {member ? (
           <>
-            <span className={styles.avatar} aria-hidden="true">
-              {initial === '' ? <CircleUser size={18} /> : initial}
+            <Avatar name={viewer.displayName} src={viewer.avatarUrl} size="sm" />
+            <span className="visually-hidden">
+              {viewer.displayName === null
+                ? 'Account menu'
+                : `Account menu for ${viewer.displayName}`}
             </span>
-            <span className="visually-hidden">Account menu</span>
           </>
         ) : (
           'Sign in'
@@ -88,9 +88,37 @@ export function AccountControl() {
         {member ? (
           <>
             {viewer.displayName === null ? null : (
-              <p className={styles.popoverNote}>Signed in as {viewer.displayName}</p>
+              <div className={styles.memberCard}>
+                <Avatar name={viewer.displayName} src={viewer.avatarUrl} size="md" />
+                <div className={styles.memberText}>
+                  <p className={styles.memberName} title={viewer.displayName}>
+                    {viewer.displayName}
+                  </p>
+                  {viewer.handle === null ? null : (
+                    <p className={styles.memberHandle}>@{viewer.handle}</p>
+                  )}
+                </div>
+              </div>
             )}
             <ul className={styles.popoverList}>
+              {viewer.handle === null || viewer.status !== 'verified' ? null : (
+                <li>
+                  <Link
+                    href={`/u/${viewer.handle}`}
+                    className={styles.popoverPrimary}
+                    aria-label={
+                      viewer.displayName === null
+                        ? 'View profile'
+                        : `View profile: ${viewer.displayName}`
+                    }
+                    onClick={() => {
+                      setOpen(false);
+                    }}
+                  >
+                    View profile
+                  </Link>
+                </li>
+              )}
               {viewer.status === 'unverified' ? (
                 <li>
                   <Link

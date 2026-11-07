@@ -3,6 +3,7 @@ import type { OnboardingStep } from '@hucxter/contracts';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { signOut } from '@/app/actions/account';
+import { ResetStep } from '@/components/onboarding/reset-step';
 import { AgeStep, NameStep, PhoneStep, ZipStep } from '@/components/onboarding/steps';
 import styles from '@/components/auth/auth.module.css';
 import { authConfig } from '@/lib/env';
@@ -30,7 +31,8 @@ const LEDES: Record<OnboardingStep, string> = {
 /**
  * Onboarding gate (D-34): phone → 18+ → home ZIP → display name, one step per screen. Resumable:
  * the step comes from the server's view of the account, so reloads and returning later land on the
- * right step. When done, returns to the safe `next`.
+ * right step. When done, returns to the safe `next`. A staff-required reset (Brief 03C.2) asks for
+ * a new display name and handle instead.
  */
 export default async function WelcomePage({ searchParams }: PageProps<'/welcome'>) {
   const { next: rawNext } = await searchParams;
@@ -53,6 +55,23 @@ export default async function WelcomePage({ searchParams }: PageProps<'/welcome'
               Sign out
             </button>
           </form>
+        </section>
+      </div>
+    );
+  }
+
+  if (member.nameResetRequired && member.nextStep === 'name') {
+    return (
+      <div className={styles.page}>
+        <section className={styles.card} aria-labelledby="welcome-title">
+          <h1 id="welcome-title" className={styles.title}>
+            Choose a new name and handle
+          </h1>
+          <p className={styles.lede}>
+            Our team reset your display name and handle because they didn’t follow the community
+            guidelines. Choose new ones to keep using Hucxter.
+          </p>
+          <ResetStep next={next} />
         </section>
       </div>
     );
