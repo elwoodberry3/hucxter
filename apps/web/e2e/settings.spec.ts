@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
@@ -23,7 +22,7 @@ test.afterEach(async () => {
 async function member(
   page: Page,
   testInfo: TestInfo,
-  { base = LOCAL_URL, slot = 0 as 0 | 1, label = 'm' } = {},
+  { base = LOCAL_URL, slot = 0, label = 'm' }: { base?: string; slot?: 0 | 1; label?: string } = {},
 ) {
   const email = await signUpVerified(page, testInfo, { base, slot, label });
   members.push(email);
