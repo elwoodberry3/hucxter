@@ -95,3 +95,8 @@
   background: var(--hx-fill-strong);
   color: var(--hx-label);
 }
+
+/* On a poster the translucent fill disappears into dark frames: use a solid chip there. */
+.posterBadge .badge_sold {
+  background: var(--hx-bg-elevated);
+}

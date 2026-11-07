@@ -1,7 +1,15 @@
+import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import type { BrowserContext, Page, TestInfo } from '@playwright/test';
 import { FAKE_VIDEO } from './fixtures/fake-video';
-import { deleteE2eUsers, localAdmin, signUpVerified, userIdFor } from './helpers/accounts';
+import {
+  deleteE2eUsers,
+  handleFor,
+  localAdmin,
+  signInWithEmail,
+  signUpVerified,
+  userIdFor,
+} from './helpers/accounts';
 import { deleteSeeded, seedListing } from './helpers/listings';
 import type { SeededListing } from './helpers/listings';
 import { LOCAL_URL, viewFrom } from './support';
@@ -159,6 +167,174 @@ async function capture3c1(
   }
 }
 
+/**
+ * Brief 03C.2 set: profiles (owner empty, owner with listings, Saved, public, public empty),
+ * settings panes, the member menu, a profile report in /admin and the /welcome reset step. Own
+ * areas again (Manchester, NH and Milwaukee) so the 3C.1 storefront shots stay unaffected.
+ */
+const SHOT_ZIPS_3C2 = { '1440': '03101', '390': '53202' } as const;
+const AVATAR_PHOTO = fileURLToPath(new URL('fixtures/avatar/gps.jpg', import.meta.url));
+
+async function capture3c2(
+  page: Page,
+  context: BrowserContext,
+  testInfo: TestInfo,
+  size: keyof typeof SHOT_ZIPS_3C2,
+) {
+  const zip = SHOT_ZIPS_3C2[size];
+  const db = localAdmin();
+  // Reload per scheme: WebKit doesn't fully repaint some text when the scheme flips in place.
+  // `open` re-opens a menu or sheet after the reload.
+  const shoot = async (
+    target: Page,
+    name: string,
+    fullPage = false,
+    open?: () => Promise<void>,
+  ) => {
+    for (const scheme of SCHEMES) {
+      await target.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+      await target.reload();
+      await ready(target);
+      await target.waitForLoadState('networkidle');
+      await open?.();
+      await target.screenshot(shot(`${size}-${name}-${scheme}`, fullPage));
+    }
+  };
+  const visit = async (target: Page, path: string) => {
+    await target.goto(`${LOCAL_URL}${path}`);
+    await ready(target);
+    await target.waitForLoadState('networkidle');
+  };
+
+  const email = await signUpVerified(page, testInfo, { base: LOCAL_URL, zip, name: 'Avery' });
+  members.push(email);
+  const owner = { id: await userIdFor(email), email };
+  const handle = await handleFor(owner.id);
+  await viewFrom(context, zip);
+
+  // A new member's own profile: the empty state.
+  await visit(page, `/u/${handle}`);
+  await shoot(page, 'profile-owner-empty', true);
+
+  // Settings panes (with a photo and a bio).
+  await visit(page, '/settings/profile');
+  await page
+    .getByRole('region', { name: 'Profile photo' })
+    .getByLabel('Add photo')
+    .setInputFiles(AVATAR_PHOTO);
+  await expect(page.getByText('Photo updated')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await db
+    .from('profiles')
+    .update({ bio: 'Mid-century lamps and furniture.\nPickup in the evenings.' })
+    .eq('id', owner.id);
+  await visit(page, '/settings');
+  await shoot(page, 'settings-index', true);
+  await visit(page, '/settings/profile');
+  await shoot(page, 'settings-profile', true);
+  await visit(page, '/settings/account');
+  await shoot(page, 'settings-account', true);
+
+  // The owner's profile with listings in every state, then Saved.
+  for (const listing of [
+    { title: 'Teak sideboard', priceCents: 32000, categorySlug: 'furniture' },
+    { title: 'Arc floor lamp', priceCents: 9000, categorySlug: 'lighting' },
+    { title: 'Rattan chair', priceCents: 4000, categorySlug: 'furniture' },
+  ]) {
+    seeded.push(await seedListing(testInfo, { ...listing, zip, owner }));
+  }
+  seeded.push(
+    await seedListing(testInfo, { title: 'Desk lamp', zip, owner, status: 'sold' }),
+    await seedListing(testInfo, { title: 'Pellet gun', zip, owner, needsReview: true }),
+    await seedListing(testInfo, { title: 'Bookcase', zip, owner, stage: 'draft' }),
+  );
+  const other = await seedListing(testInfo, { title: 'Walnut stool', priceCents: 5500, zip });
+  seeded.push(other);
+  await db.from('saved_listings').insert({ user_id: owner.id, listing_id: other.id });
+  await visit(page, `/u/${handle}`);
+  await shoot(page, 'profile-owner', true);
+  await visit(page, `/u/${handle}?tab=saved`);
+  await shoot(page, 'profile-owner-saved', true);
+
+  // Member menu (desktop popover; phones use the Account tab, shown on the profile shots).
+  if (size === '1440') {
+    await visit(page, '/');
+    await shoot(page, 'member-menu', false, async () => {
+      await page.getByRole('button', { name: /^Account menu/ }).click();
+      await expect(page.getByRole('link', { name: /^View profile/ })).toBeVisible();
+    });
+    await page.keyboard.press('Escape');
+  }
+
+  // A second member (empty public profile) seen by a guest, and Avery's public profile.
+  const otherContext = await page
+    .context()
+    .browser()
+    ?.newContext({
+      viewport: page.viewportSize(),
+      ...(testInfo.project.use.isMobile === true ? { isMobile: true, hasTouch: true } : {}),
+    });
+  if (otherContext === undefined) throw new Error('no browser');
+  const second = await otherContext.newPage();
+  const secondEmail = await signUpVerified(second, testInfo, {
+    base: LOCAL_URL,
+    slot: 1,
+    label: 'rk',
+    zip,
+    name: 'Rowan',
+  });
+  members.push(secondEmail);
+  const secondId = await userIdFor(secondEmail);
+  const secondHandle = await handleFor(secondId);
+  await otherContext.clearCookies();
+  await viewFrom(otherContext, zip);
+  await visit(second, `/u/${handle}`);
+  await shoot(second, 'profile-public', true);
+  await visit(second, `/u/${secondHandle}`);
+  await shoot(second, 'profile-public-empty', true);
+
+  // A profile report in /admin, and its reset sheet (Avery is made a moderator for this).
+  await db.from('app_roles').insert({ user_id: owner.id, role: 'moderator' });
+  const report = await db
+    .from('reports')
+    .insert({
+      reporter_id: null,
+      target_type: 'profile',
+      target_id: secondId,
+      reason: 'other',
+      note: 'Name looks like a staff account.',
+    })
+    .select('id')
+    .single();
+  const reportId: unknown = (report.data as Record<string, unknown> | null)?.id;
+  if (typeof reportId !== 'string') throw new Error('could not open a report');
+  await visit(page, '/admin');
+  await shoot(page, 'admin-profile-report', true);
+  const sheet = page.getByRole('dialog', { name: 'Require a new name and handle?' });
+  await shoot(page, 'admin-require-new-name', false, async () => {
+    await page
+      .getByRole('region', { name: 'Open reports' })
+      .getByRole('listitem')
+      .filter({ hasText: `@${secondHandle}` })
+      .getByRole('button', { name: 'Require new name & handle' })
+      .click();
+    await sheet
+      .getByLabel('Reason for the audit log (required)')
+      .fill('Looks like a staff account');
+  });
+  await sheet.getByRole('button', { name: 'Require new name & handle' }).click();
+  await expect(page.getByText('Name and handle reset.')).toBeVisible();
+
+  // Rowan signs in again and must choose a new name and handle.
+  await second.goto(`${LOCAL_URL}/sign-in?next=%2Fsell`);
+  await signInWithEmail(second, secondEmail);
+  await expect(second).toHaveURL(/\/welcome/);
+  await ready(second);
+  await shoot(second, 'welcome-reset', true);
+  await otherContext.close();
+  await db.from('reports').delete().eq('id', reportId);
+}
+
 async function ready(page: Page) {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   // Listing pages: let the lazy player upgrade and show its poster before the shot.
@@ -286,5 +462,27 @@ test.describe('screenshots', () => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await capture3c1(page, context, testInfo, '390');
+  });
+
+  test('3C.2 at 1440: profiles, settings, member menu, profile report, reset step', async ({
+    page,
+    context,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', 'one desktop set, at 1440×900');
+    test.setTimeout(180_000);
+    await capture3c2(page, context, testInfo, '1440');
+  });
+
+  test('3C.2 at 390: profiles, settings, profile report, reset step', async ({
+    page,
+    context,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'mobile-webkit',
+      'one phone set (iPhone 15 profile at 390 px)',
+    );
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture3c2(page, context, testInfo, '390');
   });
 });

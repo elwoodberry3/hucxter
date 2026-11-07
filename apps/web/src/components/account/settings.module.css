@@ -143,6 +143,15 @@
   gap: var(--hx-space-2);
 }
 
+/* "Change photo" is the file input's label styled as a button: centre it like the buttons. */
+.photoButtons label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+}
+
 .fileInput {
   position: absolute;
   width: 1px;
