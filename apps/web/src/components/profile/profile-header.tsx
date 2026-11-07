@@ -1,5 +1,6 @@
 import { BadgeCheck, Pencil } from 'lucide-react';
 import Link from 'next/link';
+import { ReportButton } from '@/components/listing/report-button';
 import { ShareButton } from '@/components/listing/share-button';
 import { Avatar } from '@/components/ui/avatar';
 import type { Profile } from '@/server/profile/load';
@@ -17,7 +18,7 @@ function formatJoined(isoDate: string): string {
  * Profile header (Brief 03C.2 §4.2): photo or initials, name, @handle, bio and verified facts. Real
  * counts only, and a zero sold count is hidden. Never the home ZIP or area.
  */
-export function ProfileHeader({ profile }: { profile: Profile }) {
+export function ProfileHeader({ profile, verified }: { profile: Profile; verified: boolean }) {
   return (
     <header className={styles.header}>
       <span className={styles.avatar}>
@@ -46,7 +47,15 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
             <Pencil size={16} aria-hidden="true" /> Edit profile
           </Link>
         ) : (
-          <ShareButton className={styles.button} label="Share profile" />
+          <>
+            <ShareButton className={styles.button} label="Share profile" />
+            <ReportButton
+              target={{ kind: 'profile', handle: profile.handle }}
+              verified={verified}
+              className={styles.button}
+              label="Report profile"
+            />
+          </>
         )}
       </div>
     </header>

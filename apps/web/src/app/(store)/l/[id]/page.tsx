@@ -10,6 +10,7 @@ import { getViewerLocation } from '@/lib/viewer-location';
 import { loadMemberForDisplay } from '@/server/auth/member';
 import { loadListingView, loadOwnerViewCount, loadPriceDrop } from '@/server/listings/public';
 import { playbackSource } from '@/server/media/playback';
+import { savedAmong } from '@/server/saves';
 import { sessionClient } from '@/server/supabase-server';
 
 export const dynamic = 'force-dynamic';
@@ -84,9 +85,13 @@ export default async function ListingPage({ params }: PageProps<'/l/[id]'>) {
     view.isOwner ? loadOwnerViewCount(db, listing.id) : Promise.resolve(null),
   ]);
 
+  const saved =
+    member === null || view.isOwner ? false : (await savedAmong(db, [listing.id])).has(listing.id);
+
   return (
     <ListingTemplate
       listing={listing}
+      saved={saved}
       department={department}
       filters={filtersFor(department, listing.category_slug)}
       player={source}

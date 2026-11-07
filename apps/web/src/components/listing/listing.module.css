@@ -1,5 +1,12 @@
 .card {
+  position: relative;
   min-width: 0;
+}
+
+.cardSave {
+  position: absolute;
+  top: var(--hx-space-2);
+  right: var(--hx-space-2);
 }
 
 .cardLink {

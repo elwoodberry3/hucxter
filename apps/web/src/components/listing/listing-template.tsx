@@ -1,6 +1,6 @@
 import type { AttributeFilter, Department, ListingDetail, PriceDrop } from '@hucxter/contracts';
 import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
-import { BadgeCheck, Heart, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Breadcrumb, SubcategoryRow } from '@/components/results/results-layout';
 import { Avatar } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import { cx } from '@/lib/cx';
 import { ListingDescription } from './description';
 import { OwnerControls } from './owner-panel';
 import { ReportButton } from './report-button';
+import { SaveButton } from './save-button';
 import { ShareButton } from './share-button';
 import { StatusBadge } from './status-badge';
 import styles from './template.module.css';
@@ -44,7 +45,7 @@ export interface OwnerView {
 
 /**
  * Listing page (Brief 03C.1 §3.4). Desktop: dark video stage with the action rail (Share,
- * Report, Save soon) + detail column. Phones: video on top, details below, sticky action bar.
+ * Report, Save) + detail column. Phones: video on top, details below, sticky action bar.
  * No counts, ratings or chat box; the message action is disabled until messaging ships.
  */
 export function ListingTemplate({
@@ -55,6 +56,7 @@ export function ListingTemplate({
   drop,
   owner,
   verified,
+  saved = false,
 }: {
   listing: ListingDetail;
   department: Department;
@@ -64,6 +66,8 @@ export function ListingTemplate({
   owner: OwnerView | null;
   /** A verified member (may report); guests and unverified members get the gated action. */
   verified: boolean;
+  /** The viewer saved this listing. */
+  saved?: boolean;
 }) {
   const subcategory = department.subcategories.find((sub) => sub.slug === listing.category_slug);
   const attributeRows = [
@@ -83,17 +87,8 @@ export function ListingTemplate({
   const sold = listing.status === 'sold';
   const isOwner = owner !== null;
 
-  const saveButton = (
-    <span className={styles.railItem}>
-      <button type="button" className={styles.secondary} disabled aria-describedby="save-soon">
-        <Heart size={18} aria-hidden="true" />
-        <span className={styles.actionLabel}>Save</span>
-      </button>
-      <span id="save-soon" className={styles.railNote}>
-        Saving arrives soon
-      </span>
-    </span>
-  );
+  // Sold listings can't be saved (listing_save refuses them); the owner never sees Save.
+  const canSave = !isOwner && !sold && !listing.is_demo;
 
   return (
     <>
@@ -131,13 +126,21 @@ export function ListingTemplate({
               <ShareButton className={styles.secondary} labelClassName={styles.actionLabel} />
               {isOwner ? null : (
                 <ReportButton
-                  listingId={listing.id}
+                  target={{ kind: 'listing', listingId: listing.id }}
                   verified={verified}
                   className={styles.secondary}
                   labelClassName={styles.actionLabel}
                 />
               )}
-              {isOwner ? null : saveButton}
+              {canSave ? (
+                <SaveButton
+                  listingId={listing.id}
+                  title={listing.title}
+                  initialSaved={saved}
+                  className={styles.secondary}
+                  labelClassName={styles.actionLabel}
+                />
+              ) : null}
             </div>
           </div>
         </div>
@@ -192,12 +195,21 @@ export function ListingTemplate({
                   </p>
                 </>
               )}
+              {canSave ? (
+                <SaveButton
+                  listingId={listing.id}
+                  title={listing.title}
+                  initialSaved={saved}
+                  className={cx(styles.secondary, styles.barOnly)}
+                  labelClassName={styles.actionLabel}
+                />
+              ) : null}
               <ShareButton
                 className={cx(styles.secondary, styles.barOnly)}
                 labelClassName={styles.actionLabel}
               />
               <ReportButton
-                listingId={listing.id}
+                target={{ kind: 'listing', listingId: listing.id }}
                 verified={verified}
                 className={cx(styles.secondary, styles.barOnly)}
                 labelClassName={styles.actionLabel}

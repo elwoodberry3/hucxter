@@ -197,7 +197,7 @@ export async function handleFor(userId: string): Promise<string> {
     .select('handle')
     .eq('id', userId)
     .single();
-  const handle = (data as { handle: string | null } | null)?.handle;
-  if (error !== null || handle === null || handle === undefined) throw new Error('no handle');
+  const handle: unknown = (data as Record<string, unknown> | null)?.handle;
+  if (error !== null || typeof handle !== 'string') throw new Error('no handle');
   return handle;
 }

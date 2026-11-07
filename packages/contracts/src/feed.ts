@@ -39,6 +39,10 @@ export const ListingCard = z
     category_slug: CategorySlug,
     /** Demo fixtures only (never in production). Rendered with a visible "Demo" label. */
     is_demo: z.boolean().default(false),
+    /** The signed-in viewer saved it (3C.2). Private to the viewer; never a count. */
+    saved: z.boolean().optional(),
+    /** The signed-in viewer is the seller (no Save button). */
+    own: z.boolean().optional(),
   })
   .strict();
 export type ListingCard = z.infer<typeof ListingCard>;

@@ -18,6 +18,8 @@ import {
   loadSavedListings,
 } from '@/server/profile/load';
 import type { OwnerFilter, ProfileSort, ProfileTab, TilePage } from '@/server/profile/load';
+import { getViewer } from '@/lib/viewer';
+import { savedAmong } from '@/server/saves';
 import { sessionClient } from '@/server/supabase-server';
 
 const TAB_LABELS: Record<ProfileTab, string> = {
@@ -91,7 +93,7 @@ export default async function Page({ params, searchParams }: PageProps<'/u/[hand
   };
   const after = decodeProfileCursor(typeof query.after === 'string' ? query.after : undefined);
 
-  const db = await sessionClient();
+  const [db, viewer] = await Promise.all([sessionClient(), getViewer()]);
   let page: TilePage;
   if (state.tab === 'saved') {
     page = await loadSavedListings(db, { sort: state.sort, after });
@@ -104,11 +106,22 @@ export default async function Page({ params, searchParams }: PageProps<'/u/[hand
     });
   }
 
+  // Save toggles: on the owner's Saved tab (to unsave), and on other members' live listings.
+  const savedIds =
+    state.tab === 'saved'
+      ? new Set(page.items.map((tile) => tile.id))
+      : owner || viewer.kind === 'guest'
+        ? new Set<string>()
+        : await savedAmong(
+            db,
+            page.items.map((tile) => tile.id),
+          );
+  const showSave = (status: string) => status !== 'sold' && (state.tab === 'saved' || !owner);
   const empty = emptyCopy(state, owner, after !== null);
 
   return (
     <div className={styles.page}>
-      <ProfileHeader profile={profile} />
+      <ProfileHeader profile={profile} verified={viewer.kind === 'member' && viewer.verified} />
       <section className={styles.content} aria-labelledby="profile-tab-heading">
         {owner && query.deleted === '1' ? (
           <p role="status" className={styles.notice}>
@@ -179,7 +192,11 @@ export default async function Page({ params, searchParams }: PageProps<'/u/[hand
           <ul className={styles.grid}>
             {page.items.map((tile) => (
               <li key={tile.id}>
-                <ProfileTileView tile={tile} owner={owner && state.tab !== 'saved'} />
+                <ProfileTileView
+                  tile={tile}
+                  owner={owner && state.tab !== 'saved'}
+                  saved={showSave(tile.status) ? savedIds.has(tile.id) : undefined}
+                />
               </li>
             ))}
           </ul>

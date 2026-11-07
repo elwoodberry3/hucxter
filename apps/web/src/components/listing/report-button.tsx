@@ -10,23 +10,52 @@ import { useToast } from '@/components/ui/toast';
 import { GatedActionButton } from './gated-action';
 import styles from './template.module.css';
 
+export type ReportTarget =
+  { kind: 'listing'; listingId: string } | { kind: 'profile'; handle: string };
+
+// Listing-only reasons (prohibited, counterfeit, stolen) don't fit a profile.
+const PROFILE_REASONS: readonly ReportReason[] = [
+  'scam',
+  'harassment',
+  'unsafe_meetup',
+  'minor_safety',
+  'other',
+];
+
+const COPY = {
+  listing: {
+    prompt: 'Sign in to report a listing',
+    title: 'Report this listing',
+    thanks: 'Thanks. Our team will review this listing.',
+    anonymity: 'The seller won’t see who reported.',
+  },
+  profile: {
+    prompt: 'Sign in to report a profile',
+    title: 'Report this profile',
+    thanks: 'Thanks. Our team will review this profile.',
+    anonymity: 'They won’t see who reported.',
+  },
+} as const;
+
 /**
- * Report: a reason + optional note sheet for verified members. Everyone else gets the gated
- * button (guests: the sign-in sheet; unverified members: on to /welcome).
+ * Report: a reason + optional note sheet for verified members, for a listing or a profile.
+ * Everyone else gets the gated button (guests: the sign-in sheet; unverified members: on to
+ * /welcome). Profiles are sent by @handle, never by id.
  */
 export function ReportButton({
-  listingId,
+  target,
   verified,
   className,
   label = 'Report',
   labelClassName,
 }: {
-  listingId: string;
+  target: ReportTarget;
   verified: boolean;
   className?: string | undefined;
   label?: string;
   labelClassName?: string | undefined;
 }) {
+  const copy = COPY[target.kind];
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [note, setNote] = useState('');
@@ -42,7 +71,7 @@ export function ReportButton({
   );
   if (!verified) {
     return (
-      <GatedActionButton action="report" prompt="Sign in to report a listing" className={className}>
+      <GatedActionButton action="report" prompt={copy.prompt} className={className}>
         {content}
       </GatedActionButton>
     );
@@ -54,17 +83,16 @@ export function ReportButton({
     }
     setError(null);
     startTransition(async () => {
-      const result = await submitReport({
-        targetType: 'listing',
-        targetId: listingId,
-        reason,
-        note,
-      });
+      const result = await submitReport(
+        target.kind === 'listing'
+          ? { targetType: 'listing', targetId: target.listingId, reason, note }
+          : { targetType: 'profile', handle: target.handle, reason, note },
+      );
       if (result.status === 'sent') {
         setOpen(false);
         setReason(null);
         setNote('');
-        toast('Thanks. Our team will review this listing.');
+        toast(copy.thanks);
       } else {
         setError(result.message);
       }
@@ -87,7 +115,7 @@ export function ReportButton({
         onClose={() => {
           setOpen(false);
         }}
-        title="Report this listing"
+        title={copy.title}
         footer={
           <div className={styles.sheetActions}>
             <button type="button" className={styles.primarySheet} disabled={pending} onClick={send}>
@@ -98,7 +126,7 @@ export function ReportButton({
       >
         <fieldset className={styles.reasons}>
           <legend className={styles.panelTitle}>What’s wrong?</legend>
-          {REPORT_REASONS.map((value) => (
+          {(target.kind === 'listing' ? REPORT_REASONS : PROFILE_REASONS).map((value) => (
             <label key={value} className={styles.reason}>
               <input
                 type="radio"
@@ -126,9 +154,7 @@ export function ReportButton({
             setNote(event.target.value);
           }}
         />
-        <p className={styles.metaSmall}>
-          The seller won’t see who reported. If someone is in danger, call 911.
-        </p>
+        <p className={styles.metaSmall}>{copy.anonymity} If someone is in danger, call 911.</p>
         <p role="alert" className={styles.ownerError}>
           {error}
         </p>

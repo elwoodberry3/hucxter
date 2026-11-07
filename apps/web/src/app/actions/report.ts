@@ -13,8 +13,9 @@ export type ReportResult =
   | { status: 'error'; message: string };
 
 /**
- * Report a listing (hucxter-trust-safety). Verified members only; one open report per member per
- * listing, reports-per-day limits in the database. The reporter is never shown to the seller.
+ * Report a listing or a profile (hucxter-trust-safety). Verified members only; one open report per
+ * member per target, reports-per-day limits in the database. The reporter is never shown to the
+ * person reported. Profiles are named by @handle and resolved in the database.
  */
 export async function submitReport(input: unknown): Promise<ReportResult> {
   if (!(await requestIsSameOrigin())) return { status: 'error', message: ORIGIN_ERROR };
@@ -30,13 +31,21 @@ export async function submitReport(input: unknown): Promise<ReportResult> {
   }
   const parsed = ReportInput.safeParse(input);
   if (!parsed.success) return { status: 'error', message: 'Choose a reason.' };
+  const report = parsed.data;
   const supabase = await sessionClient();
-  const result = await supabase.rpc('report_create', {
-    p_target_type: parsed.data.targetType,
-    p_target_id: parsed.data.targetId,
-    p_reason: parsed.data.reason,
-    p_note: parsed.data.note,
-  });
+  const result =
+    report.targetType === 'listing'
+      ? await supabase.rpc('report_create', {
+          p_target_type: 'listing',
+          p_target_id: report.targetId,
+          p_reason: report.reason,
+          p_note: report.note,
+        })
+      : await supabase.rpc('report_profile', {
+          p_handle: report.handle,
+          p_reason: report.reason,
+          p_note: report.note,
+        });
   const { error } = result;
   const data: unknown = result.data;
   if (error !== null || typeof data !== 'string')
@@ -49,12 +58,19 @@ export async function submitReport(input: unknown): Promise<ReportResult> {
       message: 'You’ve sent a lot of reports today. Try again tomorrow.',
     };
   }
-  if (data === 'not_found')
-    return { status: 'error', message: 'This listing is no longer available.' };
+  if (data === 'not_found') {
+    return {
+      status: 'error',
+      message:
+        report.targetType === 'listing'
+          ? 'This listing is no longer available.'
+          : 'This profile is no longer available.',
+    };
+  }
   if (data === 'created') {
     await recordEvent(
-      { name: 'report_submitted', target: 'listing', reason: parsed.data.reason },
-      { listingId: parsed.data.targetId, actor: userId },
+      { name: 'report_submitted', target: report.targetType, reason: report.reason },
+      { listingId: report.targetType === 'listing' ? report.targetId : null, actor: userId },
     );
   }
   // A duplicate is reported as sent: the first report is still open.

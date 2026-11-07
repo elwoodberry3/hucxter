@@ -10,11 +10,14 @@ export function GatedActionButton({
   prompt,
   children,
   className,
+  label,
 }: {
   action: GatedAction;
   prompt: string;
   children: ReactNode;
   className?: string | undefined;
+  /** Accessible name for icon-only buttons. */
+  label?: string | undefined;
 }) {
   const openSheet = useSignInSheet();
   return (
@@ -22,6 +25,7 @@ export function GatedActionButton({
       type="button"
       className={className}
       aria-haspopup="dialog"
+      aria-label={label}
       onClick={() => {
         openSheet({ action, prompt });
       }}

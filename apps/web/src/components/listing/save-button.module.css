@@ -1,0 +1,22 @@
+/* Round save button over a card poster: 44×44 target, legible on any poster. */
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+  color: var(--hx-label);
+  cursor: pointer;
+}
+
+.icon:hover {
+  background: var(--hx-accent-subtle);
+}
+
+.icon[data-saved='true'] {
+  color: var(--hx-accent);
+}

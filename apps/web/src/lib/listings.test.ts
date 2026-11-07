@@ -6,6 +6,8 @@ const rpc = vi.fn();
 vi.mock('@/server/supabase-server', () => ({ sessionClient: () => Promise.resolve({ rpc }) }));
 vi.mock('./taxonomy', () => ({ getTaxonomy: vi.fn(), findDepartment: vi.fn() }));
 vi.mock('./viewer-location', () => ({ getViewerLocation: vi.fn() }));
+// Guests: cards come back without viewer flags (server/saves.ts reads nothing).
+vi.mock('@/server/auth/member', () => ({ loadMemberForDisplay: () => Promise.resolve(null) }));
 
 const { nearbyFilters, searchListings } = await import('./listings');
 

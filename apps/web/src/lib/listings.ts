@@ -8,6 +8,7 @@ import {
   parseListingQuery,
 } from '@hucxter/contracts';
 import type { ListingQuery, RadiusMi, RawSearchParams } from '@hucxter/contracts';
+import { markViewerCards } from '@/server/saves';
 import { sessionClient } from '@/server/supabase-server';
 import { findDepartment, getTaxonomy } from './taxonomy';
 import { getViewerLocation } from './viewer-location';
@@ -103,7 +104,10 @@ export async function searchListings(search: ListingSearch): Promise<ListingPage
   const data: unknown = result.data;
   const rows = Array.isArray(data) ? (data as NearbyRow[]) : [];
   const page = rows.slice(0, limit);
-  const items = page.flatMap((row) => toCard(row) ?? []);
+  const items = await markViewerCards(
+    supabase,
+    page.flatMap((row) => toCard(row) ?? []),
+  );
   const last = page.at(-1);
   const next = rows.length > limit && last !== undefined ? cursorFromRow(last.cursor) : null;
   return { items, nextCursor: next };

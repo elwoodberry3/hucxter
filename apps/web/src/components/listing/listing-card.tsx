@@ -1,10 +1,14 @@
 import type { ListingCard as ListingCardData } from '@hucxter/contracts';
 import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
 import Link from 'next/link';
+import { SaveButton } from './save-button';
 import { StatusBadge } from './status-badge';
 import styles from './listing.module.css';
 
-/** Listing card for grids and rails: 9:16 poster, price, title, condition, distance, area. */
+/**
+ * Listing card for grids and rails: 9:16 poster, price, title, condition, distance, area. Save sits
+ * over the poster corner but outside the link, so it's its own tab stop and never navigates.
+ */
 export function ListingCardView({ listing, href }: { listing: ListingCardData; href: string }) {
   return (
     <article className={styles.card}>
@@ -26,6 +30,16 @@ export function ListingCardView({ listing, href }: { listing: ListingCardData; h
           {CONDITION_LABELS[listing.condition]} · {listing.distance_bucket} · {listing.area_label}
         </span>
       </Link>
+      {listing.own === true || listing.is_demo ? null : (
+        <span className={styles.cardSave}>
+          <SaveButton
+            listingId={listing.id}
+            title={listing.title}
+            initialSaved={listing.saved === true}
+            variant="icon"
+          />
+        </span>
+      )}
     </article>
   );
 }

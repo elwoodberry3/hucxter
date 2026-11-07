@@ -1,6 +1,7 @@
 import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
 import { Eye, Film, Pencil } from 'lucide-react';
 import Link from 'next/link';
+import { SaveButton } from '@/components/listing/save-button';
 import { StatusBadge } from '@/components/listing/status-badge';
 import cardStyles from '@/components/listing/listing.module.css';
 import { DeleteDraft } from '@/components/listings/delete-draft';
@@ -23,7 +24,16 @@ function tileHref(tile: Tile): string | null {
  * A 9:16 listing tile on a profile: poster, price, title, status badge. The owner also sees where
  * it stands (Draft, In review, Removed), its real view count, and the actions that fit.
  */
-export function ProfileTileView({ tile, owner }: { tile: Tile; owner: boolean }) {
+export function ProfileTileView({
+  tile,
+  owner,
+  saved,
+}: {
+  tile: Tile;
+  owner: boolean;
+  /** Show the Save toggle with this state (other members' live listings, and the Saved tab). */
+  saved?: boolean | undefined;
+}) {
   const title = tile.title ?? 'Untitled draft';
   const href = tileHref(tile);
   const poster = (
@@ -71,6 +81,11 @@ export function ProfileTileView({ tile, owner }: { tile: Tile; owner: boolean })
         <Link href={href} className={cardStyles.cardLink}>
           {body}
         </Link>
+      )}
+      {saved === undefined || tile.state !== 'live' ? null : (
+        <span className={cardStyles.cardSave}>
+          <SaveButton listingId={tile.id} title={title} initialSaved={saved} variant="icon" />
+        </span>
       )}
       {owner ? (
         <div className={styles.tileOwner}>
