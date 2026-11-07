@@ -102,6 +102,7 @@
 }
 
 .button,
+.confirm,
 .destructive,
 .destructiveText {
   display: inline-flex;
@@ -138,7 +139,15 @@
   color: var(--hx-on-accent);
 }
 
+.confirm {
+  flex: 1;
+  border: 0;
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+}
+
 .button:disabled,
+.confirm:disabled,
 .destructive:disabled,
 .destructiveText:disabled {
   cursor: not-allowed;
@@ -176,4 +185,12 @@
   flex-basis: 100%;
   color: var(--hx-destructive);
   font-size: var(--hx-text-subheadline);
+}
+
+/* Reported profile (Brief 03C.2): avatar beside name, @handle and bio. */
+.profileTarget {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hx-space-3);
+  min-width: 0;
 }

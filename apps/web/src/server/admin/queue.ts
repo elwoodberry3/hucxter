@@ -1,9 +1,11 @@
 import 'server-only';
 import { ReportReason } from '@hucxter/contracts';
 import { z } from 'zod';
+import { avatarUrl } from '@/lib/avatar';
 import { adminDb } from '@/server/admin-db';
 import { prohibitedMatches } from '@/server/listings/prohibited';
 import { posterUrl } from '@/server/media/playback';
+import { deleteAvatarObject } from '@/server/profile/avatar';
 
 /**
  * Minimal moderation queue (Brief 03C.1 §3.6): open reports and listings held for review. Read
@@ -44,7 +46,28 @@ export interface QueueReport {
   targetId: string;
   /** The reported listing, when it still exists. */
   listing: { title: string; status: string; removed: boolean; inReview: boolean } | null;
+  /** The reported member's public profile, when it still exists (Brief 03C.2). */
+  profile: QueueProfile | null;
 }
+
+export interface QueueProfile {
+  displayName: string;
+  handle: string | null;
+  bio: string;
+  avatarUrl: string | null;
+  /** Staff already required a new name and handle; the member hasn't chosen yet. */
+  resetPending: boolean;
+}
+
+const ProfileRow = z.object({
+  id: z.uuid(),
+  display_name: z.string().nullable(),
+  handle: z.string().nullable(),
+  bio: z.string(),
+  avatar_path: z.string().nullable(),
+  name_reset_required_at: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+});
 
 export interface QueueListing {
   id: string;
@@ -75,6 +98,21 @@ async function listingsById(ids: string[]) {
   );
 }
 
+async function profilesById(ids: string[]) {
+  if (ids.length === 0) return new Map<string, z.infer<typeof ProfileRow>>();
+  const { data, error } = await adminDb()
+    .from('profiles')
+    .select('id, display_name, handle, bio, avatar_path, name_reset_required_at, deleted_at')
+    .in('id', ids);
+  if (error !== null) throw new Error(`admin_profiles:${error.code}`);
+  return new Map(
+    z
+      .array(ProfileRow)
+      .parse(data)
+      .map((row) => [row.id, row]),
+  );
+}
+
 /** Open reports, oldest first (a queue). */
 export async function loadOpenReports(): Promise<QueueReport[]> {
   const { data, error } = await adminDb()
@@ -86,11 +124,15 @@ export async function loadOpenReports(): Promise<QueueReport[]> {
     .limit(QUEUE_LIMIT);
   if (error !== null) throw new Error(`admin_reports:${error.code}`);
   const rows = z.array(ReportRow).parse(data);
-  const listings = await listingsById(
-    rows.filter((r) => r.target_type === 'listing').map((r) => r.target_id),
-  );
+  const targets = (type: 'listing' | 'profile') =>
+    rows.filter((r) => r.target_type === type).map((r) => r.target_id);
+  const [listings, profiles] = await Promise.all([
+    listingsById(targets('listing')),
+    profilesById(targets('profile')),
+  ]);
   return rows.map((row) => {
     const listing = row.target_type === 'listing' ? listings.get(row.target_id) : undefined;
+    const profile = row.target_type === 'profile' ? profiles.get(row.target_id) : undefined;
     return {
       id: row.id,
       reason: row.reason,
@@ -106,6 +148,16 @@ export async function loadOpenReports(): Promise<QueueReport[]> {
               status: listing.status,
               removed: listing.removed_at !== null,
               inReview: listing.review_state === 'needs_review',
+            },
+      profile:
+        profile === undefined || profile.deleted_at !== null
+          ? null
+          : {
+              displayName: profile.display_name ?? 'Hucxter member',
+              handle: profile.handle,
+              bio: profile.bio,
+              avatarUrl: avatarUrl(profile.avatar_path),
+              resetPending: profile.name_reset_required_at !== null,
             },
     };
   });
@@ -211,4 +263,46 @@ export async function dismissReport(actorId: string, reportId: string) {
     p_report_id: reportId,
   });
   return outcome(error);
+}
+
+export const PROFILE_ACTIONS = [
+  'dismiss',
+  'remove_photo',
+  'clear_bio',
+  'require_new_name',
+] as const;
+export type ProfileAction = (typeof PROFILE_ACTIONS)[number];
+
+/**
+ * One staff action on a reported profile (Brief 03C.2): admin_profile_action re-checks staff,
+ * requires the reason, closes the report and writes audit_log. Remove photo deletes the file
+ * here; if Storage fails, a storage_delete_avatar job retries it.
+ */
+export async function moderateProfile(
+  actorId: string,
+  reportId: string,
+  action: ProfileAction,
+  reason: string,
+): Promise<ModerationResult> {
+  const db = adminDb();
+  const response = await db.rpc('admin_profile_action', {
+    p_actor: actorId,
+    p_report_id: reportId,
+    p_action: action,
+    p_reason: reason,
+  });
+  if (response.error !== null) return outcome(response.error);
+  const path: unknown = response.data;
+  if (action === 'remove_photo' && typeof path === 'string') {
+    if (!(await deleteAvatarObject(path))) {
+      const queued = await db.rpc('jobs_enqueue', {
+        p_kind: 'storage_delete_avatar',
+        p_payload: { path },
+      });
+      if (queued.error !== null) {
+        console.error(JSON.stringify({ event: 'avatar_delete_enqueue_failed' }));
+      }
+    }
+  }
+  return 'ok';
 }
