@@ -194,7 +194,7 @@ test.describe('Profile photos (Brief 03C.2 §4.5, AVATAR_UPLOADS on)', () => {
     const owner = await member(page, testInfo);
     expect((await upload(page, LOCAL_URL, GPS_JPEG)).status()).toBe(200);
     const path = await avatarPath(owner.id);
-    await page.goto(`${LOCAL_URL}/settings`);
+    await page.goto(`${LOCAL_URL}/settings/account`);
     await page.getByLabel('Type DELETE to confirm').fill('DELETE');
     await page.getByRole('button', { name: 'Delete my account' }).click();
     await expect(page).toHaveURL(`${LOCAL_URL}/?deleted=1`);

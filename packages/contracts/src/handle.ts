@@ -123,3 +123,14 @@ export const HANDLE_STATUSES = [
   'limited',
 ] as const;
 export type HandleStatus = (typeof HANDLE_STATUSES)[number];
+
+/** Copy for each status (settings and /welcome). `available` and `yours` are good news. */
+export const HANDLE_STATUS_MESSAGES: Record<HandleStatus, string> = {
+  available: 'Available',
+  yours: 'This is your handle',
+  taken: 'That handle is taken.',
+  held: 'That handle isn’t available yet.',
+  reserved: 'That handle isn’t available.',
+  invalid: 'That handle isn’t available.',
+  limited: 'Try again shortly',
+};

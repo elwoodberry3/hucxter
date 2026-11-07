@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { Bio, DeleteAccountInput, DisplayName, Email, OtpCode, parseUsPhone } from './account';
+import {
+  Bio,
+  DeleteAccountInput,
+  DisplayName,
+  Email,
+  OtpCode,
+  ProfileResetInput,
+  ProfileUpdate,
+  parseUsPhone,
+} from './account';
 
 describe('parseUsPhone', () => {
   it.each([
@@ -128,5 +137,30 @@ describe('DeleteAccountInput', () => {
   it('requires the typed confirmation exactly', () => {
     expect(DeleteAccountInput.safeParse({ confirm: 'DELETE' }).success).toBe(true);
     expect(DeleteAccountInput.safeParse({ confirm: 'delete' }).success).toBe(false);
+  });
+});
+
+describe('ProfileUpdate (3C.2 settings)', () => {
+  const valid = {
+    displayName: 'Sam',
+    handle: '@Sam.R',
+    bio: 'Vintage lamps.\nPortland.',
+    zip: '97205',
+  };
+  it('takes name, handle, bio and ZIP, normalizing the handle', () => {
+    const parsed = ProfileUpdate.parse(valid);
+    expect(parsed).toEqual({ ...valid, handle: 'sam.r' });
+  });
+  it('applies the bio and handle rules', () => {
+    expect(ProfileUpdate.safeParse({ ...valid, bio: 'Call 503 555 0100' }).success).toBe(false);
+    expect(ProfileUpdate.safeParse({ ...valid, bio: 'x'.repeat(151) }).success).toBe(false);
+    expect(ProfileUpdate.safeParse({ ...valid, handle: 'support_team' }).success).toBe(false);
+    expect(ProfileUpdate.safeParse({ ...valid, bio: '' }).success).toBe(true);
+  });
+  it('ProfileResetInput refuses the placeholder name', () => {
+    expect(
+      ProfileResetInput.safeParse({ displayName: 'Hucxter member', handle: 'sam' }).success,
+    ).toBe(false);
+    expect(ProfileResetInput.safeParse({ displayName: 'Sam', handle: 'sam_r' }).success).toBe(true);
   });
 });

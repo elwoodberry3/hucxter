@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { containsBlockedTerm } from './handle';
+import { Handle, containsBlockedTerm } from './handle';
 import { Zip } from './location';
 import { plainText } from './sell';
 
@@ -121,7 +121,15 @@ export const PhoneCodeVerify = z.object({ code: OtpCode });
 export const AgeAttestation = z.object({ confirmed: z.literal(true) });
 export const HomeZipInput = z.object({ zip: Zip });
 export const DisplayNameInput = z.object({ displayName: DisplayName });
-export const ProfileUpdate = z.object({ displayName: DisplayName, zip: Zip });
+/** Settings → Edit profile (3C.2). The handle goes through profile_set_handle (30-day rule). */
+export const ProfileUpdate = z.object({
+  displayName: DisplayName,
+  handle: Handle,
+  bio: Bio,
+  zip: Zip,
+});
+/** After staff required a new name and handle (/welcome or settings). */
+export const ProfileResetInput = z.object({ displayName: DisplayName, handle: Handle });
 export const DeleteAccountInput = z.object({ confirm: z.literal('DELETE') });
 
 /** The onboarding steps in order (D-34). Email is confirmed by signing in. */

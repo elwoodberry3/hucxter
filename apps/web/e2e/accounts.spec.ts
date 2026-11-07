@@ -66,13 +66,14 @@ async function newMember(testInfo: TestInfo, label = 'm'): Promise<string> {
   return email;
 }
 
-/** Signs up and finishes onboarding; ends on `next` (default /settings). */
+/** Signs up and finishes onboarding (back on /settings), then opens Settings → Account. */
 async function verifiedMember(page: Page, testInfo: TestInfo, slot: 0 | 1 = 0) {
   const email = await newMember(testInfo);
   await page.goto('/sign-in?next=%2Fsettings');
   await signInWithEmail(page, email);
   await completeOnboarding(page, testPhone(testInfo, slot));
   await expect(page).toHaveURL('/settings');
+  await page.goto('/settings/account');
   return email;
 }
 
@@ -368,6 +369,7 @@ test.describe('accounts (D-34)', () => {
     await pageB.goto('/sign-in?next=%2Fsettings');
     await signInWithEmail(pageB, email);
     await expect(pageB).toHaveURL('/settings');
+    await pageB.goto('/settings/account');
     await expect(pageB.getByText('This device')).toHaveCount(1);
     // Both browsers are listed (verifying the phone also starts a fresh session in A).
     expect(
@@ -466,6 +468,9 @@ test.describe('accounts (D-34)', () => {
 
   test('settings: profile updates and the session list shows no IP', async ({ page }, testInfo) => {
     await verifiedMember(page, testInfo);
+    const sessions = await page.getByRole('region', { name: 'Where you’re signed in' }).innerText();
+    expect(sessions).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b|::1|127\.0\.0\.1/);
+    await page.goto('/settings/profile');
     await page.getByLabel('Display name').fill('Robin');
     await page.getByLabel('Home ZIP').fill('98660');
     await page.getByRole('button', { name: 'Save profile' }).click();
@@ -473,8 +478,6 @@ test.describe('accounts (D-34)', () => {
     await page.reload();
     await expect(page.getByLabel('Display name')).toHaveValue('Robin');
     await expect(page.getByLabel('Home ZIP')).toHaveValue('98660');
-    const sessions = await page.getByRole('region', { name: 'Where you’re signed in' }).innerText();
-    expect(sessions).not.toMatch(/\b\d{1,3}(\.\d{1,3}){3}\b|::1|127\.0\.0\.1/);
   });
 
   test('session cookies are httpOnly and SameSite=Lax', async ({ page, context }, testInfo) => {

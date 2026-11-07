@@ -43,7 +43,7 @@ type PhoneReturn = z.infer<typeof PhoneReturn>;
 
 function returnPath(target: PhoneReturn): string {
   return target.context === 'settings'
-    ? '/settings?updated=phone'
+    ? '/settings/account?updated=phone'
     : welcomeHref(nextOf(target.next));
 }
 
