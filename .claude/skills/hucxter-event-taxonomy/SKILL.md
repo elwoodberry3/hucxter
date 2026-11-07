@@ -64,6 +64,12 @@ Table `events` (append-only) or a vendor SDK behind `track()` — ADR-0006. Rule
 - Events and reports keep `listing_id` / `target_id` without a foreign key, so history survives
   listing and account deletion.
 
+### Built in 3C.2: `listing_saved` / `listing_unsaved`
+- Recorded by the `toggleSave` server action after `listing_save` succeeds, through
+  `recordEvent()` with the listing id and the member's daily actor hash (no user id, no props).
+- Saves themselves live in `saved_listings` and are private: only the member reads their own
+  rows. Never show save counts publicly (D-43: no likes, favorites or public engagement counts).
+
 ## 4. Consent & preferences record (build now)
 `user_consents` (user_id, purpose, granted, version, timestamp). Purposes: `analytics`,
 `personalization`, later `ads_contextual`. Default for anything ads-related is off until the
