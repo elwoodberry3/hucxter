@@ -16,6 +16,15 @@ export function newViewId(): string {
   return randomBytes(16).toString('base64url');
 }
 
+/**
+ * Brief 03C.1b H3: only a same-origin page load counts (the listing page's own beacon). Requests
+ * without Sec-Fetch-Site (scripts, older clients) or from other sites are answered but not
+ * counted. Scripts can forge the header, so the database's daily caps are the real bound.
+ */
+export function countableView(headers: Headers): boolean {
+  return headers.get('sec-fetch-site') === 'same-origin';
+}
+
 export function validViewId(value: string | undefined): value is string {
   return value !== undefined && /^[A-Za-z0-9_-]{22}$/.test(value);
 }
