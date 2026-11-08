@@ -3,7 +3,9 @@
  * the listing for review (`needs_review`): only the owner and admins can see it. Not a block list:
  * false positives cost a review, not a lost listing.
  *
- * DRAFT for the closed QA. The final list is D-07 (Founder + counsel). Keep it in this one file.
+ * DRAFT for the closed QA. The final list is D-07 (Founder + counsel). The database decides
+ * (`prohibited_keywords`, loaded by a data migration; Brief 03C.1b H1); this file mirrors it for UI
+ * hints, and a unit test keeps the two equal. Change both with a new data migration.
  * Entries are whole words or phrases, lowercase; matching ignores case and punctuation.
  */
 export const PROHIBITED_KEYWORDS: Record<string, readonly string[]> = {

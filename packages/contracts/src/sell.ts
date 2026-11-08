@@ -74,7 +74,13 @@ export const ListingIdInput = z.object({ listingId: z.uuid() }).strict();
 export const SaveInput = z.object({ listingId: z.uuid(), saved: z.boolean() }).strict();
 export type SaveInput = z.infer<typeof SaveInput>;
 
-export const PublishInput = z.object({ listingId: z.uuid(), whenReady: z.boolean() }).strict();
+/**
+ * `version` is the listing's updated_at exactly as Postgres printed it (microseconds included),
+ * passed back untouched: publish refuses ('changed') when the draft was edited since.
+ */
+export const PublishInput = z
+  .object({ listingId: z.uuid(), whenReady: z.boolean(), version: z.string().min(1).max(64) })
+  .strict();
 
 export const OwnerStatus = z.enum(['pending', 'available', 'sold']);
 export const StatusChangeInput = z.object({ listingId: z.uuid(), status: OwnerStatus }).strict();

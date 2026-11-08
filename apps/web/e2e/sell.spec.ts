@@ -150,6 +150,37 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
     await guest.close();
   });
 
+  test('a publish after an edit in another tab says the listing changed, then checks the new text', async ({
+    page,
+    context,
+  }, testInfo) => {
+    created.push(await signUpVerified(page, testInfo, { base: LOCAL_URL }));
+    const listingId = await draftWithDetails(page);
+    await expect(page.getByText('Your video is ready.')).toBeVisible();
+
+    // Brief 03C.1b H1: another tab saves new text after this review page loaded.
+    const other = await context.newPage();
+    await other.goto(`${LOCAL_URL}/sell?draft=${listingId}&step=details`);
+    await other.getByLabel(/Description/).fill('Comes with a rifle rack.');
+    await other.getByRole('button', { name: 'Continue' }).click();
+    await expect(other.getByRole('heading', { name: 'Review and publish' })).toBeVisible();
+    await other.close();
+
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    await expect(page).toHaveURL(/changed=1/);
+    await expect(
+      page.getByRole('main').getByRole('alert').filter({ hasText: 'This listing changed' }),
+    ).toHaveText('This listing changed since you opened it. Check the details, then publish.');
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    await expect(page).toHaveURL(`${LOCAL_URL}/l/${listingId}`);
+    const { data } = await localAdmin()
+      .from('listings')
+      .select('status, review_state')
+      .eq('id', listingId)
+      .single();
+    expect(data).toEqual({ status: 'available', review_state: 'needs_review' });
+  });
+
   for (const outcome of ['error', 'overlong'] as const) {
     test(`a video that fails processing (${outcome}) can't be published`, async ({
       page,

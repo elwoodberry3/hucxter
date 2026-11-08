@@ -35,6 +35,8 @@ export interface SellDraft {
   media: MediaState;
   publishWhenReady: boolean;
   areaLabel: string | null;
+  /** updated_at text from Postgres, never parsed: publish compares it exactly. */
+  version: string;
 }
 
 type Upload =
@@ -135,6 +137,8 @@ export function SellFlow({
         media: null,
         publishWhenReady: false,
         areaLabel: null,
+        // Set when the details step saves (review comes after it).
+        version: '',
       };
       setDraft(current);
       window.history.replaceState(null, '', `/sell?draft=${created.listingId}&step=video`);
@@ -258,8 +262,8 @@ export function SellFlow({
             departments={departments}
             initial={draft.details}
             submitLabel="Continue"
-            onSaved={(details) => {
-              setDraft((d) => (d === null ? d : { ...d, details }));
+            onSaved={(details, { version }) => {
+              setDraft((d) => (d === null ? d : { ...d, details, version }));
               go('review');
             }}
           />
@@ -408,6 +412,9 @@ function VideoPicker({
   );
 }
 
+const CHANGED_MESSAGE =
+  'This listing changed since you opened it. Check the details, then publish.';
+
 function ReviewStep({
   headingRef,
   draft,
@@ -426,12 +433,15 @@ function ReviewStep({
   onEditDetails: () => void;
 }) {
   const router = useRouter();
+  const params = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<PublishOutcome | null>(
     draft.publishWhenReady ? 'scheduled' : null,
   );
-  const [error, setError] = useState<string | null>(null);
-  const { details, media, listingId } = draft;
+  const [error, setError] = useState<string | null>(
+    params.get('changed') === '1' ? CHANGED_MESSAGE : null,
+  );
+  const { details, media, listingId, version } = draft;
   const complete = detailsComplete(details);
 
   // Poll while the video is on its way or processing.
@@ -454,9 +464,15 @@ function ReviewStep({
   const publish = (whenReady: boolean) => {
     setError(null);
     startTransition(async () => {
-      const outcome = await publishListing({ listingId, whenReady });
+      const outcome = await publishListing({ listingId, whenReady, version });
       if (outcome.status !== 'ok') {
         setError(outcome.message);
+        return;
+      }
+      if (outcome.outcome === 'changed') {
+        // Edited elsewhere since this page loaded: the page renders the saved draft again (its
+        // key changes with ?changed=1, so the flow remounts with it) and says so.
+        router.replace(`/sell?draft=${listingId}&step=review&changed=1`);
         return;
       }
       setResult(outcome.outcome);
