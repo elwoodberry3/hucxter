@@ -5,9 +5,12 @@ import { FAKE_VIDEO } from './fixtures/fake-video';
 import {
   deleteE2eUsers,
   handleFor,
+  invite,
   localAdmin,
+  seedWrongEmailChecks,
   signInWithEmail,
   signUpVerified,
+  testEmail,
   userIdFor,
 } from './helpers/accounts';
 import { deleteSeeded, seedListing } from './helpers/listings';
@@ -337,6 +340,49 @@ async function capture3c2(
   await db.from('reports').delete().eq('id', reportId);
 }
 
+/**
+ * Brief 03C.1b set: the email-code trickle notice (daily wrong-code cap) and the sell review
+ * step's "This listing changed" message (publish with a stale version).
+ */
+async function capture3c1b(page: Page, testInfo: TestInfo, size: '1440' | '390') {
+  const email = testEmail(testInfo, 't');
+  members.push(email);
+  await invite(email);
+  await seedWrongEmailChecks(email, 30);
+  await page.goto('/sign-in');
+  const main = page.getByRole('main');
+  await main.getByRole('button', { name: 'Continue with email' }).click();
+  await main.getByLabel('Email').fill(email);
+  await main.getByRole('button', { name: 'Send code' }).click();
+  await expect(main.getByRole('status')).toContainText('one code per hour');
+  for (const scheme of SCHEMES) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.screenshot(shot(`${size}-email-code-trickle-${scheme}`));
+  }
+
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  members.push(await signUpVerified(page, testInfo, { base: LOCAL_URL, slot: 1 }));
+  await page.goto(`${LOCAL_URL}/sell`);
+  await page.getByTestId('choose-video').setInputFiles(FAKE_VIDEO);
+  await expect(page.getByRole('heading', { name: 'Describe it' })).toBeVisible();
+  const listingId = /draft=([0-9a-f-]{36})/.exec(page.url())?.[1] ?? '';
+  await page.getByLabel('Title').fill('Teak plant stand');
+  await page.getByLabel('Category', { exact: true }).selectOption({ label: 'Home & Living' });
+  await page.getByLabel('Subcategory').selectOption({ index: 1 });
+  await page.getByLabel('Condition').selectOption('good');
+  await page.getByLabel('Price').fill('30');
+  await page.getByLabel(/Description/).fill('Three tiers. Light scratches.');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Review and publish' })).toBeVisible();
+  // Where a publish with a stale version lands (sell-flow.tsx, outcome 'changed').
+  await page.goto(`${LOCAL_URL}/sell?draft=${listingId}&step=review&changed=1`);
+  await expect(page.getByText('This listing changed since you opened it.')).toBeVisible();
+  for (const scheme of SCHEMES) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.screenshot(shot(`${size}-sell-review-changed-${scheme}`, true));
+  }
+}
+
 async function ready(page: Page) {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   // Listing pages: let the lazy player upgrade and show its poster before the shot.
@@ -464,6 +510,22 @@ test.describe('screenshots', () => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await capture3c1(page, context, testInfo, '390');
+  });
+
+  test('3C.1b at 1440: email-code trickle notice, listing changed', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', 'one desktop set, at 1440×900');
+    test.setTimeout(120_000);
+    await capture3c1b(page, testInfo, '1440');
+  });
+
+  test('3C.1b at 390: email-code trickle notice, listing changed', async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'mobile-webkit',
+      'one phone set (iPhone 15 profile at 390 px)',
+    );
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture3c1b(page, testInfo, '390');
   });
 
   test('3C.2 at 1440: profiles, settings, member menu, profile report, reset step', async ({
