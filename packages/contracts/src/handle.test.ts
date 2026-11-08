@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   BLOCKED_TERMS,
+  BRAND_TERM_PATTERN,
+  STAFF_WORD_PATTERN,
   CONFUSABLES_FROM,
   COMBINING_MARKS,
   CONFUSABLES_TO,
@@ -133,6 +135,19 @@ describe('the database mirrors these lists', () => {
     const asJs = sqlClass?.replace(/\\U0*([0-9a-f]+)/g, '\\u{$1}');
     expect(asJs).toBe(HIDDEN_CHARS.source);
     expect(fold).toContain(COMBINING_MARKS.source);
+  });
+
+  it('checks names and bios with the same patterns (Brief 03C.1b H8)', () => {
+    const relax = readFileSync(
+      join(
+        dir,
+        readdirSync(dir).find((name) => name.endsWith('_relax_profile_blocked_terms.sql')) ?? '',
+      ),
+      'utf8',
+    );
+    expect(relax).toContain(`public.text_fold(display_name) !~ '${BRAND_TERM_PATTERN}'`);
+    expect(relax).toContain(`public.text_fold(display_name) !~ '${STAFF_WORD_PATTERN}'`);
+    expect(relax).toContain(`public.text_fold(bio) !~ '${BRAND_TERM_PATTERN}'`);
   });
 
   it('has the same blocked terms', () => {

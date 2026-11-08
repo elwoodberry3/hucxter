@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BIO_BLOCKED_MESSAGE,
   Bio,
   DeleteAccountInput,
   DisplayName,
+  NAME_BLOCKED_MESSAGE,
   Email,
   OtpCode,
   ProfileResetInput,
@@ -104,6 +106,8 @@ describe('Bio', () => {
     'Weekend woodworker. Selling things I no longer need.',
     'Line one\nLine two\nLine three\nLine four',
     'Selling since 2015 in 2024',
+    'Happy to support local sellers',
+    'Official Portland pickup spot: the library',
   ])('accepts %j', (bio) => {
     expect(Bio.safeParse(bio).success).toBe(true);
   });
@@ -116,7 +120,7 @@ describe('Bio', () => {
     'Text 503-555-0100',
     'Call (503) 555 0100 anytime',
     'Official Hucxter seller',
-    'Ask support',
+    'Ask Hücxter',
   ])('rejects %j', (bio) => {
     expect(Bio.safeParse(bio).success).toBe(false);
   });
@@ -171,5 +175,37 @@ describe('ProfileUpdate (3C.2 settings)', () => {
       ProfileResetInput.safeParse({ displayName: 'Hucxter member', handle: 'sam' }).success,
     ).toBe(false);
     expect(ProfileResetInput.safeParse({ displayName: 'Sam', handle: 'sam_r' }).success).toBe(true);
+  });
+});
+
+describe('narrower blocked terms (Brief 03C.1b H8)', () => {
+  it.each(['Badminton Bob', 'Supportive Sam', 'Officially Jo', 'Zoë Ελένη'])(
+    'accepts the name %j',
+    (name) => {
+      expect(DisplayName.safeParse(name).success).toBe(true);
+    },
+  );
+
+  it.each([
+    'Hucxter Support',
+    'Bob Admin',
+    'Admin',
+    'ＡＤＭＩＮ Bob',
+    'Ηucxter', // Greek capital eta
+    'Supрort team', // Cyrillic р
+    'Hücxter',
+    'Bob_Admin',
+    'Support24',
+    'Official Bob',
+    'Hucxterfan',
+  ])('refuses the name %j', (name) => {
+    const result = DisplayName.safeParse(name);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(NAME_BLOCKED_MESSAGE);
+  });
+
+  it('refuses the brand in a bio, with its own message', () => {
+    const result = Bio.safeParse('Selling for Hucxtеr'); // Cyrillic е
+    expect(result.error?.issues[0]?.message).toBe(BIO_BLOCKED_MESSAGE);
   });
 });

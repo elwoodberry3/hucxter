@@ -40,8 +40,8 @@ select throws_ok($$update public.profiles set display_name = 'Нucxter member' w
   '23514', null, 'a look-alike placeholder is refused');
 select throws_ok($$update public.profiles set bio = 'Off' || chr(173) || 'icial seller' where id = auth.uid()$$,
   '23514', null, 'a soft hyphen hiding a blocked term in a bio is refused');
-select throws_ok($$update public.profiles set bio = 'Ѕupport team' where id = auth.uid()$$,
-  '23514', null, 'a look-alike blocked term in a bio is refused');
+select throws_ok($$update public.profiles set bio = 'Ηucxter team' where id = auth.uid()$$,
+  '23514', null, 'a look-alike brand in a bio is refused');
 select lives_ok($$update public.profiles set display_name = 'Zoë Ελένη', bio = 'Каша и чай.' where id = auth.uid()$$,
   'real names and bios in other scripts are fine');
 select throws_ok($$update public.profiles set display_name = null where id = auth.uid()$$,
