@@ -134,13 +134,20 @@ to the browser that asked for the code, and wrong codes never start a timed lock
 
 - **Cookies:** `hx_ec` (the code-requesting browser, 1 h, SameSite=Strict) and `hx_kd` (known device, 180 days, SameSite=Lax), both httpOnly, 32 random bytes. The database stores only a keyed hash of each, bound to the address hash, in `email_code_sessions` and `email_known_devices`.
 - **Guessing bound per address per hour:** every check needs a send, so wrong checks ≤ 6 × 5 + 6 × 3 = **48**, P ≤ 48 / 10⁶ = **4.8 × 10⁻⁵** (about 1 in 20,800; ≤ 1.2 × 10⁻³ if sustained for a day, with up to 12 bot checks an hour). Known-device sends need a cookie that only a past sign-in sets.
-- **30-day bound (Brief 03C.1b H2):** split 30 days into 30 back-to-back 24 h windows. In each,
-  new-device sessions allow at most 30 wrong checks before trickle mode, and trickle allows at
-  most 24 codes × 2 checks = 48. That's ≤ 78 a day and ≤ 2,340 in 30 days, so by the union bound
-  over 6-digit codes, P ≤ 2,340 / 10⁶ ≈ **0.23%** (before 3C.1b: 48 × 24 × 30 = 34,560, ≈ 3.46%).
+- **30-day bound (Brief 03C.1b H2):** only checks on normal and overflow codes count toward the
+  cap of 30; trickle checks don't, so an episode lasts exactly 24 h and can't restart itself.
+  Each cycle is ≥ 24 h: a burst of at most 30 wrong checks starts the episode, and during it
+  trickle allows at most 24 codes × 2 checks = 48 (no normal or overflow codes are sent). The
+  next burst can only start when the episode ends, by which time the previous burst is over 24 h
+  old. That's ≤ 78 per cycle; 30 days hold at most 30 cycles plus one more burst, so
+  ≤ 30 × 78 + 30 = 2,370 wrong checks and, by the union bound over 6-digit codes,
+  P ≤ 2,370 / 10⁶ ≈ **0.24%** (before 3C.1b: 48 × 24 × 30 = 34,560, ≈ 3.46%).
 - **Trickle residual risk:** during an episode, an attacker who takes the address's one trickle
-  code each hour leaves the owner without a new-device code until the episode ends. Known devices
-  and Google sign-in still work.
+  code each hour leaves the owner without a new-device code until the episode ends (the owner gets
+  up to 24 code emails). To keep the owner out for good the attacker has to start a new burst of
+  30 wrong checks every day, and each one writes a new `auth.email_code_daily_cap` alert: repeated
+  alerts for the same hash prefix on consecutive days mean staff should check with the owner and
+  end trickle mode (below). Known devices and Google sign-in still work.
 - **Residual risk:** on a brand-new device, an attacker who keeps requesting codes can use up the pool and keep replacing the owner's newest code, so the owner may wait up to 10 minutes for an overflow slot. A known device, or Google sign-in with the same address, isn't affected.
 - **To clear an address's state:** with the service role, delete its rows from `email_code_sessions` (cascades to `email_code_checks`), `email_code_ceilings` and `email_code_lockdowns`.
 - **To end trickle mode for an address (staff, after confirming the owner):** the alert's reason

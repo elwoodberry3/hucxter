@@ -45,10 +45,19 @@ async function tamperSession(context: BrowserContext) {
   );
 }
 
-async function expectGuestPages(page: Page, listingId: string, handle: string) {
+async function expectGuestPages(
+  page: Page,
+  listingId: string,
+  handle: string,
+  { clearedByProxy = false } = {},
+) {
   for (const path of ['/', '/c/electronics', `/l/${listingId}`, `/u/${handle}`]) {
     const response = await page.goto(path);
     expect(response?.status(), path).toBe(200);
+    if (clearedByProxy && path === '/') {
+      // The proxy's cookie-clearing response is never kept by a shared cache.
+      expect(response?.headers()['cache-control']).toContain('no-store');
+    }
     await expect(page.getByRole('banner').getByRole('button', { name: 'Sign in' })).toBeVisible();
   }
 }
@@ -64,7 +73,9 @@ test.describe('stale sessions (Brief 03C.1b H5)', () => {
     seeded.push(listing);
     members.push(await signUpVerified(page, testInfo));
     await tamperSession(context);
-    await expectGuestPages(page, listing.id, await handleFor(listing.sellerId));
+    await expectGuestPages(page, listing.id, await handleFor(listing.sellerId), {
+      clearedByProxy: true,
+    });
     await expect.poll(async () => (await authCookies(context)).length).toBe(0);
   });
 

@@ -116,10 +116,11 @@ test.describe('Settings (Brief 03C.2 §4.4)', () => {
     await page.getByLabel('Bio').fill('Find me at https://example.test');
     await page.getByRole('button', { name: 'Save profile' }).click();
     await expect(page.getByRole('alert').filter({ hasText: /link|URL|web/i })).toBeVisible();
-    await page.getByLabel('Bio').fill('Official lamps');
+    // Bios refuse only the brand (Brief 03C.1b H8); "Official", "support" and "admin" are fine.
+    await page.getByLabel('Bio').fill('Hucxter lamps');
     await page.getByRole('button', { name: 'Save profile' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'Don’t use' })).toBeVisible();
-    const bio = 'Mid-century lamps.\nPickup in NW.';
+    await expect(page.getByRole('alert').filter({ hasText: 'Don’t use “Hucxter”.' })).toBeVisible();
+    const bio = 'Official mid-century lamps.\nPickup in NW.';
     await page.getByLabel('Bio').fill(bio);
     await expect(page.getByText(`${String(bio.length)}/150`)).toBeVisible();
     await page.getByRole('button', { name: 'Save profile' }).click();
@@ -128,7 +129,7 @@ test.describe('Settings (Brief 03C.2 §4.4)', () => {
     await page.waitForLoadState('networkidle');
     await page.goto(`${LOCAL_URL}/u/${owner.handle}`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Robin');
-    await expect(page.getByText('Mid-century lamps.')).toBeVisible();
+    await expect(page.getByText('Official mid-century lamps.')).toBeVisible();
   });
 
   test('handle: availability as you type, one change per 30 days, the old handle is held', async ({

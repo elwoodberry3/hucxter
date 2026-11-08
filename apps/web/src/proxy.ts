@@ -73,6 +73,11 @@ async function refreshSession(
     for (const { name } of stale) {
       response.cookies.set(name, '', hardenCookie({ maxAge: 0 }, base));
     }
+    // Like @supabase/ssr's own cookie writes: never let a shared cache keep this response.
+    response.headers.set(
+      'Cache-Control',
+      'private, no-cache, no-store, must-revalidate, max-age=0',
+    );
   }
   return response;
 }

@@ -5,7 +5,7 @@
 -- then trickle mode: one send per 3600 s with 2 checks (Brief 03C.1b H2).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(46);
 
 create function pg_temp.h(t text) returns text language sql as $$ select repeat(t, 64) $$;
 create function pg_temp.send(email text, browser text, device text default null)
@@ -99,6 +99,14 @@ select is((select count(*)::int from public.audit_log where action = 'auth.email
   and reason = 'address hash ' || left(pg_temp.h('d'), 16)), 1, 'still one audit alert for the episode');
 update public.email_code_checks set created_at = created_at - interval '24 hours' where email_hash = pg_temp.h('d');
 update public.email_code_lockdowns set started_at = started_at - interval '24 hours' where email_hash = pg_temp.h('d');
+-- A full day of trickle guesses (48) doesn't restart the episode: only normal and overflow checks
+-- count toward the cap, so trickle mode ends 24 h after it started (3C.1b review M1).
+insert into public.email_code_checks (session_id, email_hash, created_at)
+select (select id from public.email_code_sessions where email_hash = pg_temp.h('d') and kind = 'trickle'
+          order by sent_at desc limit 1),
+  pg_temp.h('d'), now() - interval '1 hour'
+from generate_series(1, 48);
+select is(public.email_code_daily_wrong(pg_temp.h('d')), 0, 'trickle checks don''t count toward the cap');
 select is(pg_temp.send('d', '4'), 'normal', 'after 24 h, normal codes return');
 select ok(not has_function_privilege('service_role', 'public.email_code_trickle(text, int)', 'execute'),
   'the trickle helper is internal');

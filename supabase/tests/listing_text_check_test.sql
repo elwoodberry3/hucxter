@@ -45,8 +45,9 @@ select ok(not has_function_privilege('authenticated', 'public.listing_text_flagg
   'members cannot call the check directly');
 select ok(not has_function_privilege('anon', 'public.listing_text_flagged(text, text)', 'execute'),
   'anon cannot call the check');
-select ok(not has_function_privilege('authenticated', 'public.lock_own_listing(uuid)', 'execute'),
-  'members cannot call lock_own_listing');
+select ok(not has_function_privilege('authenticated', 'public.lock_own_listing(uuid)', 'execute')
+  and not has_function_privilege('service_role', 'public.lock_own_listing(uuid)', 'execute'),
+  'no role can call lock_own_listing directly');
 select ok(not has_table_privilege('authenticated', 'public.prohibited_keywords', 'select'),
   'members cannot read the keyword list');
 select ok(exists (select 1 from pg_class where relname = 'prohibited_keywords' and relrowsecurity),
