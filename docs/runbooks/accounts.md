@@ -222,13 +222,20 @@ writes `audit_log`:
 | Dismiss report | Nothing changes | `report.dismissed` (target: the report) |
 | Remove photo | `avatar_path` cleared, the file deleted (a `storage_delete_avatar` job retries if Storage fails); initials show | `profile.photo_removed` |
 | Clear bio | `bio` set to `''` | `profile.bio_cleared` |
-| Require new name & handle | Name → "Hucxter member", handle → generated, old handle held 30 days (`user_id` null). The member is unverified until they choose both on `/welcome`, so every gated page and action sends them there. | `profile.name_reset` |
+| Require new name & handle | Name → "Hucxter member", handle → generated, old handle held 30 days (`user_id` null). The member is unverified until they choose both on `/welcome`, so every gated page and action sends them there. | `profile.name_reset`, with `details` = `previous_display_name`, `previous_handle` |
 
-There is no suspension or ban in Phase I. To see what staff did to a member:
+There is no suspension or ban in Phase I. To see what staff did to a member, including what a
+name reset replaced (Brief 03C.1b H9):
 ```sql
-select created_at, actor_id, action, reason from public.audit_log
+select created_at, actor_id, action, reason,
+       details ->> 'previous_display_name' as previous_name,
+       details ->> 'previous_handle' as previous_handle
+from public.audit_log
 where target_id = '<user id>' order by created_at;
 ```
+`audit_log.details` holds public profile fields only, never emails or phone numbers. These rows
+are kept when the member deletes their account, so the previous names and handles outlive it;
+how long to keep them is an open D-07 retention question (`docs/decisions/open-decisions.md`).
 
 ### Remove an account manually (SQL only, Founder decision)
 Use the QA project's SQL editor (never production). This does what self-service deletion does:
