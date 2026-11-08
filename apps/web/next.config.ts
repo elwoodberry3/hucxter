@@ -18,6 +18,16 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ['@hucxter/contracts'],
+  // Profile photos (3C.2): sharp is a native module, loaded at runtime rather than bundled, and
+  // its Linux x64 binaries (Vercel functions, CI) are traced into the avatar route explicitly
+  // (sharp#4567: libvips missing from Next 16 traces). scripts/check-sharp-trace.mjs checks it.
+  serverExternalPackages: ['sharp'],
+  outputFileTracingIncludes: {
+    '/api/profile/avatar': [
+      '../../node_modules/.pnpm/@img+sharp-linux-x64@*/node_modules/@img/sharp-linux-x64/**/*',
+      '../../node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/**/*',
+    ],
+  },
   headers() {
     return Promise.resolve([
       { source: '/:path*', headers: securityHeaders },

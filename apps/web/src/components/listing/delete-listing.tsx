@@ -25,7 +25,7 @@ export function DeleteListingButton({
     startTransition(async () => {
       const result = await deleteListing({ listingId });
       setConfirming(false);
-      // Success redirects to /listings?deleted=1 from the server.
+      // Success redirects to the owner's profile (?deleted=1) from the server.
       if (result.status === 'error') onError(result.message);
     });
   };

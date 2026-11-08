@@ -68,6 +68,11 @@ const sharedEnv = {
   SUPABASE_SECRET_KEY: supabase.SUPABASE_SECRET_KEY,
   GIT_COMMIT_SHA: process.env.GITHUB_SHA ?? 'e2e',
   DEFAULT_AREA_ZIP: '97205',
+  // `next start` also loads apps/web/.env.local when a developer has one. Variables already set
+  // win over the file, and '' means "use the default", so a local VIDEO_PROVIDER=fake can't
+  // leak into the qa and production servers.
+  VIDEO_PROVIDER: '',
+  AVATAR_UPLOADS: '',
 };
 
 export default defineConfig({
@@ -129,6 +134,7 @@ export default defineConfig({
     },
     {
       // Same build, invite gate off: proves INVITE_ONLY=false lets an uninvited email sign up.
+      // Profile photos are off here (AVATAR_UPLOADS=off): no upload control, initials only.
       command: `pnpm start -p ${String(INVITE_OFF_PORT)}`,
       url: `${inviteOffURL}/api/health`,
       reuseExistingServer: !process.env.CI,
@@ -139,6 +145,7 @@ export default defineConfig({
         APP_ORIGIN: inviteOffURL,
         INVITE_ONLY: 'false',
         CAPTCHA_PROVIDER: 'none',
+        AVATAR_UPLOADS: 'off',
       },
     },
     {

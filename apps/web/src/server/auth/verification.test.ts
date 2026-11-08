@@ -44,6 +44,25 @@ describe('verificationState', () => {
     expect(noName.verified).toBe(true);
   });
 
+  it('holds a staff-required name reset at the name step', () => {
+    const state = verificationState({
+      ...complete,
+      profile: {
+        ...complete.profile,
+        displayName: 'Hucxter member',
+        handle: 'member4821',
+        nameResetRequiredAt: '2026-11-07T00:00:00Z',
+      },
+    });
+    expect(state).toMatchObject({
+      verified: false,
+      nextStep: 'name',
+      nameResetRequired: true,
+      handle: 'member4821',
+    });
+    expect(verificationState(complete).nameResetRequired).toBe(false);
+  });
+
   it('blocks uninvited accounts only when invite-only', () => {
     expect(verificationState({ ...complete, invited: false }).nextStep).toBe('closed_test');
     expect(verificationState({ ...complete, invited: false }).verified).toBe(false);

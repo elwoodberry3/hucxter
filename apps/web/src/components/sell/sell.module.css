@@ -87,15 +87,10 @@
 }
 
 .optional,
-.counter,
 .hint {
   color: var(--hx-label-secondary);
   font-size: var(--hx-text-footnote);
   font-weight: 400;
-}
-
-.counter {
-  font-variant-numeric: tabular-nums;
 }
 
 .input,

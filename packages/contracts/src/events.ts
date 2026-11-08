@@ -107,6 +107,9 @@ export const ServerEvent = z.discriminatedUnion('name', [
     .object({ name: z.literal('listing_price_changed'), direction: z.enum(['down', 'up']) })
     .strict(),
   z.object({ name: z.literal('listing_viewed') }).strict(),
+  // Saves (3C.2): private; never shown as a count anywhere.
+  z.object({ name: z.literal('listing_saved') }).strict(),
+  z.object({ name: z.literal('listing_unsaved') }).strict(),
   z
     .object({
       name: z.literal('report_submitted'),

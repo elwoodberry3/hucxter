@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ListingDetailsInput, ReportInput, UploadRequest } from './sell';
+import { ListingDetailsInput, ReportInput, SaveInput, UploadRequest } from './sell';
 
 const base = {
   listingId: '3f1c2b9a-6d4e-4f7a-9b2c-1e8d7a6b5c4d',
@@ -52,5 +52,23 @@ describe('sell inputs', () => {
     expect(ReportInput.safeParse(report).success).toBe(true);
     expect(ReportInput.safeParse({ ...report, reason: 'meh' }).success).toBe(false);
     expect(ReportInput.safeParse({ ...report, note: 'x'.repeat(501) }).success).toBe(false);
+  });
+
+  it('profile reports name a valid @handle, never an id', () => {
+    const report = { targetType: 'profile', handle: '@Sam.Rivera', reason: 'harassment', note: '' };
+    const parsed = ReportInput.safeParse(report);
+    expect(parsed.success && parsed.data.targetType === 'profile' && parsed.data.handle).toBe(
+      'sam.rivera',
+    );
+    expect(ReportInput.safeParse({ ...report, handle: 'admin' }).success).toBe(false);
+    expect(
+      ReportInput.safeParse({ ...report, handle: undefined, targetId: base.listingId }).success,
+    ).toBe(false);
+  });
+
+  it('save toggles take a listing id and a boolean', () => {
+    expect(SaveInput.safeParse({ listingId: base.listingId, saved: true }).success).toBe(true);
+    expect(SaveInput.safeParse({ listingId: 'x', saved: true }).success).toBe(false);
+    expect(SaveInput.safeParse({ listingId: base.listingId, saved: 'yes' }).success).toBe(false);
   });
 });

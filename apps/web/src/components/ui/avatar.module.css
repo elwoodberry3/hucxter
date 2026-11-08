@@ -1,0 +1,36 @@
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--hx-brand);
+  color: var(--hx-on-brand);
+  font-weight: 700;
+  line-height: 1;
+  object-fit: cover;
+}
+
+.sm {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: var(--hx-text-caption);
+}
+
+.md {
+  width: 3rem;
+  height: 3rem;
+  font-size: var(--hx-text-callout);
+}
+
+.lg {
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: var(--hx-text-title-1);
+}
+
+.xl {
+  width: 6rem;
+  height: 6rem;
+  font-size: var(--hx-text-large-title);
+}

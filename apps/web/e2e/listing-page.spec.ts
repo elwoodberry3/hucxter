@@ -51,9 +51,7 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
     await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
   });
 
-  test('guest: Report opens the sign-in sheet; Save is disabled with "Saving arrives soon"', async ({
-    page,
-  }, testInfo) => {
+  test('guest: Report and Save open the sign-in sheet', async ({ page }, testInfo) => {
     const listing = await seedListing(testInfo);
     seeded.push(listing);
     await page.goto(url(listing.id));
@@ -66,10 +64,15 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByRole('dialog', { name: 'Sign in to report a listing' })).toBeVisible();
     await page.keyboard.press('Escape');
-    if (!testInfo.project.name.startsWith('mobile')) {
-      await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
-      await expect(page.getByText('Saving arrives soon')).toBeVisible();
-    }
+    // Desktop: the video rail; phones: the sticky action bar.
+    const save = page
+      .getByRole('main')
+      .getByRole('button', { name: 'Save', exact: true })
+      .filter({ visible: true });
+    await expect(save).toHaveCount(1);
+    await save.click();
+    await expect(page.getByRole('dialog', { name: 'Sign in to save listings' })).toBeVisible();
+    await expect(page.getByText('Saving arrives soon')).toHaveCount(0);
   });
 
   test('sold stays visible with the Sold badge and no primary action', async ({

@@ -1,5 +1,6 @@
 'use client';
 
+import { DISPLAY_NAME_MAX } from '@hucxter/contracts';
 import { useId, useRef, useState, useTransition } from 'react';
 import {
   attestAge,
@@ -11,6 +12,7 @@ import {
 import type { StepResult } from '@/app/actions/onboarding';
 import { Turnstile } from '@/components/auth/turnstile';
 import type { TurnstileHandle } from '@/components/auth/turnstile';
+import { CharCounter } from '@/components/ui/char-counter';
 import { cx } from '@/lib/cx';
 import styles from '@/components/auth/auth.module.css';
 
@@ -269,7 +271,8 @@ export function NameStep({ next, initialName }: { next: string | null; initialNa
         What should people call you?
       </label>
       <p className={styles.hint} id={`${nameId}-hint`}>
-        Your first name or a nickname, 2–40 characters. No links, emails, or phone numbers.
+        Your first name or a nickname, 2–{DISPLAY_NAME_MAX} characters. No links, emails, or phone
+        numbers.
       </p>
       <input
         id={nameId}
@@ -277,14 +280,19 @@ export function NameStep({ next, initialName }: { next: string | null; initialNa
         type="text"
         name="displayName"
         autoComplete="given-name"
-        maxLength={40}
+        maxLength={DISPLAY_NAME_MAX}
         value={name}
         aria-invalid={error === null ? undefined : true}
-        aria-describedby={cx(`${nameId}-hint`, error === null ? undefined : errorId)}
+        aria-describedby={cx(
+          `${nameId}-hint`,
+          `${nameId}-count`,
+          error === null ? undefined : errorId,
+        )}
         onChange={(event) => {
           setName(event.target.value);
         }}
       />
+      <CharCounter id={`${nameId}-count`} value={name} max={DISPLAY_NAME_MAX} />
       <button type="submit" className={styles.primary} disabled={pending || name.trim().length < 2}>
         {pending ? 'Saving…' : 'Finish'}
       </button>

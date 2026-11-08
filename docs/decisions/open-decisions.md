@@ -9,9 +9,6 @@
 | D-38 | Styling approach for the mobile standard (its §9 assumes Tailwind) | **Keep CSS Modules + CSS custom-property tokens** (no Tailwind migration); meet §9's intent with tokens and variants | Brief 03 |
 | D-39 | Transactional email provider (custom SMTP for Supabase Auth) | Founder chooses a provider; SPF/DKIM/DMARC on the sending domain | Brief 03E |
 | D-40 | QA URL and hosting plan | `qa.hucxter.app` on a Vercel **Pro** team | Brief 03E |
-| D-42 | Members get a unique public **@handle** (profile URL `/u/[handle]`), auto-generated when onboarding completes, editable in settings | Approve (Chair default, `docs/kickoff/brief-03c.md` §1) | Brief 03C.2 |
-| D-43 | Followers, following, likes, reposts, favorites, comments and public engagement counts are **deferred to Phase II** (creators). Phase I profiles show only real marketplace facts | Approve (Chair default) | Brief 03C |
-| D-44 | Profile photos: optional upload, re-encoded server-side (metadata stripped), stored in Supabase Storage; initials avatar by default | Approve (Chair default) | Brief 03C.2 |
 | D-45 | A struck-through earlier price shows only for a **real price drop on Hucxter** (live at that price ≥ 7 consecutive days, dropped within 30 days); never an MSRP or "compare at" price | Approve (Chair default) | Brief 03C.1 |
 | D-46 | **No seller star ratings** until a transaction-confirmed review system exists. Seller cards show verified facts only | Approve (Chair default) | Brief 03C |
 | D-27 | "Pending: someone's on the way": hours before the app asks the seller to confirm Sold or Available | Configurable; start with the end of the same day and tune with QA data | Brief 07 |
@@ -52,6 +49,9 @@
 | D-37 | **Mobile web is a first-class Phase I surface** per `docs/standards/mobile-experience-standard.md`, adapted for no shipping/payments | 2026-10-31 | ADR-0011 |
 | D-41 | The next QA build is hosted on Vercel for the invite-only QA team | 2026-10-31 | Brief 03E |
 | D-47 | The 3B direct-API phone-change gap (`PUT /auth/v1/user`, `POST /auth/v1/verify` outside the app's limits) is **accepted for the closed QA only**; a Supabase Send SMS hook closes it before the Phase I-B public beta | 2026-11-06 (accepted on PR #9) | `docs/runbooks/accounts.md` §5; `docs/kickoff/brief-03c.md` |
+| D-42 | Members get a unique public **@handle** (profile URL `/u/[handle]`), auto-generated when onboarding completes, editable in settings at most once per 30 days; released handles are held for 30 days | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §4.1; `docs/runbooks/accounts.md` |
+| D-43 | Followers, following, likes, reposts, favorites, comments and public engagement counts are **deferred to Phase II** (creators). Phase I profiles show only real marketplace facts | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §2 |
+| D-44 | Profile photos: optional upload, re-encoded server-side to 512×512 WebP (all metadata stripped), stored in Supabase Storage; initials avatar by default. `AVATAR_UPLOADS=off` hides uploads | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §4.5 |
 
 ## Superseded
 

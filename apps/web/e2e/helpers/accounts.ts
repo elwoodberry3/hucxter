@@ -189,3 +189,15 @@ export async function userIdFor(email: string): Promise<string> {
   }
   throw new Error('e2e user not found');
 }
+
+/** The generated @handle of a local e2e user (set when the display name is). */
+export async function handleFor(userId: string): Promise<string> {
+  const { data, error } = await localAdmin()
+    .from('profiles')
+    .select('handle')
+    .eq('id', userId)
+    .single();
+  const handle: unknown = (data as Record<string, unknown> | null)?.handle;
+  if (error !== null || typeof handle !== 'string') throw new Error('no handle');
+  return handle;
+}

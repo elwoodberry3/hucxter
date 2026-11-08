@@ -8,3 +8,4 @@ export * from './listing';
 export * from './account';
 export * from './sell';
 export * from './price-drop';
+export * from './handle';

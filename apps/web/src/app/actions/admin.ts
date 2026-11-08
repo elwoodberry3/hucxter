@@ -5,7 +5,13 @@ import { z } from 'zod';
 import { GENERIC_ERROR, ORIGIN_ERROR } from '@/server/auth/errors';
 import { loadMember } from '@/server/auth/member';
 import { requestIsSameOrigin } from '@/server/auth/origin';
-import { approveListing, dismissReport, removeListing } from '@/server/admin/queue';
+import {
+  PROFILE_ACTIONS,
+  approveListing,
+  dismissReport,
+  moderateProfile,
+  removeListing,
+} from '@/server/admin/queue';
 import type { ModerationResult } from '@/server/admin/queue';
 
 /**
@@ -18,6 +24,13 @@ export type AdminResult = { status: 'ok' } | { status: 'error'; message: string 
 const ListingTarget = z.object({ listingId: z.uuid() }).strict();
 const RemoveInput = z.object({ listingId: z.uuid(), reason: z.string().trim().max(500) }).strict();
 const ReportTarget = z.object({ reportId: z.uuid() }).strict();
+const ProfileActionInput = z
+  .object({
+    reportId: z.uuid(),
+    action: z.enum(PROFILE_ACTIONS),
+    reason: z.string().trim().min(1).max(500),
+  })
+  .strict();
 
 async function staffId(): Promise<string | AdminResult> {
   if (!(await requestIsSameOrigin())) return { status: 'error', message: ORIGIN_ERROR };
@@ -75,4 +88,28 @@ export async function dismissOpenReport(input: unknown): Promise<AdminResult> {
   const parsed = ReportTarget.safeParse(input);
   if (!parsed.success) return { status: 'error', message: GENERIC_ERROR };
   return result(await dismissReport(actor, parsed.data.reportId));
+}
+
+/**
+ * Reported profiles (Brief 03C.2): Dismiss, Remove photo, Clear bio, or Require a new name and
+ * handle. A reason is required for each; SQL writes it to audit_log. No suspension or ban.
+ */
+export async function moderateReportedProfile(input: unknown): Promise<AdminResult> {
+  const actor = await staffId();
+  if (typeof actor !== 'string') return actor;
+  const parsed = ProfileActionInput.safeParse(input);
+  if (!parsed.success) {
+    return parsed.error.issues.some((issue) => issue.path[0] === 'reason')
+      ? { status: 'error', message: 'Add a reason for the audit log.' }
+      : { status: 'error', message: GENERIC_ERROR };
+  }
+  const outcome = await moderateProfile(
+    actor,
+    parsed.data.reportId,
+    parsed.data.action,
+    parsed.data.reason,
+  );
+  // Names, handles and photos show on profiles, listing pages and cards.
+  if (outcome === 'ok' && parsed.data.action !== 'dismiss') revalidatePath('/', 'layout');
+  return result(outcome);
 }

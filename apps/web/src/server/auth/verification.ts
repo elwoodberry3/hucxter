@@ -8,11 +8,20 @@ export interface MemberState {
   ageAttested: boolean;
   homeZip: string | null;
   displayName: string | null;
+  /** Public @handle (3C.2); null until a display name is set. */
+  handle: string | null;
+  /** Object name in the avatars bucket, or null (initials). */
+  avatarPath: string | null;
+  /** Staff required a new name and handle: nothing else works until the member chooses them. */
+  nameResetRequired: boolean;
   /** False only when INVITE_ONLY is on and the account email isn't invited. */
   invited: boolean;
   isStaff: boolean;
   isAdmin: boolean;
-  /** Verified = email confirmed + phone verified + 18+ + home ZIP (+ invited when invite-only). */
+  /**
+   * Verified = email confirmed + phone verified + 18+ + home ZIP (+ invited when invite-only), and
+   * no staff-required name reset pending.
+   */
   verified: boolean;
   /** The next /welcome step, `closed_test` for an uninvited account, or null when done. */
   nextStep: OnboardingStep | 'closed_test' | null;
@@ -23,7 +32,14 @@ export interface VerificationInput {
   emailConfirmedAt: string | null;
   phoneConfirmedAt: string | null;
   phone: string | null;
-  profile: { displayName: string | null; homeZip: string | null; ageAttestedAt: string | null };
+  profile: {
+    displayName: string | null;
+    homeZip: string | null;
+    ageAttestedAt: string | null;
+    handle?: string | null;
+    avatarPath?: string | null;
+    nameResetRequiredAt?: string | null;
+  };
   roles: string[];
   invited: boolean;
   inviteOnly: boolean;
@@ -37,14 +53,21 @@ export function verificationState(input: VerificationInput): MemberState {
     input.phoneConfirmedAt !== null && input.phone !== null && input.phone !== '';
   const ageAttested = input.profile.ageAttestedAt !== null;
   const homeZip = input.profile.homeZip;
-  const verified = invited && emailConfirmed && phoneVerified && ageAttested && homeZip !== null;
+  const nameResetRequired = (input.profile.nameResetRequiredAt ?? null) !== null;
+  const verified =
+    invited &&
+    emailConfirmed &&
+    phoneVerified &&
+    ageAttested &&
+    homeZip !== null &&
+    !nameResetRequired;
 
   let nextStep: MemberState['nextStep'] = null;
   if (!invited) nextStep = 'closed_test';
   else if (!phoneVerified) nextStep = 'phone';
   else if (!ageAttested) nextStep = 'age';
   else if (homeZip === null) nextStep = 'zip';
-  else if (input.profile.displayName === null) nextStep = 'name';
+  else if (input.profile.displayName === null || nameResetRequired) nextStep = 'name';
 
   const isAdmin = input.roles.includes('admin');
   return {
@@ -54,6 +77,9 @@ export function verificationState(input: VerificationInput): MemberState {
     ageAttested,
     homeZip,
     displayName: input.profile.displayName,
+    handle: input.profile.handle ?? null,
+    avatarPath: input.profile.avatarPath ?? null,
+    nameResetRequired,
     invited,
     isStaff: isAdmin || input.roles.includes('moderator'),
     isAdmin,

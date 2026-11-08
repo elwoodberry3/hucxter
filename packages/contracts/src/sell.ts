@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ListingCondition } from './feed';
+import { Handle } from './handle';
 import { Zip } from './location';
 import { CategorySlug } from './taxonomy';
 
@@ -13,7 +14,7 @@ export const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as con
 export const VideoType = z.enum(VIDEO_TYPES);
 
 /** Plain text only: control characters (except line breaks and tabs) are removed. */
-function plainText(max: number) {
+export function plainText(max: number) {
   return z
     .string()
     .transform((value) =>
@@ -68,6 +69,10 @@ export const ListingDetailsInput = z
 export type ListingDetailsInput = z.infer<typeof ListingDetailsInput>;
 
 export const ListingIdInput = z.object({ listingId: z.uuid() }).strict();
+
+/** Save (true) or unsave (false) a listing (Brief 03C.2 §4.3). */
+export const SaveInput = z.object({ listingId: z.uuid(), saved: z.boolean() }).strict();
+export type SaveInput = z.infer<typeof SaveInput>;
 
 export const PublishInput = z.object({ listingId: z.uuid(), whenReady: z.boolean() }).strict();
 
@@ -129,14 +134,25 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   other: 'Something else',
 };
 
-export const ReportInput = z
-  .object({
-    targetType: z.literal('listing'),
-    targetId: z.uuid(),
-    reason: ReportReason,
-    note: plainText(500),
-  })
-  .strict();
+/** A report on a listing (by id) or a profile (by @handle: profile ids never reach browsers). */
+export const ReportInput = z.discriminatedUnion('targetType', [
+  z
+    .object({
+      targetType: z.literal('listing'),
+      targetId: z.uuid(),
+      reason: ReportReason,
+      note: plainText(500),
+    })
+    .strict(),
+  z
+    .object({
+      targetType: z.literal('profile'),
+      handle: Handle,
+      reason: ReportReason,
+      note: plainText(500),
+    })
+    .strict(),
+]);
 export type ReportInput = z.infer<typeof ReportInput>;
 
 export const AdminRemoveInput = z.object({ listingId: z.uuid(), reason: plainText(500) }).strict();

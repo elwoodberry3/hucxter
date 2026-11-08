@@ -60,6 +60,15 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   `src/server/media/provider.ts`: `MUX_*` read only in `server/media/mux.ts`; the fake provider
   is local-only. `/dev/templates/listing` is gone. Runbook: `docs/runbooks/video.md`. e2e adds
   :3103 (local, fake video).
+- **3C.2 (branch `brief-03c2-profiles`, PR open):** handles (`/u/[handle]`, 30-day change rule,
+  `handle_holds`), public and owner profile pages (`/listings`, `/saved`, `/profile` redirect to
+  the owner view), private saves (`saved_listings`, `listing_save`), settings panes
+  `/settings/profile` and `/settings/account`, profile photos (`/api/profile/avatar`, sharp →
+  512×512 WebP, public `avatars` bucket, service-role writes in `server/profile/avatar.ts`,
+  `AVATAR_UPLOADS`), member menu, profile reports in `/admin` (`admin_profile_action`, reason
+  required; "Require new name & handle" sends the member to `/welcome`). Local Storage is needed
+  (CI runs `storage-api`). D-42–D-44 decided 2026-11-07. PR #10 follow-ups (M1–M3, L1–L7) stay
+  open for a separate hardening PR. Runbook: `docs/runbooks/accounts.md` §7.
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages

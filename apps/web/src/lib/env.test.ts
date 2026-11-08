@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authConfig, mediaConfig, serverConfig, supabaseConfig } from './env';
+import { authConfig, mediaConfig, profileConfig, serverConfig, supabaseConfig } from './env';
 
 describe('serverConfig', () => {
   it('defaults the origin in development', () => {
@@ -144,5 +144,27 @@ describe('mediaConfig', () => {
     expect(mediaConfig({})).toMatchObject({ maxSeconds: 60, maxBytes: 524_288_000 });
     expect(mediaConfig({ MEDIA_MAX_SECONDS: '30' }).maxSeconds).toBe(30);
     expect(() => mediaConfig({ MEDIA_MAX_SECONDS: '3600' })).toThrow();
+  });
+});
+
+describe('profileConfig', () => {
+  const url = 'https://abc123.supabase.co';
+
+  it('turns photos on by default and serves them from the exact Supabase origin', () => {
+    expect(profileConfig({ SUPABASE_URL: `${url}/` })).toEqual({
+      avatarUploads: true,
+      avatarOrigin: url,
+    });
+  });
+
+  it('AVATAR_UPLOADS=off hides photos and adds no origin', () => {
+    expect(profileConfig({ SUPABASE_URL: url, AVATAR_UPLOADS: 'off' })).toEqual({
+      avatarUploads: false,
+      avatarOrigin: null,
+    });
+  });
+
+  it('rejects other values', () => {
+    expect(() => profileConfig({ AVATAR_UPLOADS: 'yes' })).toThrow();
   });
 });

@@ -1,7 +1,8 @@
-# Accounts runbook (Brief 03 · 3B)
+# Accounts runbook (Brief 03 · 3B, 3C.2)
 
 **Who:** Founder and QA leads. **Covers:** testing sign-up locally, granting the first admin,
-managing QA invites, and the auth settings a cloud project needs in 3E. Nothing here touches a
+managing QA invites, the auth settings a cloud project needs in 3E, and (§7) handles, profile
+moderation, manual account removal and profile photos. Nothing here touches a
 remote project until 3E, and then only with the Founder running each step.
 
 ---
@@ -167,3 +168,91 @@ checks behind a Supabase auth hook.
 5. **The real on-screen keyboard** on an iPhone (Safari) and an Android phone (Chrome) on each
    `/welcome` step: the input and the Continue button stay visible, the tab bar hides.
 6. **Delete account** on a phone: you're signed out on every device.
+
+---
+
+## 7. Profiles, handles and moderation (3C.2)
+
+### Handles
+- Every member gets an `@handle` when their display name is set: lowercase letters, numbers, `.`
+  and `_`, 3–24 characters, not all digits, no leading/trailing `.` or `..`. Generated from the
+  display name (`handle_generate`), with digits added on a collision. Reserved words and the
+  substrings `hucxter`, `admin`, `support`, `official` are refused (contracts `handle.ts` and SQL
+  `handle_is_reserved`; a unit test keeps the two lists equal).
+- Members can change their handle **once every 30 days** in Settings → Edit profile (the first
+  change after the generated one is allowed straight away). The old handle is **held for 30 days**
+  in `handle_holds`, so nobody else can take it. `/u/<old handle>` returns 404; there are no
+  redirects.
+- Holds with `user_id` null (from a staff reset or an account deletion) block everyone, including
+  the former owner. To release a hold early (Founder decision only):
+  ```sql
+  delete from public.handle_holds where handle = '<handle>';
+  ```
+- Availability checks (`handle_status`) are limited to 60 per 10 minutes per member
+  (`action_limit_config` row `handle_check`); the UI then shows "Try again shortly".
+
+### Profile reports in `/admin`
+Members report a profile from its page (Report profile). Staff see it under **Open reports** with
+the photo, name, `@handle` (linked) and bio. Every action needs a reason, closes the report and
+writes `audit_log`:
+
+| Action | Effect | `audit_log.action` |
+|---|---|---|
+| Dismiss report | Nothing changes | `report.dismissed` (target: the report) |
+| Remove photo | `avatar_path` cleared, the file deleted (a `storage_delete_avatar` job retries if Storage fails); initials show | `profile.photo_removed` |
+| Clear bio | `bio` set to `''` | `profile.bio_cleared` |
+| Require new name & handle | Name → "Hucxter member", handle → generated, old handle held 30 days (`user_id` null). The member is unverified until they choose both on `/welcome`, so every gated page and action sends them there. | `profile.name_reset` |
+
+There is no suspension or ban in Phase I. To see what staff did to a member:
+```sql
+select created_at, actor_id, action, reason from public.audit_log
+where target_id = '<user id>' order by created_at;
+```
+
+### Remove an account manually (SQL only, Founder decision)
+Use the QA project's SQL editor (never production). This does what self-service deletion does:
+listings hidden, Mux and photo deletion jobs queued, handle held for 30 days, profile, roles and
+listings removed with the auth user. Checked locally on 2026-11-07.
+```sql
+begin;
+select public.account_delete_prepare('<user id>');
+insert into public.audit_log (actor_id, action, target_type, target_id, reason)
+values ('<your user id>', 'account.removed_by_staff', 'user', '<user id>', '<reason>');
+delete from auth.users where id = '<user id>';
+commit;
+```
+The jobs run on the next jobs cron tick (`docs/runbooks/video.md`).
+
+### Display-name and bio rules on existing rows
+Names (25 characters, blocked terms) and bios are checked by CHECKs on `profiles`:
+`profiles_display_name_rules`, and from the trust-safety hardening `profiles_display_name_folded`,
+`profiles_bio_folded` (blocked terms are also caught behind look-alike letters, fullwidth forms
+and invisible characters, which are refused outright) and `profiles_handle_has_name`. Each
+migration validates its CHECK only when no existing row breaks it; otherwise it stays `NOT VALID`
+(new writes are checked, old rows aren't) and the migration prints counts only. Local counts on
+2026-11-07: 0 (all validated). Before 3E, run on the QA project:
+```sql
+select conname, convalidated from pg_constraint
+where conrelid = 'public.profiles'::regclass
+  and conname in ('profiles_display_name_rules', 'profiles_display_name_folded',
+                  'profiles_bio_folded', 'profiles_handle_has_name');
+select
+  count(*) filter (where char_length(display_name) > 25) as over_25,
+  count(*) filter (where public.text_fold(display_name) ~ '(hucxter|admin|support|official)'
+                     and name_reset_required_at is null) as blocked_name,
+  count(*) filter (where public.text_fold(bio) ~ '(hucxter|admin|support|official)') as blocked_bio
+from public.profiles where display_name is not null;
+```
+While a row breaks a `NOT VALID` CHECK, **every** update to it fails: the member's own profile,
+ZIP or photo changes, and staff **Remove photo** and **Clear bio**. Only **Require new name &
+handle** works on a bad name; clear a bad bio with SQL. When all counts are 0, validate each one:
+`alter table public.profiles validate constraint <name>;`
+
+### Profile photos
+- Settings → Edit profile → Change photo. JPEG, PNG or WebP up to 5 MB; the server re-encodes it
+  with sharp to a 512×512 WebP and drops all metadata (EXIF incl. GPS, XMP, IPTC, ICC). Stored as
+  `<uuid>.webp` in the public `avatars` bucket (service role writes only), cached for 1 day.
+- `AVATAR_UPLOADS=off` hides upload and removal, makes `/api/profile/avatar` return 404 and shows
+  initials everywhere (stored photos are ignored). Use it if sharp fails on Vercel (3E check).
+- Manual QA in 3E: upload a photo from an iPhone (Safari converts HEIC to JPEG) and an Android
+  phone on the QA URL; check the photo shows on the profile, the seller card and the menu.

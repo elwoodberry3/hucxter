@@ -50,19 +50,6 @@
   padding: 0;
 }
 
-.railItem {
-  display: grid;
-  justify-items: center;
-  gap: var(--hx-space-1);
-}
-
-.railNote {
-  max-width: 4.5rem;
-  color: var(--hx-on-stage);
-  font-size: var(--hx-text-caption);
-  text-align: center;
-}
-
 .details {
   display: grid;
   gap: var(--hx-space-4);
@@ -373,20 +360,27 @@
   gap: var(--hx-space-3);
 }
 
-.avatar {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: var(--hx-brand);
-  color: var(--hx-on-brand);
+.sellerName {
   font-weight: 700;
 }
 
-.sellerName {
-  font-weight: 700;
+.sellerLink {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--hx-space-2);
+  min-height: var(--hx-target-min);
+  color: inherit;
+  text-decoration: none;
+}
+
+.sellerLink:hover {
+  text-decoration: underline;
+}
+
+.sellerHandle {
+  color: var(--hx-label-secondary);
+  font-weight: 400;
 }
 
 .sellerFacts {
@@ -469,7 +463,8 @@
     bottom: 0;
     left: 0;
     z-index: var(--z-tabbar);
-    grid-template-columns: auto auto 1fr;
+    /* Save · Share · Report (icon buttons), then the primary action filling the rest. */
+    grid-template-columns: auto auto auto 1fr;
     align-items: center;
     padding: var(--hx-space-2) var(--hx-page-gutter)
       calc(var(--hx-space-2) + env(safe-area-inset-bottom));
@@ -486,7 +481,7 @@
   }
 
   .primary {
-    grid-column: 3;
+    grid-column: -2 / -1;
     grid-row: 1;
     min-height: var(--hx-target-min);
     padding: 0 var(--hx-space-3);
@@ -500,7 +495,7 @@
   }
 
   .soldNote {
-    grid-column: 3;
+    grid-column: -2 / -1;
     grid-row: 1;
     font-size: var(--hx-text-subheadline);
   }

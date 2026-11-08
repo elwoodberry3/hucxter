@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DistanceBucket, ListingCard } from './feed';
 import { CategorySlug } from './taxonomy';
+import { Handle } from './handle';
 
 /**
  * Seller card on a listing page (Brief 03C.1 §3.4, D-46): verified facts only. No ratings, reviews,
@@ -13,6 +14,10 @@ export const SellerSummary = z
     joined_month: z.iso.date(),
     phone_verified: z.boolean(),
     items_sold: z.number().int().min(0),
+    /** Public @handle for the profile link (3C.2); absent for demo listings. */
+    handle: Handle.nullable().optional(),
+    /** Public photo URL, or null for initials. */
+    avatar_url: z.url().nullable().optional(),
   })
   .strict();
 export type SellerSummary = z.infer<typeof SellerSummary>;

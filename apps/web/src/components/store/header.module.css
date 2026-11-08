@@ -302,18 +302,33 @@
   }
 }
 
-/* Member avatar in the account control (initial of the display name). */
-.avatar {
-  display: inline-flex;
+/* Member card at the top of the account menu: photo, name (truncated), @handle. */
+.memberCard {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  background: var(--hx-accent);
-  color: var(--hx-on-accent);
-  font-size: var(--hx-text-subheadline);
+  gap: var(--hx-space-3);
+  padding: var(--hx-space-2) var(--hx-space-3) var(--hx-space-3);
+  border-bottom: 1px solid var(--hx-separator);
+}
+
+.memberText {
+  display: grid;
+  min-width: 0;
+}
+
+.memberName {
+  overflow: hidden;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberHandle {
+  overflow: hidden;
+  color: var(--hx-label-secondary);
+  font-size: var(--hx-text-subheadline);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 button.popoverLink {

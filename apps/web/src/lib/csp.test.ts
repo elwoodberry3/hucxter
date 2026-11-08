@@ -34,6 +34,18 @@ describe('contentSecurityPolicy', () => {
     expect(on).toContain("connect-src 'self'");
   });
 
+  it('adds exactly the Storage origin to img-src only when profile photos are on', () => {
+    const base = { nonce: 'n', isDev: false, upgradeInsecure: true };
+    expect(contentSecurityPolicy(base)).toContain("img-src 'self' data: blob:;");
+    const on = contentSecurityPolicy({ ...base, avatarOrigin: 'https://abc.supabase.co' });
+    expect(on).toContain("img-src 'self' data: blob: https://abc.supabase.co;");
+    // Nowhere else: no scripts, connections or frames from Storage.
+    expect(on.split('https://abc.supabase.co').length).toBe(2);
+    expect(
+      contentSecurityPolicy({ ...base, mux: true, avatarOrigin: 'http://127.0.0.1:54321' }),
+    ).toContain("img-src 'self' data: blob: https://image.mux.com http://127.0.0.1:54321;");
+  });
+
   it('adds Mux hosts only when the Mux provider is on', () => {
     const base = { nonce: 'n', isDev: false, upgradeInsecure: true };
     const off = contentSecurityPolicy(base);

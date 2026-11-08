@@ -46,12 +46,17 @@ jobs:
         with:
           version: 2.122.0
 
-      - name: Start local Supabase (database, REST, Auth, Mailpit)
-        run: supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      # Storage stays on for profile photos (Brief 03C.2).
+      - name: Start local Supabase (database, REST, Auth, Storage, Mailpit)
+        run: supabase start -x realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - run: supabase db reset
 
       - run: pnpm test:e2e
+
+      # sharp#4567: the avatar route's build trace must carry sharp and libvips for linux-x64.
+      - name: Check the sharp build trace
+        run: node apps/web/scripts/check-sharp-trace.mjs
 
       - name: Upload Playwright report and screenshots
         if: ${{ !cancelled() }}
@@ -78,8 +83,9 @@ jobs:
 
       # Local stack only (never linked to a remote project). Auth (gotrue) runs too: it creates
       # auth.sessions, which the account functions and their pgTAP tests use.
-      - name: Start local Supabase (Postgres + Auth)
-        run: supabase start -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      # Storage runs so the avatars bucket migration applies to a real storage schema.
+      - name: Start local Supabase (Postgres + Auth + Storage)
+        run: supabase start -x realtime,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       - run: supabase db reset
       - run: supabase test db

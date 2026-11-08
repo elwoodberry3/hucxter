@@ -217,7 +217,7 @@ export async function saveDetails(
   }
   if (before.status !== 'draft') {
     revalidatePath(`/l/${before.id}`);
-    revalidatePath('/listings');
+    revalidatePath('/u/[handle]', 'page');
   }
   return { status: 'saved', inReview: flagged || before.reviewState === 'needs_review' };
 }

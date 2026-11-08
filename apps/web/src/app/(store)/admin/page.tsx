@@ -2,8 +2,10 @@ import { REPORT_REASON_LABELS, formatPrice } from '@hucxter/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ModerationActions } from '@/components/admin/moderation-actions';
+import { ProfileModeration } from '@/components/admin/profile-moderation';
 import styles from '@/components/admin/admin.module.css';
 import { listedAgo } from '@/components/listing/listing-template';
+import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { loadOpenReports, loadReviewListings } from '@/server/admin/queue';
 import { requireStaff } from '@/server/auth/gate';
@@ -71,37 +73,86 @@ export default async function AdminPage() {
           <EmptyState title="No open reports" body="Reports from members wait here." />
         ) : (
           <ul className={styles.list}>
-            {reports.map((report) => (
-              <li key={report.id} className={styles.item}>
-                <div className={styles.body}>
-                  <h3 className={styles.title}>{REPORT_REASON_LABELS[report.reason]}</h3>
-                  <p className={styles.meta}>
-                    Reported {listedAgo(report.createdAt)} ·{' '}
-                    {report.listing === null ? (
-                      report.targetType === 'listing' ? (
-                        'Listing deleted'
-                      ) : (
-                        'A member profile'
-                      )
-                    ) : report.listing.removed ? (
-                      `${report.listing.title} (removed)`
-                    ) : (
-                      <Link href={`/l/${report.targetId}`}>{report.listing.title}</Link>
+            {reports.map((report) =>
+              report.targetType === 'profile' ? (
+                <li key={report.id} className={styles.item}>
+                  <div className={styles.body}>
+                    <h3 className={styles.title}>{REPORT_REASON_LABELS[report.reason]}</h3>
+                    <p className={styles.meta}>
+                      Profile reported {listedAgo(report.createdAt)}
+                      {report.profile === null ? ' · Account deleted' : ''}
+                    </p>
+                    {report.note === null ? null : (
+                      <p className={styles.description}>“{report.note}”</p>
                     )}
-                  </p>
-                  {report.note === null ? null : (
-                    <p className={styles.description}>“{report.note}”</p>
+                    {report.profile === null ? null : (
+                      <div className={styles.profileTarget}>
+                        <Avatar
+                          name={report.profile.displayName}
+                          src={report.profile.avatarUrl}
+                          size="md"
+                        />
+                        <div className={styles.body}>
+                          <p className={styles.title}>{report.profile.displayName}</p>
+                          {report.profile.handle === null ? null : (
+                            <p className={styles.meta}>
+                              <Link href={`/u/${report.profile.handle}`}>
+                                @{report.profile.handle}
+                              </Link>
+                            </p>
+                          )}
+                          {report.profile.resetPending ? (
+                            <p className={styles.flag}>Waiting for a new name and handle</p>
+                          ) : null}
+                          {report.profile.bio === '' ? null : (
+                            <p className={styles.description}>{report.profile.bio}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {report.profile === null ? (
+                    <ModerationActions reportId={report.id} />
+                  ) : (
+                    <ProfileModeration
+                      reportId={report.id}
+                      displayName={report.profile.displayName}
+                      hasPhoto={report.profile.avatarUrl !== null}
+                      hasBio={report.profile.bio !== ''}
+                      resetPending={report.profile.resetPending}
+                    />
                   )}
-                </div>
-                <ModerationActions
-                  reportId={report.id}
-                  listingId={
-                    report.listing !== null && !report.listing.removed ? report.targetId : undefined
-                  }
-                  listingTitle={report.listing?.title}
-                />
-              </li>
-            ))}
+                </li>
+              ) : (
+                <li key={report.id} className={styles.item}>
+                  <div className={styles.body}>
+                    <h3 className={styles.title}>{REPORT_REASON_LABELS[report.reason]}</h3>
+                    <p className={styles.meta}>
+                      Reported {listedAgo(report.createdAt)} ·{' '}
+                      {report.listing === null ? (
+                        'Listing deleted'
+                      ) : report.listing.removed ? (
+                        `${report.listing.title} (removed)`
+                      ) : (
+                        <Link href={`/l/${report.targetId}`}>{report.listing.title}</Link>
+                      )}
+                    </p>
+                    {report.note === null ? null : (
+                      <p className={styles.description}>“{report.note}”</p>
+                    )}
+                  </div>
+                  <ModerationActions
+                    reportId={report.id}
+                    listingId={
+                      report.listing !== null && !report.listing.removed
+                        ? report.targetId
+                        : undefined
+                    }
+                    listingTitle={report.listing?.title}
+                  />
+                </li>
+              ),
+            )}
           </ul>
         )}
       </section>

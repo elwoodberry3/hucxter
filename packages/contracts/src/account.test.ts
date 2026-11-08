@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { DeleteAccountInput, DisplayName, Email, OtpCode, parseUsPhone } from './account';
+import {
+  Bio,
+  DeleteAccountInput,
+  DisplayName,
+  Email,
+  OtpCode,
+  ProfileResetInput,
+  ProfileUpdate,
+  parseUsPhone,
+} from './account';
 
 describe('parseUsPhone', () => {
   it.each([
@@ -54,7 +63,12 @@ describe('DisplayName', () => {
 
   it.each([
     'A',
-    'x'.repeat(41),
+    'x'.repeat(26),
+    'Hucxter member',
+    'HUCXTER fan',
+    'Site Admin',
+    'Tech Support',
+    'Official Bob',
     'me@example.com',
     'see www.example.com',
     'https://x.io',
@@ -68,6 +82,47 @@ describe('DisplayName', () => {
 
   it('trims', () => {
     expect(DisplayName.parse('  Lee  ')).toBe('Lee');
+  });
+
+  it('allows exactly 25 characters', () => {
+    expect(DisplayName.safeParse('x'.repeat(25)).success).toBe(true);
+  });
+});
+
+describe('Bio', () => {
+  it('turns tabs into spaces (the database allows no tabs)', () => {
+    expect(Bio.parse('Lamps\tand chairs')).toBe('Lamps and chairs');
+  });
+
+  it('refuses hidden and direction-control characters', () => {
+    expect(Bio.safeParse('Hi\u200bthere').success).toBe(false);
+    expect(DisplayName.safeParse('\u202eAlex').success).toBe(false);
+  });
+
+  it.each([
+    '',
+    'Weekend woodworker. Selling things I no longer need.',
+    'Line one\nLine two\nLine three\nLine four',
+    'Selling since 2015 in 2024',
+  ])('accepts %j', (bio) => {
+    expect(Bio.safeParse(bio).success).toBe(true);
+  });
+
+  it.each([
+    'x'.repeat(151),
+    'a\nb\nc\nd\ne',
+    'me@example.com',
+    'Shop at www.example.com',
+    'Text 503-555-0100',
+    'Call (503) 555 0100 anytime',
+    'Official Hucxter seller',
+    'Ask support',
+  ])('rejects %j', (bio) => {
+    expect(Bio.safeParse(bio).success).toBe(false);
+  });
+
+  it('normalizes line endings, strips control characters and trims', () => {
+    expect(Bio.parse('  Hi\r\nthere\u0007  ')).toBe('Hi\nthere');
   });
 });
 
@@ -91,5 +146,30 @@ describe('DeleteAccountInput', () => {
   it('requires the typed confirmation exactly', () => {
     expect(DeleteAccountInput.safeParse({ confirm: 'DELETE' }).success).toBe(true);
     expect(DeleteAccountInput.safeParse({ confirm: 'delete' }).success).toBe(false);
+  });
+});
+
+describe('ProfileUpdate (3C.2 settings)', () => {
+  const valid = {
+    displayName: 'Sam',
+    handle: '@Sam.R',
+    bio: 'Vintage lamps.\nPortland.',
+    zip: '97205',
+  };
+  it('takes name, handle, bio and ZIP, normalizing the handle', () => {
+    const parsed = ProfileUpdate.parse(valid);
+    expect(parsed).toEqual({ ...valid, handle: 'sam.r' });
+  });
+  it('applies the bio and handle rules', () => {
+    expect(ProfileUpdate.safeParse({ ...valid, bio: 'Call 503 555 0100' }).success).toBe(false);
+    expect(ProfileUpdate.safeParse({ ...valid, bio: 'x'.repeat(151) }).success).toBe(false);
+    expect(ProfileUpdate.safeParse({ ...valid, handle: 'support_team' }).success).toBe(false);
+    expect(ProfileUpdate.safeParse({ ...valid, bio: '' }).success).toBe(true);
+  });
+  it('ProfileResetInput refuses the placeholder name', () => {
+    expect(
+      ProfileResetInput.safeParse({ displayName: 'Hucxter member', handle: 'sam' }).success,
+    ).toBe(false);
+    expect(ProfileResetInput.safeParse({ displayName: 'Sam', handle: 'sam_r' }).success).toBe(true);
   });
 });

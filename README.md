@@ -121,8 +121,7 @@ Never add fake listings, counts, ratings, or scale claims.
   home ZIP and, when `INVITE_ONLY=true`, an invite. `/welcome` walks through the missing steps and
   resumes after a reload. Every gated page and action uses `requireVerifiedMember()`
   (`apps/web/src/server/auth/gate.ts`); every mutation checks `Origin` first.
-- **Settings** (`/settings`): profile, phone change, signed-in devices (no IP addresses), sign out
-  everywhere, delete account.
+- **Settings** (`/settings`): Edit profile and Account panes (see 3C.2 below).
 - **Local testing:** codes arrive in Mailpit (http://127.0.0.1:54324). Test numbers
   +1 503 555 0100–0139 take code `123456` (`supabase/config.toml`). Invites, the first admin,
   OTP limits and the cloud settings for QA are in `docs/runbooks/accounts.md`.
@@ -140,8 +139,8 @@ Never add fake listings, counts, ratings, or scale claims.
   under the D-45 rule), status, distance bucket and area, seller card, Meet safely. Messaging is
   still disabled ("Is this still available?" arrives in 3C.2). Owners get Edit, Mark pending,
   Mark sold and Delete.
-- **My Listings** (`/listings`): Drafts · Processing · Live · In review · Sold. **Report** sheet on
-  every listing; staff review reports and held listings in `/admin`.
+- **My Listings** became the owner view of the profile in 3C.2 (`/listings` redirects there).
+  **Report** sheet on every listing; staff review reports and held listings in `/admin`.
 - **Discovery:** home rails, categories and search read live listings within the viewer's radius
   (1, 5, 10, 25, 50 or 100 mi). Browsers never see a precise location.
 - **Video locally** uses a fake provider (no Mux account needed). Real Mux setup, variables, manual
@@ -149,3 +148,24 @@ Never add fake listings, counts, ratings, or scale claims.
 - **Variables** (server only, never committed): `VIDEO_PROVIDER`, `MUX_TOKEN_ID`,
   `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`, `MUX_SIGNING_KEY_ID`, `MUX_SIGNING_PRIVATE_KEY`,
   `MEDIA_MAX_SECONDS`, `MEDIA_MAX_BYTES`, `CRON_SECRET`.
+
+## Profiles, saves and settings (Brief 03, Milestone 3C.2)
+
+- **Profiles** (`/u/[handle]`): photo or initials, display name, `@handle`, bio, Phone verified,
+  joined date, listed and sold counts (real numbers; no followers, likes or ratings), Share and
+  Report. Tabs Listings · Sold. The **owner** also sees Saved, filters (All, Live, Pending, Drafts,
+  In review), views per listing and Edit/Delete. Home ZIP and area are never shown. `/profile`,
+  `/listings` and `/saved` redirect to the member's own profile.
+- **Saves:** Save on listing cards and the listing page (members only; guests get the sign-in
+  sheet). Saves are private; the Saved tab shows live listings only.
+- **Settings:** Edit profile (photo, display name 2–25, handle once every 30 days with a live
+  availability check, bio 0–150, home ZIP) and Account (phone shown masked, Change number,
+  signed-in devices, sign out everywhere, delete account). Two panes on desktop; list → detail on
+  phones.
+- **Member menu:** photo and name, View profile, Messages, Settings, Admin (staff), Sign out. On
+  phones the Account tab opens your profile.
+- **Moderation:** profile reports in `/admin` with Dismiss, Remove photo, Clear bio and Require new
+  name & handle, each with a required reason in `audit_log`. Handles, holds, manual account
+  removal and the photo pipeline: [`docs/runbooks/accounts.md` §7](docs/runbooks/accounts.md).
+- **Variables:** `AVATAR_UPLOADS` (`on` by default; `off` hides photo uploads and shows initials
+  everywhere). Photos need local Storage, which `supabase start` runs.

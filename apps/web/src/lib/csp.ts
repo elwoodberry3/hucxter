@@ -9,6 +9,7 @@ export function contentSecurityPolicy({
   turnstile = false,
   mux = false,
   inlineStyles = false,
+  avatarOrigin = null,
 }: {
   nonce: string;
   isDev: boolean;
@@ -28,6 +29,11 @@ export function contentSecurityPolicy({
    * because browsers ignore 'unsafe-inline' next to a nonce. Scripts are unaffected.
    */
   inlineStyles?: boolean;
+  /**
+   * Profile photos (AVATAR_UPLOADS on): exactly the Supabase origin that serves the public
+   * avatars bucket, for img-src only. Null when photos are off.
+   */
+  avatarOrigin?: string | null;
 }): string {
   const challenge = turnstile ? ' https://challenges.cloudflare.com' : '';
   const muxConnect = mux ? ' https://*.mux.com https://storage.googleapis.com' : '';
@@ -39,7 +45,7 @@ export function contentSecurityPolicy({
     isDev || inlineStyles
       ? "style-src 'self' 'unsafe-inline'"
       : `style-src 'self' 'nonce-${nonce}'`,
-    `img-src 'self' data: blob:${mux ? ' https://image.mux.com' : ''}`,
+    `img-src 'self' data: blob:${mux ? ' https://image.mux.com' : ''}${avatarOrigin === null ? '' : ` ${avatarOrigin}`}`,
     ...(mux ? ["media-src 'self' blob: https://*.mux.com", "worker-src 'self' blob:"] : []),
     "font-src 'self'",
     `connect-src 'self'${muxConnect}`,

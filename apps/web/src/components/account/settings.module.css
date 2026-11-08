@@ -1,0 +1,231 @@
+/* Settings (Brief 03C.2 §4.4): phone list → detail; 64rem and up, nav + pane side by side. */
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--hx-space-6);
+  width: min(100%, 64rem);
+  margin: 0 auto;
+  padding: var(--hx-space-4) 0 var(--hx-space-8);
+}
+
+.heading {
+  margin-bottom: var(--hx-space-4);
+  font-size: var(--hx-text-large-title);
+  font-weight: 800;
+}
+
+.nav ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+  list-style: none;
+}
+
+.nav li + li {
+  border-top: 1px solid var(--hx-separator);
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hx-space-3);
+  min-height: var(--hx-target-min);
+  padding: var(--hx-space-3) var(--hx-space-4);
+  color: var(--hx-label);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--hx-fill-hover);
+}
+
+.navChevron {
+  color: var(--hx-label-secondary);
+}
+
+.pane {
+  display: grid;
+  gap: var(--hx-space-4);
+  align-content: start;
+  min-width: 0;
+}
+
+.paneTitle {
+  font-size: var(--hx-text-title-1);
+  font-weight: 800;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  justify-self: start;
+  min-height: var(--hx-target-min);
+  color: var(--hx-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Phones: the index is the list; a pane page is the pane with a back link. */
+@media (width < 64rem) {
+  .shell[data-pane='index'] .pane {
+    display: none;
+  }
+
+  .shell:not([data-pane='index']) .navColumn {
+    display: none;
+  }
+
+  .shell:not([data-pane='index']) .paneTitle {
+    font-size: var(--hx-text-large-title);
+  }
+}
+
+@media (width >= 64rem) {
+  .shell {
+    grid-template-columns: 16rem minmax(0, 1fr);
+    align-items: start;
+    gap: var(--hx-space-8);
+  }
+
+  .back {
+    display: none;
+  }
+
+  .navLink[aria-current='page'] {
+    background: var(--hx-accent-subtle);
+    color: var(--hx-accent);
+  }
+
+  .navChevron {
+    display: none;
+  }
+}
+
+/* Panel sections inside a pane. */
+.card {
+  display: grid;
+  gap: var(--hx-space-3);
+  padding: var(--hx-space-6);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+}
+
+@media (width < 64rem) {
+  .card {
+    padding: var(--hx-space-4);
+  }
+}
+
+.cardTitle {
+  font-size: var(--hx-text-title-3);
+  font-weight: 700;
+}
+
+.photoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hx-space-4);
+}
+
+.photoButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hx-space-2);
+}
+
+/* "Change photo" is the file input's label styled as a button: centre it like the buttons. */
+.photoButtons label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The file input stays focusable; its label shows the focus ring. */
+.fileInput:focus-visible + label {
+  outline: 2px solid var(--hx-accent);
+  outline-offset: 2px;
+}
+
+.fileInput + label {
+  cursor: pointer;
+}
+
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--hx-space-2);
+}
+
+.handleField {
+  display: flex;
+  align-items: stretch;
+}
+
+.handlePrefix {
+  display: grid;
+  place-items: center;
+  padding: 0 var(--hx-space-3);
+  border: 1px solid var(--hx-separator-strong);
+  border-right: 0;
+  border-radius: var(--hx-radius-control) 0 0 var(--hx-radius-control);
+  background: var(--hx-fill-hover);
+  color: var(--hx-label-secondary);
+  font-weight: 600;
+}
+
+.handleField input {
+  flex: 1;
+  min-width: 0;
+  border-radius: 0 var(--hx-radius-control) var(--hx-radius-control) 0;
+}
+
+.status {
+  font-size: var(--hx-text-subheadline);
+}
+
+.status[data-tone='good'] {
+  color: var(--hx-success-label);
+  font-weight: 600;
+}
+
+.status[data-tone='bad'] {
+  color: var(--hx-destructive);
+}
+
+.status[data-tone='neutral'] {
+  color: var(--hx-label-secondary);
+}
+
+.textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.phone {
+  font-size: var(--hx-text-headline);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

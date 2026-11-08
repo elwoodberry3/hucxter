@@ -17,17 +17,22 @@ import { sessionClient } from '@/server/supabase-server';
  */
 export type OwnerResult = { status: 'ok' } | { status: 'error'; message: string };
 
-async function verifiedUserId(): Promise<string | OwnerResult> {
+async function verifiedOwner(): Promise<{ userId: string; handle: string | null } | OwnerResult> {
   if (!(await requestIsSameOrigin())) return { status: 'error', message: ORIGIN_ERROR };
   try {
     const member = await loadMember();
     if (member === null || !member.verified) {
       return { status: 'error', message: 'Sign in again to manage your listings.' };
     }
-    return member.userId;
+    return { userId: member.userId, handle: member.handle };
   } catch {
     return { status: 'error', message: GENERIC_ERROR };
   }
+}
+
+async function verifiedUserId(): Promise<string | OwnerResult> {
+  const owner = await verifiedOwner();
+  return 'userId' in owner ? owner.userId : owner;
 }
 
 export async function setListingStatus(input: unknown): Promise<OwnerResult> {
@@ -58,14 +63,17 @@ export async function setListingStatus(input: unknown): Promise<OwnerResult> {
     { listingId: own.id, actor: userId },
   );
   revalidatePath(`/l/${own.id}`);
-  revalidatePath('/listings');
+  revalidatePath('/u/[handle]', 'page');
   return { status: 'ok' };
 }
 
-/** On success it navigates to /listings?deleted=1 (a client push would race the revalidation). */
+/**
+ * On success it navigates to the owner's profile with ?deleted=1 (a client push would race the
+ * revalidation).
+ */
 export async function deleteListing(input: unknown): Promise<OwnerResult> {
-  const userId = await verifiedUserId();
-  if (typeof userId !== 'string') return userId;
+  const owner = await verifiedOwner();
+  if (!('userId' in owner)) return owner;
   const parsed = ListingIdInput.safeParse(input);
   if (!parsed.success) return { status: 'error', message: GENERIC_ERROR };
   const { error } = await (
@@ -74,7 +82,7 @@ export async function deleteListing(input: unknown): Promise<OwnerResult> {
     p_id: parsed.data.listingId,
   });
   if (error !== null) return { status: 'error', message: 'We couldn’t delete that listing.' };
-  revalidatePath('/listings');
+  revalidatePath('/u/[handle]', 'page');
   revalidatePath('/');
-  redirect('/listings?deleted=1');
+  redirect(owner.handle === null ? '/' : `/u/${owner.handle}?deleted=1`);
 }

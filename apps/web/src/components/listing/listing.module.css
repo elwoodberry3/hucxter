@@ -1,5 +1,12 @@
 .card {
+  position: relative;
   min-width: 0;
+}
+
+.cardSave {
+  position: absolute;
+  top: var(--hx-space-2);
+  right: var(--hx-space-2);
 }
 
 .cardLink {
@@ -87,4 +94,9 @@
 .badge_sold {
   background: var(--hx-fill-strong);
   color: var(--hx-label);
+}
+
+/* On a poster the translucent fill disappears into dark frames: use a solid chip there. */
+.posterBadge .badge_sold {
+  background: var(--hx-bg-elevated);
 }

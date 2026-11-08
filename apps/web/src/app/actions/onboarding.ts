@@ -43,7 +43,7 @@ type PhoneReturn = z.infer<typeof PhoneReturn>;
 
 function returnPath(target: PhoneReturn): string {
   return target.context === 'settings'
-    ? '/settings?updated=phone'
+    ? '/settings/account?updated=phone'
     : welcomeHref(nextOf(target.next));
 }
 
@@ -157,7 +157,7 @@ export async function saveHomeZip(input: unknown, next: unknown): Promise<StepRe
   redirect(welcomeHref(nextOf(next)));
 }
 
-/** Display name: first name or nickname (2–40, no links, emails, or phone numbers). */
+/** Display name: first name or nickname (2–25, no links, emails, phone numbers or blocked terms). */
 export async function saveDisplayName(input: unknown, next: unknown): Promise<StepResult> {
   const gate = await invitedMember();
   if (!('ok' in gate)) return gate;
@@ -166,6 +166,10 @@ export async function saveDisplayName(input: unknown, next: unknown): Promise<St
     return { status: 'error', message: parsed.error.issues[0]?.message ?? GENERIC_ERROR };
   }
   const member = await requireSignedIn('/welcome');
+  // Last step only: the name (and with it the public handle) comes after phone, 18+ and ZIP.
+  if (member.nextStep !== 'name' || member.nameResetRequired) {
+    redirect(welcomeHref(nextOf(next)));
+  }
   const supabase = await sessionClient();
   const { error } = await supabase
     .from('profiles')

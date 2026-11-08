@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HIDDEN_CHARS, Handle, containsBlockedTerm } from './handle';
 import { Zip } from './location';
+import { plainText } from './sell';
 
 /** Sign-in email: trimmed and lowercased. Never logged or sent to analytics. */
 export const Email = z
@@ -62,15 +64,25 @@ export function parseUsPhone(raw: string, { allowFictional = false } = {}): Pars
 const DIGITS_LIMIT = 7;
 const URL_LIKE = /(:\/\/|www\.|\.(com|net|org|io|app|co|me|ly|gg|tv|us|info|biz)\b)/i;
 
+export const DISPLAY_NAME_MAX = 25;
+export const BIO_MAX = 150;
+export const BIO_MAX_LINE_BREAKS = 3;
+
+/** Copy for BLOCKED_TERMS (handle.ts). */
+const BLOCKED_MESSAGE = 'Don’t use “Hucxter”, “admin”, “support” or “official”.';
+/** Seven digits close together (spaces or punctuation between them): a phone number. */
+const PHONE_LIKE = /(\d[^\da-z]{0,3}){7}/i;
+
 /**
- * Display name: first name or nickname, 2–40 characters, with no URLs, emails, or phone numbers
- * (the database CHECK on profiles.display_name mirrors this).
+ * Display name: first name or nickname, 2–25 characters (Brief 03C.2 §4.4), with no URLs, emails,
+ * phone numbers or blocked terms (Founder amendment 2). The database CHECKs on
+ * profiles.display_name mirror this.
  */
 export const DisplayName = z
   .string()
   .trim()
   .min(2, 'Use at least 2 characters.')
-  .max(40, 'Use 40 characters or fewer.')
+  .max(DISPLAY_NAME_MAX, `Use ${String(DISPLAY_NAME_MAX)} characters or fewer.`)
   // eslint-disable-next-line no-control-regex -- control characters are exactly what we reject
   .refine((value) => !/[\u0000-\u001f\u007f]/.test(value), 'Use letters, numbers, and spaces.')
   .refine(
@@ -80,7 +92,27 @@ export const DisplayName = z
   .refine(
     (value) => value.replace(/\D/g, '').length < DIGITS_LIMIT,
     'Don’t include a phone number.',
-  );
+  )
+  .refine((value) => !HIDDEN_CHARS.test(value), 'Remove hidden or special formatting characters.')
+  .refine((value) => !containsBlockedTerm(value), BLOCKED_MESSAGE);
+
+/** Profile bio: optional plain text, 0–150 characters, at most 3 line breaks, same rules. */
+export const Bio = z
+  .string()
+  // Tabs become spaces (the profiles CHECK allows no control characters but line breaks).
+  .transform((value) => value.replace(/\t/g, ' '))
+  .pipe(plainText(BIO_MAX))
+  .refine(
+    (value) => (value.match(/\n/g) ?? []).length <= BIO_MAX_LINE_BREAKS,
+    `Use ${String(BIO_MAX_LINE_BREAKS)} line breaks or fewer.`,
+  )
+  .refine(
+    (value) => !value.includes('@') && !URL_LIKE.test(value),
+    'Don’t include links or emails.',
+  )
+  .refine((value) => !PHONE_LIKE.test(value), 'Don’t include a phone number.')
+  .refine((value) => !HIDDEN_CHARS.test(value), 'Remove hidden or special formatting characters.')
+  .refine((value) => !containsBlockedTerm(value), BLOCKED_MESSAGE);
 
 export const EmailCodeRequest = z.object({
   email: Email,
@@ -95,7 +127,15 @@ export const PhoneCodeVerify = z.object({ code: OtpCode });
 export const AgeAttestation = z.object({ confirmed: z.literal(true) });
 export const HomeZipInput = z.object({ zip: Zip });
 export const DisplayNameInput = z.object({ displayName: DisplayName });
-export const ProfileUpdate = z.object({ displayName: DisplayName, zip: Zip });
+/** Settings → Edit profile (3C.2). The handle goes through profile_set_handle (30-day rule). */
+export const ProfileUpdate = z.object({
+  displayName: DisplayName,
+  handle: Handle,
+  bio: Bio,
+  zip: Zip,
+});
+/** After staff required a new name and handle (/welcome or settings). */
+export const ProfileResetInput = z.object({ displayName: DisplayName, handle: Handle });
 export const DeleteAccountInput = z.object({ confirm: z.literal('DELETE') });
 
 /** The onboarding steps in order (D-34). Email is confirmed by signing in. */

@@ -7,9 +7,11 @@ import { useToast } from '@/components/ui/toast';
 export function ShareButton({
   className,
   labelClassName,
+  label = 'Share',
 }: {
   className?: string | undefined;
   labelClassName?: string | undefined;
+  label?: string;
 }) {
   const toast = useToast();
   return (
@@ -34,7 +36,7 @@ export function ShareButton({
         }}
       >
         <Share2 size={18} aria-hidden="true" />
-        <span className={labelClassName}>Share</span>
+        <span className={labelClassName}>{label}</span>
       </button>
     </>
   );
