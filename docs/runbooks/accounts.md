@@ -130,11 +130,32 @@ to the browser that asked for the code, and wrong codes never start a timed lock
 | Sends per browser per hour | 3 | Neutral "We sent a code if…" answer, nothing sent |
 | Sends per address per hour (shared pool) | 6 | Overflow: one send per 10 minutes, 3 checks each (Turnstile is required on every send outside local) |
 | Known-device sends per hour | 3 | Own allowance outside the pool, for a browser that signed in to this address before (`hx_kd`, 180 days) |
+| Wrong checks per address per rolling 24 h, new devices (daily cap, 3C.1b) | 30 | **Trickle mode** for the rest of the 24 h: new devices get one code per hour for the address, 2 checks each (Turnstile still required outside local). The code step adds "For your security, new devices can request one code per hour for this address for now…". Known devices and Google aren't affected. One `audit_log` alert per episode: `auth.email_code_daily_cap` (hash prefix only) |
 
 - **Cookies:** `hx_ec` (the code-requesting browser, 1 h, SameSite=Strict) and `hx_kd` (known device, 180 days, SameSite=Lax), both httpOnly, 32 random bytes. The database stores only a keyed hash of each, bound to the address hash, in `email_code_sessions` and `email_known_devices`.
 - **Guessing bound per address per hour:** every check needs a send, so wrong checks ≤ 6 × 5 + 6 × 3 = **48**, P ≤ 48 / 10⁶ = **4.8 × 10⁻⁵** (about 1 in 20,800; ≤ 1.2 × 10⁻³ if sustained for a day, with up to 12 bot checks an hour). Known-device sends need a cookie that only a past sign-in sets.
+- **30-day bound (Brief 03C.1b H2):** split 30 days into 30 back-to-back 24 h windows. In each,
+  new-device sessions allow at most 30 wrong checks before trickle mode, and trickle allows at
+  most 24 codes × 2 checks = 48. That's ≤ 78 a day and ≤ 2,340 in 30 days, so by the union bound
+  over 6-digit codes, P ≤ 2,340 / 10⁶ ≈ **0.23%** (before 3C.1b: 48 × 24 × 30 = 34,560, ≈ 3.46%).
+- **Trickle residual risk:** during an episode, an attacker who takes the address's one trickle
+  code each hour leaves the owner without a new-device code until the episode ends. Known devices
+  and Google sign-in still work.
 - **Residual risk:** on a brand-new device, an attacker who keeps requesting codes can use up the pool and keep replacing the owner's newest code, so the owner may wait up to 10 minutes for an overflow slot. A known device, or Google sign-in with the same address, isn't affected.
-- **To clear an address's state:** with the service role, delete its rows from `email_code_sessions` (cascades to `email_code_checks`) and `email_code_ceilings`.
+- **To clear an address's state:** with the service role, delete its rows from `email_code_sessions` (cascades to `email_code_checks`), `email_code_ceilings` and `email_code_lockdowns`.
+- **To end trickle mode for an address (staff, after confirming the owner):** the alert's reason
+  holds the first 16 hex characters of the address hash. In the SQL editor:
+
+  ```sql
+  begin;
+  delete from public.email_code_lockdowns where left(email_hash, 16) = '<hash prefix>';
+  delete from public.email_code_sessions where left(email_hash, 16) = '<hash prefix>'; -- and their checks
+  insert into public.audit_log (actor_id, action, target_type, reason)
+  values ('<staff user id>', 'auth.email_code_daily_cap_cleared', 'email_code', 'address hash <hash prefix>');
+  commit;
+  ```
+
+  Open alerts: `select created_at, reason from public.audit_log where action = 'auth.email_code_daily_cap' order by created_at desc;`
 
 **Known gap (D-47: accepted by the Founder on PR #9 for the closed QA only; a Supabase Send SMS hook
 must close it before the Phase I-B public beta):** a signed-in member can call Supabase Auth's

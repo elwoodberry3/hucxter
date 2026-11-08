@@ -19,8 +19,12 @@ export const OTP_LIMITS = {
  * Email codes (Brief 03C.1 §3.0, Founder amendment 1). Checks are bound to the browser that asked
  * for the code, and wrong codes never start a timed lock, so someone without the inbox can't block
  * the person who has it. Guessing bound per address per hour: every check needs a send, so wrong
- * checks ≤ 6 × 5 (normal) + 6 × 3 (overflow, one per 10 min) = 48, P ≤ 4.8 × 10⁻⁵. Known-device
- * sends need a cookie only a past sign-in sets, so they don't widen it.
+ * checks ≤ 6 × 5 (normal) + 6 × 3 (overflow, one per 10 min) = 48, P ≤ 4.8 × 10⁻⁵.
+ *
+ * Daily cap (Brief 03C.1b H2): after 30 wrong new-device checks in a rolling 24 h, new devices go
+ * into trickle mode for the rest of the 24 h (one code per hour for the address, 2 checks each).
+ * Any 24 h then allows ≤ 30 + 24 × 2 = 78 wrong checks, so 30 days allow ≤ 2,340 and P ≤ 0.234%
+ * (runbook §5). Known-device sends need a cookie only a past sign-in sets, so they don't widen it.
  */
 export const EMAIL_CODE_LIMITS = {
   checksPerSend: 5,
@@ -30,6 +34,9 @@ export const EMAIL_CODE_LIMITS = {
   overflowChecksPerSend: 3,
   knownDeviceSendsPerHour: 3,
   wrongChecksCeilingPerHour: 15,
+  wrongChecksPerAddressPerDay: 30,
+  trickleSpacingSeconds: 60 * 60,
+  trickleChecksPerSend: 2,
   // Matches [auth.email] otp_expiry in supabase/config.toml (and the cloud setting, runbook §5).
   sessionTtlSeconds: 600,
 } as const;
@@ -79,12 +86,14 @@ export function allowPhoneCodeCheck(userId: string): Promise<LimitResult> {
 const SendRow = z.array(
   z.object({
     session_id: z.uuid().nullable(),
-    kind: z.enum(['normal', 'overflow', 'known', 'denied']),
+    kind: z.enum(['normal', 'overflow', 'known', 'trickle', 'denied', 'trickle_wait']),
   }),
 );
 
+/** `trickle`: the address is in trickle mode (new devices get one code per hour). */
 export type EmailSendResult =
-  { ok: true; sessionId: string; kind: 'normal' | 'overflow' | 'known' } | { ok: false };
+  | { ok: true; sessionId: string; kind: 'normal' | 'overflow' | 'known' | 'trickle' }
+  | { ok: false; trickle: boolean };
 
 /**
  * Records an email-code send for this (lowercased) address from this browser if the limits allow
@@ -107,6 +116,9 @@ export async function allowEmailCodeSend(
     p_overflow_checks: limits.overflowChecksPerSend,
     p_known_per_hour: limits.knownDeviceSendsPerHour,
     p_session_ttl_s: limits.sessionTtlSeconds,
+    p_daily_wrong_cap: limits.wrongChecksPerAddressPerDay,
+    p_trickle_spacing_s: limits.trickleSpacingSeconds,
+    p_trickle_checks: limits.trickleChecksPerSend,
   });
   const rows = SendRow.safeParse(result.data);
   const row = rows.success ? rows.data[0] : undefined;
@@ -114,9 +126,10 @@ export async function allowEmailCodeSend(
     result.error !== null ||
     row === undefined ||
     row.session_id === null ||
-    row.kind === 'denied'
+    row.kind === 'denied' ||
+    row.kind === 'trickle_wait'
   ) {
-    return { ok: false };
+    return { ok: false, trickle: row?.kind === 'trickle_wait' };
   }
   return { ok: true, sessionId: row.session_id, kind: row.kind };
 }
@@ -143,6 +156,7 @@ export async function beginEmailCodeCheck(
     p_browser_hash: subjectHash('email_browser', browserId),
     p_ceiling: EMAIL_CODE_LIMITS.wrongChecksCeilingPerHour,
     p_session_ttl_s: EMAIL_CODE_LIMITS.sessionTtlSeconds,
+    p_daily_wrong_cap: EMAIL_CODE_LIMITS.wrongChecksPerAddressPerDay,
   });
   const id = z.uuid().nullable().safeParse(result.data);
   return result.error === null && id.success ? id.data : null;

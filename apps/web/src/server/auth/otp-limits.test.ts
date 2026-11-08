@@ -36,7 +36,39 @@ describe('email-code limits (Brief 03C.1 §3.0)', () => {
       p_overflow_spacing_s: 600,
       p_overflow_checks: 3,
       p_known_per_hour: 3,
+      p_daily_wrong_cap: 30,
+      p_trickle_spacing_s: 3600,
+      p_trickle_checks: 2,
     });
+  });
+
+  it('reports trickle mode (Brief 03C.1b H2) for granted and refused sends', async () => {
+    rpc.mockResolvedValueOnce({ data: [{ session_id: SESSION, kind: 'trickle' }], error: null });
+    await expect(allowEmailCodeSend(EMAIL, 'b', null)).resolves.toEqual({
+      ok: true,
+      sessionId: SESSION,
+      kind: 'trickle',
+    });
+    rpc.mockResolvedValueOnce({ data: [{ session_id: null, kind: 'trickle_wait' }], error: null });
+    await expect(allowEmailCodeSend(EMAIL, 'b', null)).resolves.toEqual({
+      ok: false,
+      trickle: true,
+    });
+  });
+
+  it('passes the daily cap to every check', async () => {
+    rpc.mockResolvedValueOnce({ data: SESSION, error: null });
+    await beginEmailCodeCheck(EMAIL, 'b');
+    expect(rpc.mock.calls[0]?.[1]).toMatchObject({ p_ceiling: 15, p_daily_wrong_cap: 30 });
+  });
+
+  it('keeps the 30-day guessing bound under 0.5% (≤ 2,340 wrong checks)', () => {
+    const trickleSendsPerDay = (24 * 3600) / EMAIL_CODE_LIMITS.trickleSpacingSeconds;
+    const perDay =
+      EMAIL_CODE_LIMITS.wrongChecksPerAddressPerDay +
+      trickleSendsPerDay * EMAIL_CODE_LIMITS.trickleChecksPerSend;
+    expect(perDay).toBe(78);
+    expect((perDay * 30) / 1_000_000).toBeLessThan(0.005);
   });
 
   it('keeps the guessing bound at 48 wrong checks per address per hour', () => {
@@ -49,9 +81,15 @@ describe('email-code limits (Brief 03C.1 §3.0)', () => {
 
   it('fails closed when the database errors or answers something unexpected', async () => {
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'down' } });
-    await expect(allowEmailCodeSend(EMAIL, 'b', null)).resolves.toEqual({ ok: false });
+    await expect(allowEmailCodeSend(EMAIL, 'b', null)).resolves.toEqual({
+      ok: false,
+      trickle: false,
+    });
     rpc.mockResolvedValueOnce({ data: [{ session_id: null, kind: 'denied' }], error: null });
-    await expect(allowEmailCodeSend(EMAIL, 'b', 'd')).resolves.toEqual({ ok: false });
+    await expect(allowEmailCodeSend(EMAIL, 'b', 'd')).resolves.toEqual({
+      ok: false,
+      trickle: false,
+    });
     rpc.mockResolvedValueOnce({ data: 'nope', error: null });
     await expect(beginEmailCodeCheck(EMAIL, 'b')).resolves.toBeNull();
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'down' } });

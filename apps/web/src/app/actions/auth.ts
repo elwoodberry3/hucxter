@@ -24,8 +24,13 @@ import {
 } from '@/server/auth/otp-limits';
 import { sessionClient } from '@/server/supabase-server';
 
+/**
+ * `notice: 'trickle'`: the address is in trickle mode (too many wrong codes today), so new devices
+ * get one code per hour. It depends only on guesses against the address, not on whether an
+ * account exists, so the answer stays enumeration-neutral.
+ */
 export type EmailCodeResult =
-  | { status: 'sent' }
+  | { status: 'sent'; notice?: 'trickle' }
   | { status: 'closed_test'; message: string }
   | { status: 'error'; message: string };
 
@@ -64,13 +69,16 @@ async function sendNeutrally(
     const browserId = await codeBrowserId({ create: true });
     if (browserId === null) return { status: 'sent' };
     const limit = await allowEmailCodeSend(email, browserId, await knownDeviceId());
-    if (!limit.ok) return { status: 'sent' };
+    if (!limit.ok)
+      return limit.trickle ? { status: 'sent', notice: 'trickle' } : { status: 'sent' };
+    const sent: EmailCodeResult =
+      limit.kind === 'trickle' ? { status: 'sent', notice: 'trickle' } : { status: 'sent' };
     const supabase = await sessionClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true, ...(captchaToken ? { captchaToken } : {}) },
     });
-    if (error === null) return { status: 'sent' };
+    if (error === null) return sent;
     if (isClosedTestRejection(error))
       return { status: 'closed_test', message: CLOSED_TEST_MESSAGE };
     if (error.code === 'captcha_failed') {
@@ -78,7 +86,7 @@ async function sendNeutrally(
       await refundEmailCodeSend(limit.sessionId).catch(() => undefined);
       return { status: 'error', message: CAPTCHA_ERROR };
     }
-    return { status: 'sent' };
+    return sent;
   } catch {
     return { status: 'sent' };
   }
