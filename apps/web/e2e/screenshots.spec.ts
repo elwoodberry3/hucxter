@@ -82,9 +82,16 @@ async function capture3c1(
     await page.screenshot(shot(`${size}-sell-video-${scheme}`));
   }
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  // The fake's signed ready URL comes back on the last upload chunk (Hx-Fake-Ready).
+  const readyPath = page
+    .waitForResponse(
+      (response) =>
+        response.url().includes('/api/dev/fake-video/upload/') && response.status() === 200,
+    )
+    .then((response) => response.headerValue('hx-fake-ready'));
   await page.getByTestId('choose-video').setInputFiles(FAKE_VIDEO);
   await expect(page.getByRole('heading', { name: 'Describe it' })).toBeVisible();
-  const draftUrl = page.url();
+  const listingId = /draft=([0-9a-f-]{36})/.exec(page.url())?.[1] ?? '';
   await page.getByLabel('Title').fill('Rattan armchair');
   await page.getByLabel('Category', { exact: true }).selectOption({ label: 'Home & Living' });
   await page.getByLabel('Subcategory').selectOption({ index: 1 });
@@ -101,16 +108,9 @@ async function capture3c1(
     await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
     await page.screenshot(shot(`${size}-sell-review-processing-${scheme}`, true));
   }
-  const listingId = /draft=([0-9a-f-]{36})/.exec(draftUrl)?.[1] ?? '';
-  const media = await localAdmin()
-    .from('listing_media')
-    .select('id')
-    .eq('listing_id', listingId)
-    .single();
-  await page.request.post(
-    `${LOCAL_URL}/api/dev/fake-video/ready/${(media.data as { id: string }).id}`,
-    { headers: { Origin: LOCAL_URL } },
-  );
+  await page.request.post(`${LOCAL_URL}${(await readyPath) ?? ''}`, {
+    headers: { Origin: LOCAL_URL },
+  });
   await page.reload();
   await expect(page.getByRole('button', { name: 'Publish', exact: true })).toBeVisible();
   for (const scheme of SCHEMES) {

@@ -176,9 +176,12 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
     seeded.push(listing);
     const violations: string[] = [];
     const thirdParty: string[] = [];
+    const unrecognized: string[] = [];
     page.on('console', (message) => {
       if (/Content Security Policy|Refused to/i.test(message.text()))
         violations.push(message.text());
+      // The fake video is declared and served as video/mp4 (Brief 03C.1b H6).
+      if (/unrecognized/i.test(message.text())) unrecognized.push(message.text());
     });
     page.on('request', (request) => {
       const host = new URL(request.url()).host;
@@ -220,6 +223,7 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
       .toBe(true);
     await page.waitForTimeout(1500);
     expect(violations).toEqual([]);
+    expect(unrecognized).toEqual([]);
     expect(thirdParty).toEqual([]);
   });
 
