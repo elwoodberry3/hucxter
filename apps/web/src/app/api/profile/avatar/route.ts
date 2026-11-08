@@ -2,13 +2,13 @@ import { revalidatePath } from 'next/cache';
 import { profileConfig } from '@/lib/env';
 import { loadMember } from '@/server/auth/member';
 import { rejectCrossOrigin } from '@/server/auth/origin';
+import { readCapped } from '@/server/http/read-capped';
 import { removeAvatar, saveAvatar, takeAvatarAttempt } from '@/server/profile/avatar';
 import {
   AVATAR_MAX_BYTES,
   AVATAR_TYPES,
   AvatarInputError,
   processAvatar,
-  readCapped,
 } from '@/server/profile/image';
 
 export const dynamic = 'force-dynamic';
