@@ -2,6 +2,7 @@ import 'server-only';
 import { Handle, ListingCondition } from '@hucxter/contracts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { readOrGuest } from '@/server/supabase-server';
 import { avatarUrl } from '@/lib/avatar';
 
 /**
@@ -49,7 +50,9 @@ export interface Profile {
 /** The profile for a handle, or null (unknown, invalid, deleted, or onboarding not finished). */
 export async function loadProfile(db: SupabaseClient, handle: string): Promise<Profile | null> {
   if (!Handle.safeParse(handle).success) return null;
-  const result = await db.rpc('profile_by_handle', { p_handle: handle });
+  const result = await readOrGuest(db, 'profile_by_handle', (client) =>
+    client.rpc('profile_by_handle', { p_handle: handle }),
+  );
   if (result.error !== null) throw new Error(`profile_by_handle:${result.error.code}`);
   const row = z.array(ProfileRow).parse(result.data)[0];
   if (row === undefined) return null;
@@ -170,13 +173,15 @@ export async function loadProfileListings(
   },
 ): Promise<TilePage> {
   const limit = input.limit ?? PROFILE_PAGE_SIZE;
-  const result = await db.rpc('profile_listings', {
-    p_handle: input.handle,
-    p_filter: input.filter,
-    p_sort: input.sort,
-    p_cursor: input.after,
-    p_limit: limit + 1,
-  });
+  const result = await readOrGuest(db, 'profile_listings', (client) =>
+    client.rpc('profile_listings', {
+      p_handle: input.handle,
+      p_filter: input.filter,
+      p_sort: input.sort,
+      p_cursor: input.after,
+      p_limit: limit + 1,
+    }),
+  );
   if (result.error !== null) throw new Error(`profile_listings:${result.error.code}`);
   return page(z.array(TileRow).parse(result.data), limit);
 }

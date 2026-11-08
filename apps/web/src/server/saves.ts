@@ -3,6 +3,7 @@ import type { ListingCard } from '@hucxter/contracts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { loadMemberForDisplay } from '@/server/auth/member';
+import { logError } from '@/server/log';
 
 const SavedRow = z.object({ listing_id: z.uuid() });
 const OwnRow = z.object({ id: z.uuid() });
@@ -10,12 +11,12 @@ const OwnRow = z.object({ id: z.uuid() });
 /** Which of these listing ids the signed-in viewer saved (RLS: own rows only). */
 export async function savedAmong(db: SupabaseClient, ids: string[]): Promise<Set<string>> {
   if (ids.length === 0) return new Set();
-  const { data, error } = await db
+  const { data, error, status } = await db
     .from('saved_listings')
     .select('listing_id')
     .in('listing_id', ids);
   if (error !== null) {
-    console.error('saved_ids_failed');
+    logError('saved_ids_failed', { status, code: error.code });
     return new Set();
   }
   return new Set(
@@ -43,7 +44,10 @@ export async function markViewerCards(
     db.from('listings').select('id').in('id', ids),
   ]);
   if (saved.error !== null || own.error !== null) {
-    console.error('viewer_cards_failed');
+    logError('viewer_cards_failed', {
+      status: saved.error === null ? own.status : saved.status,
+      code: (saved.error ?? own.error)?.code,
+    });
     return items;
   }
   const savedIds = new Set(

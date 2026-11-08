@@ -12,6 +12,7 @@ import { loadListingView, loadOwnerViewCount, loadPriceDrop } from '@/server/lis
 import { playbackSource } from '@/server/media/playback';
 import { savedAmong } from '@/server/saves';
 import { sessionClient } from '@/server/supabase-server';
+import { codeOf, logError } from '@/server/log';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,9 +58,9 @@ async function player(mediaId: string | null): Promise<PlayerSource | null> {
   if (mediaId === null) return null;
   try {
     return await playbackSource(mediaId);
-  } catch {
+  } catch (error) {
     // The video provider being down (or unconfigured) must not take the page with it.
-    console.error('playback_unavailable');
+    logError('playback_unavailable', { code: codeOf(error) });
     return null;
   }
 }

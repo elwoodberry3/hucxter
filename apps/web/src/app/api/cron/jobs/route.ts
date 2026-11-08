@@ -1,5 +1,6 @@
 import { cronAuthorized } from '@/server/jobs/cron-auth';
 import { runJobs } from '@/server/jobs/run';
+import { codeOf, logError } from '@/server/log';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,12 +11,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     return Response.json(await runJobs(), { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    console.error(
-      JSON.stringify({
-        event: 'jobs_run_failed',
-        code: error instanceof Error ? error.message : 'unknown',
-      }),
-    );
+    logError('jobs_run_failed', { code: codeOf(error) });
     return new Response('Job run failed', {
       status: 500,
       headers: { 'Cache-Control': 'no-store' },

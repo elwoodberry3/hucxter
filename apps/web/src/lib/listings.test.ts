@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 const rpc = vi.fn();
-vi.mock('@/server/supabase-server', () => ({ sessionClient: () => Promise.resolve({ rpc }) }));
+vi.mock('@/server/supabase-server', () => ({
+  sessionClient: () => Promise.resolve({ rpc }),
+  readOrGuest: (db: unknown, _event: string, run: (client: unknown) => unknown) => run(db),
+}));
 vi.mock('./taxonomy', () => ({ getTaxonomy: vi.fn(), findDepartment: vi.fn() }));
 vi.mock('./viewer-location', () => ({ getViewerLocation: vi.fn() }));
 // Guests: cards come back without viewer flags (server/saves.ts reads nothing).
@@ -111,7 +114,7 @@ describe('searchListings rows', () => {
     await expect(
       searchListings({ query: parseListingQuery({}), zip: '97205', radiusMi: 25, limit: 5 }),
     ).resolves.toEqual({ items: [], nextCursor: null });
-    expect(error).toHaveBeenCalledWith('listings_nearby_failed:22023');
+    expect(error).toHaveBeenCalledWith('{"event":"listings_nearby_failed","code":"22023"}');
     error.mockRestore();
   });
 });

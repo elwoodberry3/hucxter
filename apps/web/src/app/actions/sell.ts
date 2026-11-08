@@ -22,6 +22,7 @@ import { loadOwnListing } from '@/server/listings/owner';
 import type { MediaStatus } from '@/server/listings/owner';
 import { beginUpload } from '@/server/media/uploads';
 import { sessionClient } from '@/server/supabase-server';
+import { codeOf, logError } from '@/server/log';
 
 /**
  * Sell flow actions (Brief 03C.1 §3.3). Each one checks the Origin, then that the caller is a
@@ -111,12 +112,7 @@ export async function startUpload(
     );
     return { status: 'ok', uploadUrl: result.uploadUrl };
   } catch (error) {
-    console.error(
-      JSON.stringify({
-        event: 'upload_start_failed',
-        code: error instanceof Error ? error.message.slice(0, 80) : 'unknown',
-      }),
-    );
+    logError('upload_start_failed', { code: codeOf(error) });
     return { status: 'error', message: 'We couldn’t start the upload. Try again.' };
   }
 }

@@ -9,7 +9,8 @@ import {
 } from '@hucxter/contracts';
 import type { ListingQuery, RadiusMi, RawSearchParams } from '@hucxter/contracts';
 import { markViewerCards } from '@/server/saves';
-import { sessionClient } from '@/server/supabase-server';
+import { logError } from '@/server/log';
+import { readOrGuest, sessionClient } from '@/server/supabase-server';
 import { findDepartment, getTaxonomy } from './taxonomy';
 import { getViewerLocation } from './viewer-location';
 
@@ -86,19 +87,21 @@ export async function searchListings(search: ListingSearch): Promise<ListingPage
   const limit = Math.min(Math.max(search.limit, 1), MAX_LIMIT);
   const cursor = decodeCursor(search.after);
   const supabase = await sessionClient();
-  const result = await supabase.rpc('listings_nearby', {
-    p_zip: search.zip,
-    p_radius_mi: search.query.distanceMi ?? search.radiusMi,
-    p_department: search.departmentSlug ?? null,
-    p_subcategory: search.subcategorySlug ?? null,
-    p_query: search.query.q ?? null,
-    p_filters: nearbyFilters(search.query),
-    p_cursor: cursor,
-    p_limit: limit + 1,
-  });
+  const result = await readOrGuest(supabase, 'listings_nearby', (client) =>
+    client.rpc('listings_nearby', {
+      p_zip: search.zip,
+      p_radius_mi: search.query.distanceMi ?? search.radiusMi,
+      p_department: search.departmentSlug ?? null,
+      p_subcategory: search.subcategorySlug ?? null,
+      p_query: search.query.q ?? null,
+      p_filters: nearbyFilters(search.query),
+      p_cursor: cursor,
+      p_limit: limit + 1,
+    }),
+  );
   if (result.error !== null) {
     // Discovery degrades to an empty page (the designed empty state), never a broken one.
-    console.error(`listings_nearby_failed:${result.error.code}`);
+    logError('listings_nearby_failed', { status: result.status, code: result.error.code });
     return { items: [], nextCursor: null };
   }
   const data: unknown = result.data;

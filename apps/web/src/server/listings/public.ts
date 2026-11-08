@@ -3,6 +3,7 @@ import { DistanceBucket, ListingCondition, priceDrop } from '@hucxter/contracts'
 import type { ListingDetail, PriceDrop } from '@hucxter/contracts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { readOrGuest } from '@/server/supabase-server';
 import { avatarUrl } from '@/lib/avatar';
 
 /**
@@ -62,7 +63,9 @@ export async function loadListingView(
   viewerZip: string | null,
 ): Promise<ListingView | null> {
   if (!z.uuid().safeParse(id).success) return null;
-  const result = await db.rpc('listing_public', { p_id: id, p_viewer_zip: viewerZip });
+  const result = await readOrGuest(db, 'listing_public', (client) =>
+    client.rpc('listing_public', { p_id: id, p_viewer_zip: viewerZip }),
+  );
   if (result.error !== null) throw new Error(`listing_public:${result.error.code}`);
   const rows = z.array(Row).parse(result.data);
   const row = rows[0];
@@ -130,7 +133,9 @@ const PricePoints = z.array(
 
 /** The D-45 price drop for a listing, or null. */
 export async function loadPriceDrop(db: SupabaseClient, id: string): Promise<PriceDrop | null> {
-  const result = await db.rpc('listing_price_points', { p_id: id });
+  const result = await readOrGuest(db, 'listing_price_points', (client) =>
+    client.rpc('listing_price_points', { p_id: id }),
+  );
   if (result.error !== null) return null;
   const points = PricePoints.safeParse(result.data);
   if (!points.success) return null;

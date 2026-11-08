@@ -3,7 +3,9 @@ import type { OnboardingStep } from '@hucxter/contracts';
 import { cache } from 'react';
 import { z } from 'zod';
 import { authConfig } from '@/lib/env';
-import { sessionClient } from '../supabase-server';
+import { markStaleSession, sessionClient } from '../supabase-server';
+import { logError } from '../log';
+import { isStaleAuthError } from './stale-session';
 import { verificationState } from './verification';
 import type { MemberState } from './verification';
 
@@ -26,7 +28,15 @@ const RoleRows = z.array(z.object({ role: z.string() }));
 export const loadMember = cache(async (): Promise<MemberState | null> => {
   const supabase = await sessionClient();
   const { data, error } = await supabase.auth.getUser();
-  if (error !== null) return null;
+  if (error !== null) {
+    // A token for a user or session that no longer exists (Brief 03C.1b H5): guest, and the
+    // layout clears the cookies. "No session" and outages are just signed out.
+    if (error.name !== 'AuthSessionMissingError' && isStaleAuthError(error)) {
+      logError('stale_session_member', { status: error.status, code: error.code });
+      markStaleSession();
+    }
+    return null;
+  }
   const { user } = data;
 
   const { inviteOnly } = authConfig();
@@ -80,7 +90,7 @@ export const loadMemberForDisplay = cache(async (): Promise<MemberState | null> 
   try {
     return await loadMember();
   } catch {
-    console.error('member_load_failed');
+    logError('member_load_failed');
     return null;
   }
 });
