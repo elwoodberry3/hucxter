@@ -1,12 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
+import {
+  AUDIT_REASON_REQUIRED,
+  AdminApproveInput,
+  AdminProfileActionInput,
+  AdminRemoveInput,
+  AdminReportInput,
+} from '@hucxter/contracts';
 import { GENERIC_ERROR, ORIGIN_ERROR } from '@/server/auth/errors';
 import { loadMember } from '@/server/auth/member';
 import { requestIsSameOrigin } from '@/server/auth/origin';
 import {
-  PROFILE_ACTIONS,
   approveListing,
   dismissReport,
   moderateProfile,
@@ -20,17 +25,6 @@ import type { ModerationResult } from '@/server/admin/queue';
  * enqueues revoking its Mux playback id.
  */
 export type AdminResult = { status: 'ok' } | { status: 'error'; message: string };
-
-const ListingTarget = z.object({ listingId: z.uuid() }).strict();
-const RemoveInput = z.object({ listingId: z.uuid(), reason: z.string().trim().max(500) }).strict();
-const ReportTarget = z.object({ reportId: z.uuid() }).strict();
-const ProfileActionInput = z
-  .object({
-    reportId: z.uuid(),
-    action: z.enum(PROFILE_ACTIONS),
-    reason: z.string().trim().min(1).max(500),
-  })
-  .strict();
 
 async function staffId(): Promise<string | AdminResult> {
   if (!(await requestIsSameOrigin())) return { status: 'error', message: ORIGIN_ERROR };
@@ -66,7 +60,7 @@ function result(outcome: ModerationResult, listingId?: string): AdminResult {
 export async function approveHeldListing(input: unknown): Promise<AdminResult> {
   const actor = await staffId();
   if (typeof actor !== 'string') return actor;
-  const parsed = ListingTarget.safeParse(input);
+  const parsed = AdminApproveInput.safeParse(input);
   if (!parsed.success) return { status: 'error', message: GENERIC_ERROR };
   return result(await approveListing(actor, parsed.data.listingId), parsed.data.listingId);
 }
@@ -74,7 +68,7 @@ export async function approveHeldListing(input: unknown): Promise<AdminResult> {
 export async function removeReportedListing(input: unknown): Promise<AdminResult> {
   const actor = await staffId();
   if (typeof actor !== 'string') return actor;
-  const parsed = RemoveInput.safeParse(input);
+  const parsed = AdminRemoveInput.safeParse(input);
   if (!parsed.success) return { status: 'error', message: GENERIC_ERROR };
   return result(
     await removeListing(actor, parsed.data.listingId, parsed.data.reason),
@@ -85,7 +79,7 @@ export async function removeReportedListing(input: unknown): Promise<AdminResult
 export async function dismissOpenReport(input: unknown): Promise<AdminResult> {
   const actor = await staffId();
   if (typeof actor !== 'string') return actor;
-  const parsed = ReportTarget.safeParse(input);
+  const parsed = AdminReportInput.safeParse(input);
   if (!parsed.success) return { status: 'error', message: GENERIC_ERROR };
   return result(await dismissReport(actor, parsed.data.reportId));
 }
@@ -97,10 +91,10 @@ export async function dismissOpenReport(input: unknown): Promise<AdminResult> {
 export async function moderateReportedProfile(input: unknown): Promise<AdminResult> {
   const actor = await staffId();
   if (typeof actor !== 'string') return actor;
-  const parsed = ProfileActionInput.safeParse(input);
+  const parsed = AdminProfileActionInput.safeParse(input);
   if (!parsed.success) {
     return parsed.error.issues.some((issue) => issue.path[0] === 'reason')
-      ? { status: 'error', message: 'Add a reason for the audit log.' }
+      ? { status: 'error', message: AUDIT_REASON_REQUIRED }
       : { status: 'error', message: GENERIC_ERROR };
   }
   const outcome = await moderateProfile(

@@ -1,5 +1,6 @@
 import 'server-only';
 import { ReportReason } from '@hucxter/contracts';
+import type { ProfileAction } from '@hucxter/contracts';
 import { z } from 'zod';
 import { avatarUrl } from '@/lib/avatar';
 import { adminDb } from '@/server/admin-db';
@@ -264,14 +265,6 @@ export async function dismissReport(actorId: string, reportId: string) {
   });
   return outcome(error);
 }
-
-export const PROFILE_ACTIONS = [
-  'dismiss',
-  'remove_photo',
-  'clear_bio',
-  'require_new_name',
-] as const;
-export type ProfileAction = (typeof PROFILE_ACTIONS)[number];
 
 /**
  * One staff action on a reported profile (Brief 03C.2): admin_profile_action re-checks staff,
