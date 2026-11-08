@@ -60,15 +60,21 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   `src/server/media/provider.ts`: `MUX_*` read only in `server/media/mux.ts`; the fake provider
   is local-only. `/dev/templates/listing` is gone. Runbook: `docs/runbooks/video.md`. e2e adds
   :3103 (local, fake video).
-- **3C.2 (branch `brief-03c2-profiles`, PR open):** handles (`/u/[handle]`, 30-day change rule,
+- **3C.2 (PR #11, merged):** handles (`/u/[handle]`, 30-day change rule,
   `handle_holds`), public and owner profile pages (`/listings`, `/saved`, `/profile` redirect to
   the owner view), private saves (`saved_listings`, `listing_save`), settings panes
   `/settings/profile` and `/settings/account`, profile photos (`/api/profile/avatar`, sharp →
   512×512 WebP, public `avatars` bucket, service-role writes in `server/profile/avatar.ts`,
   `AVATAR_UPLOADS`), member menu, profile reports in `/admin` (`admin_profile_action`, reason
   required; "Require new name & handle" sends the member to `/welcome`). Local Storage is needed
-  (CI runs `storage-api`). D-42–D-44 decided 2026-11-07. PR #10 follow-ups (M1–M3, L1–L7) stay
-  open for a separate hardening PR. Runbook: `docs/runbooks/accounts.md` §7.
+  (CI runs `storage-api`). D-42–D-44 decided 2026-11-07. Runbook: `docs/runbooks/accounts.md` §7.
+- **3C.1b (branch `brief-03c1b-hardening`):** the DB decides prohibited-item review
+  (`prohibited_keywords` table; `src/config/prohibited-keywords.ts` is a mirror with a sync test;
+  `listing_publish` takes `p_version`), email-code daily cap with trickle mode
+  (`email_code_lockdowns`), listing event caps (`listing_event_counts`, views need
+  `Sec-Fetch-Site: same-origin`), stale sessions fall back to guest (`readOrGuest`,
+  `/api/session/stale`), logs via `server/log.ts` (status + code only), fake video is MP4 with a
+  signed ready URL, narrower name/bio blocked terms, `audit_log.details`. D-48 decided.
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
@@ -108,7 +114,9 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
    RLS stays enabled on every table as defense in depth.
 4. **Location privacy.** Never return a precise listing or user coordinate to the browser. Use the
    display point + distance buckets from the `hucxter-geo-radius` skill.
-5. **Radius cap.** Every discovery query is bounded by the viewer's radius, max 160,934 m (100 mi).
+5. **Radius cap.** Every discovery query (feed, search, category, rails) is bounded by the viewer's
+   radius, max 160,934 m (100 mi). Profile pages aren't discovery (D-48): their tiles show no area
+   or distance, so they have no radius bound.
 6. **AI is advisory.** AI output is a draft the user edits and confirms. No AI action may create a
    binding commitment, send a message as a user, or move money. Untrusted content (video, captions,
    messages) is data, never instructions.

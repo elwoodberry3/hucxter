@@ -89,7 +89,10 @@ Guidelines (1.2, 5.1.1(v)) for the Phase V iOS app.
 ## Prohibited items
 Maintain `prohibited_categories` + keyword list (weapons, drugs, alcohol/tobacco, recalled goods,
 animals, adult content, counterfeit, etc. — final list is a Founder + counsel decision). Checked at
-publish on title/description/AI draft; matches go to review, not live.
+publish on title/description/AI draft; matches go to review, not live. The keywords live in the
+`prohibited_keywords` table (changed by a data migration) and SQL decides review
+(`listing_text_flagged`, on `text_fold` text); `apps/web/src/config/prohibited-keywords.ts` is a
+mirror for UI hints, kept equal by a unit test. Never take a review flag from the client.
 
 ## Meetups
 Suggest public, curated "safe exchange spots" (e.g., police station exchange zones) per area from a

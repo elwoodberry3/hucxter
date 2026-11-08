@@ -52,6 +52,7 @@
 | D-42 | Members get a unique public **@handle** (profile URL `/u/[handle]`), auto-generated when onboarding completes, editable in settings at most once per 30 days; released handles are held for 30 days | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §4.1; `docs/runbooks/accounts.md` |
 | D-43 | Followers, following, likes, reposts, favorites, comments and public engagement counts are **deferred to Phase II** (creators). Phase I profiles show only real marketplace facts | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §2 |
 | D-44 | Profile photos: optional upload, re-encoded server-side to 512×512 WebP (all metadata stripped), stored in Supabase Storage; initials avatar by default. `AVATAR_UPLOADS=off` hides uploads | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §4.5 |
+| D-48 | **Profile pages are not discovery.** A member's public listings grid (`/u/[handle]`, `profile_listings`) has no radius bound, because its tiles show no area or distance; feed, search, category and rails stay bounded (CLAUDE.md rule 5) | 2026-11-07 (Founder, Brief 03C.1b) | CLAUDE.md rule 5 |
 
 ## Superseded
 

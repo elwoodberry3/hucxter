@@ -252,7 +252,9 @@ commit;
 The jobs run on the next jobs cron tick (`docs/runbooks/video.md`).
 
 ### Display-name and bio rules on existing rows
-Names (25 characters, blocked terms) and bios are checked by CHECKs on `profiles`:
+Names (25 characters, blocked terms) and bios are checked by CHECKs on `profiles`. Since 3C.1b
+(H8) names refuse "hucxter" anywhere and admin / support / official only as whole words; bios
+refuse only "hucxter"; handles still refuse all four anywhere.
 `profiles_display_name_rules`, and from the trust-safety hardening `profiles_display_name_folded`,
 `profiles_bio_folded` (blocked terms are also caught behind look-alike letters, fullwidth forms
 and invisible characters, which are refused outright) and `profiles_handle_has_name`. Each
@@ -266,9 +268,10 @@ where conrelid = 'public.profiles'::regclass
                   'profiles_bio_folded', 'profiles_handle_has_name');
 select
   count(*) filter (where char_length(display_name) > 25) as over_25,
-  count(*) filter (where public.text_fold(display_name) ~ '(hucxter|admin|support|official)'
+  count(*) filter (where (public.text_fold(display_name) ~ 'hucxter'
+                      or public.text_fold(display_name) ~ '(^|[^a-z])(admin|support|official)([^a-z]|$)')
                      and name_reset_required_at is null) as blocked_name,
-  count(*) filter (where public.text_fold(bio) ~ '(hucxter|admin|support|official)') as blocked_bio
+  count(*) filter (where public.text_fold(bio) ~ 'hucxter') as blocked_bio
 from public.profiles where display_name is not null;
 ```
 While a row breaks a `NOT VALID` CHECK, **every** update to it fails: the member's own profile,

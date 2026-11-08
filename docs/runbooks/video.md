@@ -77,12 +77,15 @@ Docs checked 2026-11-06: [direct uploads](https://www.mux.com/docs/guides/upload
 
 - **Without Mux (default):** `APP_ENV=local` uses the fake provider. Uploads go to
   `/api/dev/fake-video/upload/[id]`, which posts **signed** webhook events to the real webhook
-  route, so the webhook path is the same code that runs in QA. Playback uses a local WebM fixture
-  (`apps/web/e2e/fixtures/fake-video/sample.webm`, served by `/api/dev/fake-video/file/`). The console line "Media type is unrecognized" comes from the fixture
-  and is harmless.
+  route, so the webhook path is the same code that runs in QA. Playback uses a local MP4 fixture
+  (`apps/web/e2e/fixtures/fake-video/sample.mp4`, VP9 in MP4 recorded by Playwright's Chromium,
+  git-ignored), served as `video/mp4` by `/api/dev/fake-video/file/`, so Mux Player recognises
+  the type. Delete an old `sample.webm` there if you have one; it's no longer used.
 - **e2e:** `pnpm test:e2e` starts a fourth server on **:3103** (`APP_ENV=local`, production build,
   fake provider). The `hx_fake_video` cookie (`slow` | `error` | `overlong`) drives the processing,
-  error and too-long outcomes.
+  error and too-long outcomes. With `slow`, the last upload chunk's response carries
+  `Hx-Fake-Ready: /api/dev/fake-video/ready/<id>?sig=…`; POST that path (same Origin) to finish
+  processing. Without the signature the route answers 403.
 - **With real Mux locally:** set `VIDEO_PROVIDER=mux` and the `MUX_*` values for a **dev** Mux
   environment. Mux can't reach localhost, so expose the app with a tunnel (for example
   `cloudflared tunnel --url http://localhost:3000`), set `APP_ORIGIN` to the tunnel URL, and point
@@ -119,6 +122,15 @@ Stored in `action_limit_config` (tune with a migration; no code change). Chair d
 tune: listings created 10/day (3/day for accounts younger than 7 days), uploads 10/hour (4/hour),
 reports 20/day (5/day). When a limit is reached the UI says "You’ve reached the limit for now. Try
 again in about …". Server actions return that state; they don't send HTTP 429.
+
+### Events
+Listing events (views, saves, report opens and the rest of `hucxter-event-taxonomy`) go through
+`events_insert`, capped per listing per UTC day in `listing_event_counts` (Brief 03C.1b H3):
+**200 guest views** and **1,000 events** of all kinds. Over the cap, events are dropped silently;
+duplicates (the same viewer and listing on the same day) don't count. Members stay at one view per
+member per day. `POST /api/listings/[id]/view` counts only when the browser sends
+`Sec-Fetch-Site: same-origin`; scripts can forge that header, so the caps are the real bound. No
+IP address is read or stored. Counter rows from before yesterday (UTC) are deleted as new events arrive.
 
 ## 7. Troubleshooting
 
