@@ -183,14 +183,17 @@ async function newSeller(testInfo: TestInfo): Promise<{ sellerId: string; seller
   const sellerEmail = testEmail(testInfo, 'seller');
   // A confirmed phone like a real member's (profiles are public only after onboarding). The
   // 555-01xx test numbers belong to signed-in workers, so fixtures use random 555-2xxx numbers.
-  const created = await localAdmin().auth.admin.createUser({
-    email: sellerEmail,
-    email_confirm: true,
-    phone: `+1503555${String(2000 + randomInt(8000))}`,
-    phone_confirm: true,
-  });
-  if (created.error !== null) throw new Error('could not create the fixture seller');
-  return { sellerId: created.data.user.id, sellerEmail };
+  // Random numbers can collide when many specs seed sellers at once: retry with a new one.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const created = await localAdmin().auth.admin.createUser({
+      email: sellerEmail,
+      email_confirm: true,
+      phone: `+1503555${String(2000 + randomInt(8000))}`,
+      phone_confirm: true,
+    });
+    if (created.error === null) return { sellerId: created.data.user.id, sellerEmail };
+  }
+  throw new Error('could not create the fixture seller');
 }
 
 export async function deleteSeeded(listings: SeededListing[]): Promise<void> {

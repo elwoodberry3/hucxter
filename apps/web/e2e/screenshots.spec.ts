@@ -383,6 +383,71 @@ async function capture3c1b(page: Page, testInfo: TestInfo, size: '1440' | '390')
   }
 }
 
+/**
+ * Brief 03 3D set: the Discover feed (poster with Play under reduced motion), the details sheet at
+ * peek and expanded, blocked autoplay ("Tap to play"), and the empty state. Own areas (Billings
+ * and Boise) and an empty one (Bismarck) so parallel specs never show up in the feed.
+ */
+const FEED_ZIPS = { '1440': '59101', '390': '83702' } as const;
+const FEED_EMPTY_ZIP = '58501';
+
+async function capture3d(page: Page, testInfo: TestInfo, size: keyof typeof FEED_ZIPS) {
+  const zip = FEED_ZIPS[size];
+  for (const [index, listing] of SHOT_LISTINGS.entries()) {
+    seeded.push(
+      await seedListing(testInfo, {
+        ...listing,
+        zip,
+        publishedDaysAgo: index * 0.01,
+        description: 'Solid wood, light wear on one corner. Pickup only.',
+      }),
+    );
+  }
+  await viewFrom(page.context(), zip, 1);
+  const item = page.locator('[data-feed-item][data-active="true"]');
+  const dialog = page.getByRole('dialog');
+  for (const scheme of SCHEMES) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.goto(`${LOCAL_URL}/discover`);
+    // The tap layer is named "Play …" from the start; wait for the visible Play (player ready).
+    await expect(item.getByRole('button', { name: /^Play / })).toContainText('Play', {
+      timeout: 20_000,
+    });
+    await page.screenshot(shot(`${size}-discover-feed-${scheme}`));
+    await item.getByRole('button', { name: /^Details for/ }).click();
+    await expect(dialog.getByText('Phone verified')).toBeVisible();
+    await page.screenshot(shot(`${size}-discover-sheet-peek-${scheme}`));
+    await dialog.getByRole('button', { name: 'Expand' }).click();
+    await expect(dialog.getByRole('heading', { name: 'Description' })).toBeVisible();
+    await page.screenshot(shot(`${size}-discover-sheet-expanded-${scheme}`));
+  }
+
+  // Blocked autoplay: the browser refuses play() (fresh page so the init script applies).
+  const blocked = await page.context().newPage();
+  await blocked.setViewportSize(page.viewportSize() ?? { width: 1440, height: 900 });
+  await blocked.addInitScript(() => {
+    HTMLMediaElement.prototype.play = () =>
+      Promise.reject(new DOMException('Autoplay is not allowed', 'NotAllowedError'));
+  });
+  for (const scheme of SCHEMES) {
+    await blocked.emulateMedia({ colorScheme: scheme, reducedMotion: 'no-preference' });
+    await blocked.goto(`${LOCAL_URL}/discover`);
+    await expect(
+      blocked.locator('[data-feed-item][data-active="true"]').getByText('Tap to play'),
+    ).toBeVisible({ timeout: 20_000 });
+    await blocked.screenshot(shot(`${size}-discover-autoplay-blocked-${scheme}`));
+  }
+  await blocked.close();
+
+  await viewFrom(page.context(), FEED_EMPTY_ZIP, 25);
+  for (const scheme of SCHEMES) {
+    await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    await page.goto(`${LOCAL_URL}/discover`);
+    await expect(page.getByRole('heading', { name: /^No videos near / })).toBeVisible();
+    await page.screenshot(shot(`${size}-discover-empty-${scheme}`));
+  }
+}
+
 async function ready(page: Page) {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   // Listing pages: let the lazy player upgrade and show its poster before the shot.
@@ -548,5 +613,25 @@ test.describe('screenshots', () => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await capture3c2(page, context, testInfo, '390');
+  });
+
+  test('3D at 1440: Discover feed, details sheet, blocked autoplay, empty state', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', 'one desktop set, at 1440×900');
+    test.setTimeout(180_000);
+    await capture3d(page, testInfo, '1440');
+  });
+
+  test('3D at 390: Discover feed, details sheet, blocked autoplay, empty state', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'mobile-webkit',
+      'one phone set (iPhone 15 profile at 390 px)',
+    );
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture3d(page, testInfo, '390');
   });
 });
