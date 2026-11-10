@@ -1,8 +1,19 @@
 /* Discover details sheet (3D): peek facts, seller, then attributes and description expanded. */
 
+/* Peek shows price, facts, seller and the message action, so it needs more than the default. */
+.sheet {
+  --hx-sheet-peek: 60dvh;
+}
+
 .body {
   display: grid;
   gap: var(--hx-space-4);
+}
+
+.body p,
+.body dl,
+.body dd {
+  margin: 0;
 }
 
 .loading {

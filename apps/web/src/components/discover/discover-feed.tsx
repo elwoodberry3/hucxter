@@ -193,7 +193,6 @@ export function DiscoverFeed({
   const router = useRouter();
   /** While set, the URL keeps this item (restoring a position) instead of following `active`. */
   const restoring = useRef<string | null>(null);
-  const regionRef = useRef<HTMLElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const handles = useRef(new Map<string, FeedPlayerHandle>());
   const requested = useRef(new Set<string>());
@@ -224,22 +223,6 @@ export function DiscoverFeed({
   useEffect(() => {
     if (sheet !== null) clearReturn();
   }, [sheet]);
-
-  // The feed fills the viewport below whatever sits above it (header, category bar, notices).
-  useEffect(() => {
-    const region = regionRef.current;
-    const feed = feedRef.current;
-    if (region === null || feed === null) return;
-    const measure = () => {
-      const top = feed.getBoundingClientRect().top + window.scrollY;
-      region.style.setProperty('--hx-feed-top', `${String(Math.round(top))}px`);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => {
-      window.removeEventListener('resize', measure);
-    };
-  }, []);
 
   // The active item is the one at least 60% in view.
   useEffect(() => {
@@ -403,8 +386,8 @@ export function DiscoverFeed({
 
   return (
     <section
-      ref={regionRef}
       className={styles.region}
+      data-feed-region
       aria-label="Discover videos near you"
       aria-describedby={hintId}
       onKeyDown={onKeyDown}

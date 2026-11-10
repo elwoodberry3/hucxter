@@ -143,6 +143,7 @@ export function DetailsSheet({
   return (
     <BottomSheet
       open
+      className={styles.sheet ?? ''}
       onClose={onClose}
       title={card.title}
       size={size}

@@ -203,6 +203,23 @@ body {
   height: 100%;
 }
 
+/* Discover (3D): the page is one viewport tall and the feed fills what's left under the header,
+   category bar and notices. Layout sets the height (no measuring), so nothing shifts on load. */
+body:has([data-feed-region]) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body:has([data-feed-region]) > main {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  /* Clear the phone tab bar (0 on desktop). */
+  padding-bottom: calc(var(--hx-bottom-chrome) + env(safe-area-inset-bottom));
+}
+
 body {
   background: var(--hx-bg);
   color: var(--hx-label);

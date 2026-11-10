@@ -3,15 +3,16 @@
 
 .region {
   position: relative;
-  /* Set from the feed's measured top (header, category bar, notices); a close default first. */
-  --hx-feed-top: var(--hx-header-height);
-  --hx-feed-height: calc(
-    100dvh - var(--hx-feed-top) - var(--hx-bottom-chrome) - env(safe-area-inset-bottom)
-  );
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .feed {
-  height: var(--hx-feed-height);
+  flex: 1;
+  min-height: 0;
+  /* Each item is exactly as tall as the feed (100cqh), whatever sits above it. */
+  container-type: size;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
@@ -31,7 +32,7 @@
 .item {
   display: flex;
   justify-content: center;
-  height: var(--hx-feed-height);
+  height: 100cqh;
   padding: var(--hx-space-4) 0;
   outline: none;
 }

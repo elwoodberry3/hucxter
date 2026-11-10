@@ -38,7 +38,8 @@
 }
 
 .sheet[data-size='peek'] {
-  max-height: 45dvh;
+  /* A sheet whose peek must show more (Discover details) sets --hx-sheet-peek. */
+  max-height: var(--hx-sheet-peek, 45dvh);
 }
 
 .sheet[data-size='full'] {
