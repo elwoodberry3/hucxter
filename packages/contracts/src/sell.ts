@@ -74,7 +74,13 @@ export const ListingIdInput = z.object({ listingId: z.uuid() }).strict();
 export const SaveInput = z.object({ listingId: z.uuid(), saved: z.boolean() }).strict();
 export type SaveInput = z.infer<typeof SaveInput>;
 
-export const PublishInput = z.object({ listingId: z.uuid(), whenReady: z.boolean() }).strict();
+/**
+ * `version` is the listing's updated_at exactly as Postgres printed it (microseconds included),
+ * passed back untouched: publish refuses ('changed') when the draft was edited since.
+ */
+export const PublishInput = z
+  .object({ listingId: z.uuid(), whenReady: z.boolean(), version: z.string().min(1).max(64) })
+  .strict();
 
 export const OwnerStatus = z.enum(['pending', 'available', 'sold']);
 export const StatusChangeInput = z.object({ listingId: z.uuid(), status: OwnerStatus }).strict();
@@ -155,5 +161,27 @@ export const ReportInput = z.discriminatedUnion('targetType', [
 ]);
 export type ReportInput = z.infer<typeof ReportInput>;
 
+/** Staff moderation inputs (/admin). SQL re-checks staff and writes audit_log. */
+export const AdminApproveInput = z.object({ listingId: z.uuid() }).strict();
 export const AdminRemoveInput = z.object({ listingId: z.uuid(), reason: plainText(500) }).strict();
 export const AdminReportInput = z.object({ reportId: z.uuid() }).strict();
+
+export const PROFILE_ACTIONS = [
+  'dismiss',
+  'remove_photo',
+  'clear_bio',
+  'require_new_name',
+] as const;
+export type ProfileAction = (typeof PROFILE_ACTIONS)[number];
+
+export const AUDIT_REASON_REQUIRED = 'Add a reason for the audit log.';
+
+/** One staff action on a reported profile; a reason is required for each (Brief 03C.2). */
+export const AdminProfileActionInput = z
+  .object({
+    reportId: z.uuid(),
+    action: z.enum(PROFILE_ACTIONS),
+    reason: plainText(500).pipe(z.string().min(1, AUDIT_REASON_REQUIRED)),
+  })
+  .strict();
+export type AdminProfileActionInput = z.infer<typeof AdminProfileActionInput>;

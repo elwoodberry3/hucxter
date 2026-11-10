@@ -21,7 +21,7 @@
 | D-20 | Redirects: `hucxter.com` and `hucxster.app` → `hucxter.app` (301) | Yes. Configure at the DNS/edge level | Public beta |
 | D-21 | Vector (SVG) master of the Hx mark | Provide when available, for sharper favicons and the Phase IV app | Nice to have |
 | D-05 | Maximum video length and size; default discovery radius | Brief 03 defaults: `MEDIA_MAX_SECONDS=60`, `MEDIA_MAX_BYTES=524288000`, radius 25 mi; tune with QA data. Brief 03C keeps these limits (the mockup's 2:36 video is illustrative) | Brief 03C |
-| D-07 | Prohibited items list, terms, privacy policy, age policy, data retention | Counsel review. **Now also blocks Facebook/TikTok app review**, which needs live Terms + Privacy URLs on hucxter.app | Brief 03 (social login), public beta |
+| D-07 | Prohibited items list, terms, privacy policy, age policy, data retention. Retention questions include: `audit_log.details` keeps previous display names and handles from staff name resets after the member deletes their account (Brief 03C.1b H9); how long? | Counsel review. **Now also blocks Facebook/TikTok app review**, which needs live Terms + Privacy URLs on hucxter.app | Brief 03 (social login), public beta |
 | D-08 | SMS provider for phone verification (Brief 03 default: **Twilio Verify** via Supabase; bot challenge **Cloudflare Turnstile**) (e.g., Twilio, MessageBird, Vonage; check Supabase's supported list), bot-challenge provider, analytics approach (ADR-0006) | Pick on cost and VoIP detection | Brief 03 |
 | D-09 | In-app payments/escrow | Not in Phase I; revisit in Phase II with dispute data | Phase II |
 | D-10 | Ad network placement (brief said Phase II) | Sponsored listings in Phase II, FairXchange in Phase III | Phase II plan |
@@ -52,6 +52,7 @@
 | D-42 | Members get a unique public **@handle** (profile URL `/u/[handle]`), auto-generated when onboarding completes, editable in settings at most once per 30 days; released handles are held for 30 days | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §4.1; `docs/runbooks/accounts.md` |
 | D-43 | Followers, following, likes, reposts, favorites, comments and public engagement counts are **deferred to Phase II** (creators). Phase I profiles show only real marketplace facts | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §2 |
 | D-44 | Profile photos: optional upload, re-encoded server-side to 512×512 WebP (all metadata stripped), stored in Supabase Storage; initials avatar by default. `AVATAR_UPLOADS=off` hides uploads | 2026-11-07 (Founder, Brief 03C.2) | `docs/kickoff/brief-03c.md` §4.5 |
+| D-48 | **Profile pages are not discovery.** A member's public listings grid (`/u/[handle]`, `profile_listings`) has no radius bound, because its tiles show no area or distance; feed, search, category and rails stay bounded (CLAUDE.md rule 5) | 2026-11-07 (Founder, Brief 03C.1b) | CLAUDE.md rule 5 |
 
 ## Superseded
 

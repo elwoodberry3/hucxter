@@ -3,7 +3,7 @@
 -- reasons and audit, the required name reset, and account deletion holding the handle.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(54);
+select plan(58);
 
 insert into auth.users (id, email, aud, role, email_confirmed_at, phone_confirmed_at, phone, created_at) values
   ('00000000-0000-4000-8000-0000000c2e01', 'owner3@example.test', 'authenticated', 'authenticated', now(), now(), '15035550171', now()),
@@ -152,6 +152,23 @@ select ok(not public.is_verified_member('00000000-0000-4000-8000-0000000c2e01'),
 select is(
   (select array_agg(action order by action) from public.audit_log where actor_id = '00000000-0000-4000-8000-0000000c2e03' and reason is not null),
   array['profile.name_reset', 'profile.photo_removed', 'report.dismissed'], 'every action is audited with its reason');
+-- Brief 03C.1b H9: the reset row keeps what the member was called.
+select is(
+  (select details from public.audit_log where action = 'profile.name_reset'
+     and target_id = '00000000-0000-4000-8000-0000000c2e01'),
+  '{"previous_display_name": "Pell Quorra", "previous_handle": "fresh.handle"}'::jsonb,
+  'the name-reset audit row records the previous display name and handle');
+select is(
+  (select count(*)::int from public.audit_log where actor_id = '00000000-0000-4000-8000-0000000c2e03'
+     and action <> 'profile.name_reset' and details is not null),
+  0, 'other actions write no details');
+select throws_ok(
+  $$insert into public.audit_log (action, details) values ('test.details', '["a"]')$$,
+  '23514', null, 'details must be a jsonb object');
+select ok(
+  not has_table_privilege('authenticated', 'public.audit_log', 'select')
+  and not has_table_privilege('anon', 'public.audit_log', 'select'),
+  'members and guests still can''t read audit_log');
 
 -- The member completes the reset
 set local role authenticated;

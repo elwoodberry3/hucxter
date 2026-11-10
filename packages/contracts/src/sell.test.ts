@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { ListingDetailsInput, ReportInput, SaveInput, UploadRequest } from './sell';
+import {
+  AUDIT_REASON_REQUIRED,
+  AdminApproveInput,
+  AdminProfileActionInput,
+  AdminRemoveInput,
+  AdminReportInput,
+  ListingDetailsInput,
+  ReportInput,
+  SaveInput,
+  UploadRequest,
+} from './sell';
 
 const base = {
   listingId: '3f1c2b9a-6d4e-4f7a-9b2c-1e8d7a6b5c4d',
@@ -70,5 +80,45 @@ describe('sell inputs', () => {
     expect(SaveInput.safeParse({ listingId: base.listingId, saved: true }).success).toBe(true);
     expect(SaveInput.safeParse({ listingId: 'x', saved: true }).success).toBe(false);
     expect(SaveInput.safeParse({ listingId: base.listingId, saved: 'yes' }).success).toBe(false);
+  });
+});
+
+describe('admin inputs (Brief 03C.1b H7)', () => {
+  const reportId = '3f1c2b9a-6d4e-4f7a-9b2c-1e8d7a6b5c4d';
+
+  it('strips control characters from staff reasons', () => {
+    const removed = AdminRemoveInput.parse({ listingId: reportId, reason: ' Weapon.\u0007 ' });
+    expect(removed.reason).toBe('Weapon.');
+    const action = AdminProfileActionInput.parse({
+      reportId,
+      action: 'clear_bio',
+      reason: 'Spam\u0000 link',
+    });
+    expect(action.reason).toBe('Spam link');
+  });
+
+  it('requires a reason for a profile action, and a known action', () => {
+    const blank = AdminProfileActionInput.safeParse({
+      reportId,
+      action: 'dismiss',
+      reason: ' \u0007 ',
+    });
+    expect(blank.success).toBe(false);
+    expect(blank.error?.issues[0]?.message).toBe(AUDIT_REASON_REQUIRED);
+    expect(blank.error?.issues[0]?.path).toEqual(['reason']);
+    expect(
+      AdminProfileActionInput.safeParse({ reportId, action: 'suspend', reason: 'x' }).success,
+    ).toBe(false);
+    expect(
+      AdminProfileActionInput.safeParse({ reportId, action: 'dismiss', reason: 'ok' }).success,
+    ).toBe(true);
+  });
+
+  it('refuses extra fields and bad ids', () => {
+    expect(AdminReportInput.safeParse({ reportId, extra: 1 }).success).toBe(false);
+    expect(AdminApproveInput.safeParse({ listingId: 'nope' }).success).toBe(false);
+    expect(
+      AdminRemoveInput.safeParse({ listingId: reportId, reason: 'x'.repeat(501) }).success,
+    ).toBe(false);
   });
 });

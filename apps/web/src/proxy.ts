@@ -5,6 +5,8 @@ import { contentSecurityPolicy, createNonce } from '@/lib/csp';
 import { authConfig, mediaConfig, profileConfig, serverConfig, supabaseConfig } from '@/lib/env';
 import { isProductPath } from '@/lib/routes';
 import { authCookieOptions, hardenCookie } from '@/server/auth/cookies';
+import { AUTH_COOKIE, isStaleAuthError } from '@/server/auth/stale-session';
+import { logError } from '@/server/log';
 
 export async function proxy(request: NextRequest) {
   const nonce = createNonce();
@@ -60,7 +62,23 @@ async function refreshSession(
       },
     },
   });
-  await supabase.auth.getClaims();
+  const { error } = await supabase.auth.getClaims();
+  if (error !== null && isStaleAuthError(error)) {
+    // Brief 03C.1b H5: an invalid session renders as a guest now (request) and is gone next time
+    // (response). Outages and network errors keep the cookies.
+    logError('stale_session_cleared', { status: error.status, code: error.code });
+    const stale = request.cookies.getAll().filter(({ name }) => AUTH_COOKIE.test(name));
+    for (const { name } of stale) request.cookies.delete(name);
+    response = forward();
+    for (const { name } of stale) {
+      response.cookies.set(name, '', hardenCookie({ maxAge: 0 }, base));
+    }
+    // Like @supabase/ssr's own cookie writes: never let a shared cache keep this response.
+    response.headers.set(
+      'Cache-Control',
+      'private, no-cache, no-store, must-revalidate, max-age=0',
+    );
+  }
   return response;
 }
 

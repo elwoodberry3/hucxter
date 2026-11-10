@@ -35,6 +35,19 @@ async function draftWithDetails(
   return listingId;
 }
 
+/**
+ * The signed ready URL the fake provider returns on the last chunk of a "slow" upload
+ * (Hx-Fake-Ready, see fake-routes.ts). Call before the upload starts.
+ */
+function signedReadyUrl(page: Page): Promise<string> {
+  return page
+    .waitForResponse(
+      (response) =>
+        response.url().includes('/api/dev/fake-video/upload/') && response.status() === 200,
+    )
+    .then(async (response) => `${LOCAL_URL}${(await response.headerValue('hx-fake-ready')) ?? ''}`);
+}
+
 async function mediaIdOf(listingId: string): Promise<string> {
   const { data } = await localAdmin()
     .from('listing_media')
@@ -91,6 +104,7 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
   }, testInfo) => {
     created.push(await signUpVerified(page, testInfo, { base: LOCAL_URL }));
     await fakeOutcome(context, 'slow');
+    const readyUrl = signedReadyUrl(page);
     const listingId = await draftWithDetails(page);
     await expect(
       page.getByText('Your video is processing. This usually takes under a minute.'),
@@ -103,10 +117,13 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
     await expect(page.getByRole('button', { name: 'Will publish when ready' })).toBeDisabled();
 
     // The video finishes processing (the fake's "ready" webhook); the page follows it live.
-    const ready = await page.request.post(
+    // Without the signature the ready call is refused (Brief 03C.1b H6).
+    const unsigned = await page.request.post(
       `${LOCAL_URL}/api/dev/fake-video/ready/${await mediaIdOf(listingId)}`,
       { headers: { Origin: LOCAL_URL } },
     );
+    expect(unsigned.status()).toBe(403);
+    const ready = await page.request.post(await readyUrl, { headers: { Origin: LOCAL_URL } });
     expect(ready.status()).toBe(204);
     await expect(page).toHaveURL(`${LOCAL_URL}/l/${listingId}`, { timeout: 15_000 });
     await expect(page.getByText('Available', { exact: true })).toBeVisible();
@@ -119,6 +136,7 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
   }, testInfo) => {
     created.push(await signUpVerified(page, testInfo, { base: LOCAL_URL }));
     await fakeOutcome(context, 'slow');
+    const readyUrl = signedReadyUrl(page);
     const listingId = await draftWithDetails(page);
     await page.getByRole('button', { name: 'Publish when ready' }).click();
     await expect(
@@ -130,10 +148,7 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('heading', { name: 'Review and publish' })).toBeVisible();
 
-    const ready = await page.request.post(
-      `${LOCAL_URL}/api/dev/fake-video/ready/${await mediaIdOf(listingId)}`,
-      { headers: { Origin: LOCAL_URL } },
-    );
+    const ready = await page.request.post(await readyUrl, { headers: { Origin: LOCAL_URL } });
     expect(ready.status()).toBe(204);
     await expect
       .poll(async () => {
@@ -148,6 +163,37 @@ test.describe('sell flow (Brief 03C.1 §3.3, fake video provider)', () => {
     const guest = await browser.newContext();
     expect((await (await guest.newPage()).goto(`${LOCAL_URL}/l/${listingId}`))?.status()).toBe(404);
     await guest.close();
+  });
+
+  test('a publish after an edit in another tab says the listing changed, then checks the new text', async ({
+    page,
+    context,
+  }, testInfo) => {
+    created.push(await signUpVerified(page, testInfo, { base: LOCAL_URL }));
+    const listingId = await draftWithDetails(page);
+    await expect(page.getByText('Your video is ready.')).toBeVisible();
+
+    // Brief 03C.1b H1: another tab saves new text after this review page loaded.
+    const other = await context.newPage();
+    await other.goto(`${LOCAL_URL}/sell?draft=${listingId}&step=details`);
+    await other.getByLabel(/Description/).fill('Comes with a rifle rack.');
+    await other.getByRole('button', { name: 'Continue' }).click();
+    await expect(other.getByRole('heading', { name: 'Review and publish' })).toBeVisible();
+    await other.close();
+
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    await expect(page).toHaveURL(/changed=1/);
+    await expect(
+      page.getByRole('main').getByRole('alert').filter({ hasText: 'This listing changed' }),
+    ).toHaveText('This listing changed since you opened it. Check the details, then publish.');
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    await expect(page).toHaveURL(`${LOCAL_URL}/l/${listingId}`);
+    const { data } = await localAdmin()
+      .from('listings')
+      .select('status, review_state')
+      .eq('id', listingId)
+      .single();
+    expect(data).toEqual({ status: 'available', review_state: 'needs_review' });
   });
 
   for (const outcome of ['error', 'overlong'] as const) {

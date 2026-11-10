@@ -1,6 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { adminDb } from '@/server/admin-db';
+import { codeOf, logError } from '@/server/log';
 
 /**
  * Profile photo storage (Brief 03C.2 §4.5). The service role is the only writer of the public
@@ -14,7 +15,7 @@ export async function deleteAvatarObject(path: string | null | undefined): Promi
   if (path === null || path === undefined || !OBJECT_NAME.test(path)) return true;
   const { error } = await adminDb().storage.from(BUCKET).remove([path]);
   if (error !== null) {
-    console.error(JSON.stringify({ event: 'avatar_delete_failed' }));
+    logError('avatar_delete_failed', { code: codeOf(error) });
     return false;
   }
   return true;
@@ -31,7 +32,7 @@ export async function deleteAvatarOrQueue(path: string | null | undefined): Prom
     p_payload: { path },
   });
   if (queued.error !== null) {
-    console.error(JSON.stringify({ event: 'avatar_delete_enqueue_failed' }));
+    logError('avatar_delete_enqueue_failed', { status: queued.status, code: queued.error.code });
   }
 }
 

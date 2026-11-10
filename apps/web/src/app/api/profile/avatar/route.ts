@@ -2,14 +2,15 @@ import { revalidatePath } from 'next/cache';
 import { profileConfig } from '@/lib/env';
 import { loadMember } from '@/server/auth/member';
 import { rejectCrossOrigin } from '@/server/auth/origin';
+import { readCapped } from '@/server/http/read-capped';
 import { removeAvatar, saveAvatar, takeAvatarAttempt } from '@/server/profile/avatar';
 import {
   AVATAR_MAX_BYTES,
   AVATAR_TYPES,
   AvatarInputError,
   processAvatar,
-  readCapped,
 } from '@/server/profile/image';
+import { codeOf, logError } from '@/server/log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -51,8 +52,8 @@ export async function POST(request: Request) {
   let retryAfter: number;
   try {
     retryAfter = await takeAvatarAttempt(who.userId);
-  } catch {
-    console.error(JSON.stringify({ event: 'avatar_limit_failed' }));
+  } catch (error) {
+    logError('avatar_limit_failed', { code: codeOf(error) });
     return json(500, { error: 'We couldn’t save your photo. Try again.' });
   }
   if (retryAfter > 0) {
@@ -74,8 +75,8 @@ export async function POST(request: Request) {
   }
   try {
     await saveAvatar(who.userId, webp);
-  } catch {
-    console.error(JSON.stringify({ event: 'avatar_save_failed' }));
+  } catch (error) {
+    logError('avatar_save_failed', { code: codeOf(error) });
     return json(500, { error: 'We couldn’t save your photo. Try again.' });
   }
   revalidate(who.handle);
@@ -88,8 +89,8 @@ export async function DELETE(request: Request) {
   if (who instanceof Response) return who;
   try {
     await removeAvatar(who.userId);
-  } catch {
-    console.error(JSON.stringify({ event: 'avatar_remove_failed' }));
+  } catch (error) {
+    logError('avatar_remove_failed', { code: codeOf(error) });
     return json(500, { error: 'We couldn’t remove your photo. Try again.' });
   }
   revalidate(who.handle);

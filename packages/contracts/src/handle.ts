@@ -63,10 +63,21 @@ export const HANDLE_RESERVED = [
 ] as const;
 
 /**
- * Words that can't appear anywhere in a handle, display name or bio (case-insensitive), so no
- * member can pass for Hucxter staff. The only exception is the system placeholder below.
+ * Words that can't appear anywhere in a handle (case-insensitive, look-alikes folded), so no
+ * member can pass for Hucxter staff. Display names and bios use the narrower patterns below.
  */
 export const BLOCKED_TERMS = ['hucxter', 'admin', 'support', 'official'] as const;
+
+/**
+ * Display names and bios (Brief 03C.1b H8), on folded text: the brand anywhere, and in names the
+ * staff words only as whole words (no letter either side), so "Badminton Bob" and "Happy to
+ * support local sellers" are fine while "Hucxter Support" and "Bob_Admin" are not. The SQL CHECKs
+ * in 20261108130000_relax_profile_blocked_terms use the same two patterns. The only exception is
+ * the system placeholder below.
+ */
+export const BRAND_TERM_PATTERN = 'hucxter';
+export const STAFF_WORD_PATTERN = '(^|[^a-z])(admin|support|official)([^a-z]|$)';
+const STAFF_WORD = new RegExp(STAFF_WORD_PATTERN);
 
 /** Set only by staff moderation ("Require new name"); members can't choose it. */
 export const PLACEHOLDER_DISPLAY_NAME = 'Hucxter member';
@@ -112,9 +123,21 @@ export function foldText(value: string): string {
   return out.toLowerCase().replace(new RegExp(HIDDEN_CHARS.source, 'gu'), '');
 }
 
+/** Handles: any blocked term anywhere. */
 export function containsBlockedTerm(value: string): boolean {
   const folded = foldText(value);
   return BLOCKED_TERMS.some((term) => folded.includes(term));
+}
+
+/** Display names: the brand anywhere, or a staff word as a whole word. */
+export function nameHasBlockedTerm(value: string): boolean {
+  const folded = foldText(value);
+  return folded.includes(BRAND_TERM_PATTERN) || STAFF_WORD.test(folded);
+}
+
+/** Bios: the brand anywhere. */
+export function bioHasBlockedTerm(value: string): boolean {
+  return foldText(value).includes(BRAND_TERM_PATTERN);
 }
 
 /** What people type: "@Alex.B " → "alex.b". */

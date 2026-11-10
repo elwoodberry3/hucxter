@@ -4,14 +4,21 @@ import { join } from 'node:path';
 import { cookies } from 'next/headers';
 import { mediaConfig } from '@/lib/env';
 import { rejectCrossOrigin } from '@/server/auth/origin';
-import { assertFakeVideoAllowed, fakeEvent, fakeUploadSignatureValid } from './fake';
+import {
+  assertFakeVideoAllowed,
+  fakeEvent,
+  fakeReadySignature,
+  fakeReadySignatureValid,
+  fakeUploadSignatureValid,
+} from './fake';
 import type { FakeOutcome } from './fake';
 import { handleMuxWebhook } from './webhook';
 
 /**
  * Route logic for /api/dev/fake-video/* (local only; 404 whenever the fake provider isn't the
  * active one). e2e picks an outcome with the `hx_fake_video` cookie: ready (default), slow (stays
- * processing until /ready is called), error, overlong.
+ * processing until the signed URL in the last chunk's Hx-Fake-Ready header is POSTed), error,
+ * overlong.
  */
 export const FAKE_OUTCOME_COOKIE = 'hx_fake_video';
 const FAKE_DURATION_SECONDS = 12;
@@ -68,15 +75,22 @@ export async function fakeUpload(request: Request, mediaId: string): Promise<Res
   const outcome: FakeOutcome =
     value === 'slow' || value === 'error' || value === 'overlong' ? value : 'ready';
   await emit('video.upload.asset_created', mediaId);
-  if (outcome !== 'slow') await emitReady(mediaId, outcome);
-  return new Response(null, { status: 200 });
+  if (outcome !== 'slow') {
+    await emitReady(mediaId, outcome);
+    return new Response(null, { status: 200 });
+  }
+  const ready = `/api/dev/fake-video/ready/${mediaId}?sig=${fakeReadySignature(mediaId)}`;
+  return new Response(null, { status: 200, headers: { 'Hx-Fake-Ready': ready } });
 }
 
-/** POST: finish a "slow" upload (e2e for "Publish when ready"). */
+/** POST: finish a "slow" upload (e2e for "Publish when ready"). Needs the signed URL. */
 export async function fakeReady(request: Request, mediaId: string): Promise<Response> {
   if (!fakeActive() || !UUID.test(mediaId)) return notFound();
   const crossOrigin = rejectCrossOrigin(request);
   if (crossOrigin !== null) return crossOrigin;
+  if (!fakeReadySignatureValid(mediaId, new URL(request.url).searchParams.get('sig'))) {
+    return new Response('Forbidden', { status: 403 });
+  }
   await emitReady(mediaId);
   return new Response(null, { status: 204 });
 }
@@ -91,15 +105,15 @@ export async function fakeFile(request: Request, name: string): Promise<Response
       headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' },
     });
   }
-  if (name !== 'sample.webm') return notFound();
+  if (name !== 'sample.mp4') return notFound();
   let file: Buffer;
   try {
-    file = await readFile(join(process.cwd(), 'e2e', 'fixtures', 'fake-video', 'sample.webm'));
+    file = await readFile(join(process.cwd(), 'e2e', 'fixtures', 'fake-video', 'sample.mp4'));
   } catch {
     return notFound();
   }
   const headers = {
-    'Content-Type': 'video/webm',
+    'Content-Type': 'video/mp4',
     'Accept-Ranges': 'bytes',
     'Cache-Control': 'no-store',
   };

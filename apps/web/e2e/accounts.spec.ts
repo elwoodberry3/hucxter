@@ -8,6 +8,7 @@ import {
   deleteE2eUsers,
   emailCode,
   emailCount,
+  seedWrongEmailChecks,
   invite,
   signInWithEmail,
   testEmail,
@@ -301,6 +302,40 @@ test.describe('accounts (D-34)', () => {
     await page.getByRole('main').getByRole('button', { name: 'Send a new code' }).click();
     const started = new Date(Date.now() - 1000);
     await requestCode(page, email);
+    await enterCode(page, await emailCode(email, started));
+    await expect(page).toHaveURL(/\/welcome/);
+  });
+
+  test('after 30 wrong codes in a day, new devices get one code per hour (trickle, no lock)', async ({
+    browser,
+    page,
+  }, testInfo) => {
+    const email = await newMember(testInfo);
+    await seedWrongEmailChecks(email, 30);
+    await page.goto('/sign-in');
+    const main = page.getByRole('main');
+    await main.getByRole('button', { name: 'Continue with email' }).click();
+    const started = new Date(Date.now() - 1000);
+    await main.getByLabel('Email').fill(email);
+    await main.getByRole('button', { name: 'Send code' }).click();
+    await expect(main.getByRole('status')).toHaveText(
+      'We sent a code if this address can sign in. Check your inbox. For your security, new devices can request one code per hour for this address for now. A device you’ve signed in on before, or Continue with Google, still works.',
+    );
+
+    // A second new device within the hour gets the same notice and no code.
+    const context = await browser.newContext();
+    const other = await context.newPage();
+    await other.goto('/sign-in');
+    await other.getByRole('main').getByRole('button', { name: 'Continue with email' }).click();
+    await other.getByRole('main').getByLabel('Email').fill(email);
+    await other.getByRole('main').getByRole('button', { name: 'Send code' }).click();
+    await expect(other.getByRole('main').getByRole('status')).toContainText(
+      'new devices can request one code per hour',
+    );
+    await context.close();
+    expect(await emailCount(email)).toBe(1);
+
+    // The owner's one code still works.
     await enterCode(page, await emailCode(email, started));
     await expect(page).toHaveURL(/\/welcome/);
   });

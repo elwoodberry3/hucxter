@@ -3,6 +3,7 @@ import { getViewerLocation } from '@/lib/viewer-location';
 import { posterUrl } from '@/server/media/playback';
 import { loadListingView } from '@/server/listings/public';
 import { sessionClient } from '@/server/supabase-server';
+import { codeOf, logError } from '@/server/log';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,9 +27,9 @@ export async function GET(_request: Request, { params }: RouteContext<'/media/po
   let url: string | null;
   try {
     url = await posterUrl(view.mediaId, 480);
-  } catch {
+  } catch (error) {
     // The video provider being down (or unconfigured) costs the card its poster, nothing more.
-    console.error('poster_unavailable');
+    logError('poster_unavailable', { code: codeOf(error) });
     url = null;
   }
   if (url === null) return new Response('Not found', { status: 404 });

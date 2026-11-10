@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newViewId, nextUtcMidnight, validViewId } from './view-cookie';
+import { countableView, newViewId, nextUtcMidnight, validViewId } from './view-cookie';
 
 describe('hx_vid', () => {
   it('expires at the next UTC midnight', () => {
@@ -17,5 +17,15 @@ describe('hx_vid', () => {
     expect(a).not.toBe(newViewId());
     expect(validViewId('short')).toBe(false);
     expect(validViewId(undefined)).toBe(false);
+  });
+});
+
+describe('countable views (Brief 03C.1b H3)', () => {
+  it('counts only same-origin page loads', () => {
+    expect(countableView(new Headers({ 'sec-fetch-site': 'same-origin' }))).toBe(true);
+    expect(countableView(new Headers({ 'sec-fetch-site': 'same-site' }))).toBe(false);
+    expect(countableView(new Headers({ 'sec-fetch-site': 'cross-site' }))).toBe(false);
+    expect(countableView(new Headers({ 'sec-fetch-site': 'none' }))).toBe(false);
+    expect(countableView(new Headers())).toBe(false);
   });
 });

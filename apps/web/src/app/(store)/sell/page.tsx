@@ -31,6 +31,7 @@ export default async function Page({ searchParams }: PageProps<'/sell'>) {
       listingId: own.id,
       media: own.media?.status ?? null,
       publishWhenReady: own.publishWhenReady,
+      version: own.updatedAt,
       areaLabel: ownAreaLabel(own),
       details: ownDetailsValues(own, member.homeZip),
     };
@@ -40,6 +41,8 @@ export default async function Page({ searchParams }: PageProps<'/sell'>) {
   const { maxBytes, maxSeconds } = mediaConfig();
   return (
     <SellFlow
+      // Remount with the saved draft after a publish found it changed (`?changed=1`), and only then.
+      key={params.changed === '1' && draft !== null ? `changed-${draft.version}` : 'flow'}
       draft={draft}
       departments={departments}
       homeZip={member.homeZip ?? ''}

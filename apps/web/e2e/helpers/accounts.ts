@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import type { Page, TestInfo } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
@@ -200,4 +200,64 @@ export async function handleFor(userId: string): Promise<string> {
   const handle: unknown = (data as Record<string, unknown> | null)?.handle;
   if (error !== null || typeof handle !== 'string') throw new Error('no handle');
   return handle;
+}
+
+/**
+ * The app's keyed hash of an email address (subjectHash in src/server/admin-db.ts, same key
+ * derivation), so a test can seed email-code rows for its own address on the LOCAL stack.
+ */
+function localEmailHash(email: string): string {
+  const secret = process.env.SUPABASE_SECRET_KEY;
+  if (secret === undefined) throw new Error('SUPABASE_SECRET_KEY missing (from supabase status)');
+  const key = createHmac('sha256', secret).update('hucxter-otp-limits-v1').digest();
+  return createHmac('sha256', key).update(`email:${email.toLowerCase()}`).digest('hex');
+}
+
+/**
+ * Seeds `count` wrong email-code checks for an address from throwaway browsers (Brief 03C.1b
+ * H2), through the real functions with generous limits, so the app's daily cap applies next.
+ */
+export async function seedWrongEmailChecks(email: string, count: number): Promise<void> {
+  const db = localAdmin();
+  const emailHash = localEmailHash(email);
+  const send = async (browserHash: string) => {
+    const sent = await db.rpc('email_code_send', {
+      p_email_hash: emailHash,
+      p_browser_hash: browserHash,
+      p_device_hash: null,
+      p_checks_per_send: 10,
+      p_browser_per_hour: 100,
+      p_email_per_hour: 100,
+      p_overflow_spacing_s: 600,
+      p_overflow_checks: 3,
+      p_known_per_hour: 3,
+      p_session_ttl_s: 600,
+      p_daily_wrong_cap: 1000,
+      p_trickle_spacing_s: 3600,
+      p_trickle_checks: 2,
+    });
+    if (sent.error !== null) throw new Error(`seed send failed: ${sent.error.code}`);
+  };
+  const check = (browserHash: string, ceiling: number) =>
+    db.rpc('email_code_check_begin', {
+      p_email_hash: emailHash,
+      p_browser_hash: browserHash,
+      p_ceiling: ceiling,
+      p_session_ttl_s: 600,
+      p_daily_wrong_cap: 1000,
+    });
+  for (let done = 0; done < count; done += 10) {
+    const browserHash = randomBytes(32).toString('hex');
+    await send(browserHash);
+    for (let n = 0; n < Math.min(10, count - done); n += 1) {
+      const begun = await check(browserHash, 1000);
+      if (begun.error !== null || begun.data === null) throw new Error('seed check failed');
+    }
+  }
+  // Real guessing passes the hourly ceiling (15) on the way: record that hit, as the app would,
+  // so only the daily cap is in play for the next code.
+  const last = randomBytes(32).toString('hex');
+  await send(last);
+  const ceiling = await check(last, 0);
+  if (ceiling.error !== null || ceiling.data !== null) throw new Error('seed ceiling failed');
 }

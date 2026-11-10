@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, request, test } from '@playwright/test';
 import { deleteE2eUsers, localAdmin, signUpVerified, userIdFor } from './helpers/accounts';
 import { deleteSeeded, seedListing } from './helpers/listings';
 import type { SeededListing } from './helpers/listings';
@@ -176,9 +176,12 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
     seeded.push(listing);
     const violations: string[] = [];
     const thirdParty: string[] = [];
+    const unrecognized: string[] = [];
     page.on('console', (message) => {
       if (/Content Security Policy|Refused to/i.test(message.text()))
         violations.push(message.text());
+      // The fake video is declared and served as video/mp4 (Brief 03C.1b H6).
+      if (/unrecognized/i.test(message.text())) unrecognized.push(message.text());
     });
     page.on('request', (request) => {
       const host = new URL(request.url()).host;
@@ -220,6 +223,7 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
       .toBe(true);
     await page.waitForTimeout(1500);
     expect(violations).toEqual([]);
+    expect(unrecognized).toEqual([]);
     expect(thirdParty).toEqual([]);
   });
 
@@ -284,6 +288,17 @@ test.describe('listing page (Brief 03C.1 §3.4)', () => {
     await guestPage.reload();
     await expect(guestPage.getByText(/views?/)).toHaveCount(0);
     await guest.close();
+
+    // Brief 03C.1b H3: a scripted beacon without Sec-Fetch-Site (a fresh guest each time) is
+    // answered but not counted.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const scripted = await request.newContext();
+      const response = await scripted.post(`${LOCAL_URL}/api/listings/${listing.id}/view`, {
+        headers: { Origin: LOCAL_URL },
+      });
+      expect(response.status()).toBe(204);
+      await scripted.dispose();
+    }
 
     await page.goto(url(listing.id));
     await expect(page.getByText('1 view')).toBeVisible();

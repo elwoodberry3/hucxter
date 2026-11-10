@@ -1,6 +1,7 @@
 import 'server-only';
 import { CONSENT_VERSION, EVENT_SCHEMA_VERSION, ServerEvent } from '@hucxter/contracts';
 import { adminDb, dailyActorHash } from './admin-db';
+import { codeOf, logError } from './log';
 
 /**
  * First-party event log (Brief 03C.1 §3.6, hucxter-event-taxonomy): validated against the
@@ -15,7 +16,7 @@ export async function recordEvent(
   const { name, ...props } = ServerEvent.parse(event);
   const actor = context.actor ?? context.viewerId ?? null;
   try {
-    const { error } = await adminDb().rpc('events_insert', {
+    const { error, status } = await adminDb().rpc('events_insert', {
       p_name: name,
       p_listing_id: context.listingId ?? null,
       p_actor_hash: actor === null ? null : dailyActorHash(actor),
@@ -24,9 +25,8 @@ export async function recordEvent(
       p_schema_version: EVENT_SCHEMA_VERSION,
       p_consent_version: CONSENT_VERSION,
     });
-    if (error !== null)
-      console.error(JSON.stringify({ event: 'event_insert_failed', name, code: error.code }));
-  } catch {
-    console.error(JSON.stringify({ event: 'event_insert_failed', name }));
+    if (error !== null) logError(`event_insert_failed.${name}`, { status, code: error.code });
+  } catch (thrown) {
+    logError(`event_insert_failed.${name}`, { code: codeOf(thrown) });
   }
 }

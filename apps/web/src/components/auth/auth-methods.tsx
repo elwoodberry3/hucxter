@@ -13,6 +13,9 @@ import styles from './auth.module.css';
 type Step = 'choose' | 'email' | 'code' | 'closed';
 
 const SENT_COPY = 'We sent a code if this address can sign in. Check your inbox.';
+// Trickle mode (Brief 03C.1b H2): too many wrong codes for this address today.
+const TRICKLE_COPY =
+  'For your security, new devices can request one code per hour for this address for now. A device you’ve signed in on before, or Continue with Google, still works.';
 
 function googleHref(next: string | null): string {
   const safe = safeNextPath(next);
@@ -54,7 +57,7 @@ export function AuthMethods({
       const result = await sendEmailCode({ email, captchaToken: captchaToken ?? undefined });
       turnstile.current?.reset();
       if (result.status === 'sent') {
-        setStatus(SENT_COPY);
+        setStatus(result.notice === 'trickle' ? `${SENT_COPY} ${TRICKLE_COPY}` : SENT_COPY);
         setCode('');
         setStep('code');
       } else if (result.status === 'closed_test') {

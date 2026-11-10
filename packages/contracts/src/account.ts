@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HIDDEN_CHARS, Handle, containsBlockedTerm } from './handle';
+import { HIDDEN_CHARS, Handle, bioHasBlockedTerm, nameHasBlockedTerm } from './handle';
 import { Zip } from './location';
 import { plainText } from './sell';
 
@@ -68,8 +68,10 @@ export const DISPLAY_NAME_MAX = 25;
 export const BIO_MAX = 150;
 export const BIO_MAX_LINE_BREAKS = 3;
 
-/** Copy for BLOCKED_TERMS (handle.ts). */
-const BLOCKED_MESSAGE = 'Don’t use “Hucxter”, “admin”, “support” or “official”.';
+/** Copy for the blocked-term rules (handle.ts). */
+export const NAME_BLOCKED_MESSAGE =
+  'Don’t use “Hucxter”, or “admin”, “support” or “official” as a word.';
+export const BIO_BLOCKED_MESSAGE = 'Don’t use “Hucxter”.';
 /** Seven digits close together (spaces or punctuation between them): a phone number. */
 const PHONE_LIKE = /(\d[^\da-z]{0,3}){7}/i;
 
@@ -94,7 +96,7 @@ export const DisplayName = z
     'Don’t include a phone number.',
   )
   .refine((value) => !HIDDEN_CHARS.test(value), 'Remove hidden or special formatting characters.')
-  .refine((value) => !containsBlockedTerm(value), BLOCKED_MESSAGE);
+  .refine((value) => !nameHasBlockedTerm(value), NAME_BLOCKED_MESSAGE);
 
 /** Profile bio: optional plain text, 0–150 characters, at most 3 line breaks, same rules. */
 export const Bio = z
@@ -112,7 +114,7 @@ export const Bio = z
   )
   .refine((value) => !PHONE_LIKE.test(value), 'Don’t include a phone number.')
   .refine((value) => !HIDDEN_CHARS.test(value), 'Remove hidden or special formatting characters.')
-  .refine((value) => !containsBlockedTerm(value), BLOCKED_MESSAGE);
+  .refine((value) => !bioHasBlockedTerm(value), BIO_BLOCKED_MESSAGE);
 
 export const EmailCodeRequest = z.object({
   email: Email,

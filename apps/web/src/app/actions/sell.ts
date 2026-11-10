@@ -20,9 +20,9 @@ import { requestIsSameOrigin } from '@/server/auth/origin';
 import { recordEvent } from '@/server/events';
 import { loadOwnListing } from '@/server/listings/owner';
 import type { MediaStatus } from '@/server/listings/owner';
-import { prohibitedMatches } from '@/server/listings/prohibited';
 import { beginUpload } from '@/server/media/uploads';
 import { sessionClient } from '@/server/supabase-server';
+import { codeOf, logError } from '@/server/log';
 
 /**
  * Sell flow actions (Brief 03C.1 §3.3). Each one checks the Origin, then that the caller is a
@@ -112,12 +112,7 @@ export async function startUpload(
     );
     return { status: 'ok', uploadUrl: result.uploadUrl };
   } catch (error) {
-    console.error(
-      JSON.stringify({
-        event: 'upload_start_failed',
-        code: error instanceof Error ? error.message.slice(0, 80) : 'unknown',
-      }),
-    );
+    logError('upload_start_failed', { code: codeOf(error) });
     return { status: 'error', message: 'We couldn’t start the upload. Try again.' };
   }
 }
@@ -137,11 +132,15 @@ export async function reportUpload(input: unknown): Promise<void> {
   await recordEvent(event, { listingId: own.id, actor: userId });
 }
 
-/** Step 3 (and later edits): title, category, condition, price, attributes, description, ZIP. */
-/** `inReview`: an edit to a published listing matched the prohibited-item check (now hidden). */
+/**
+ * Step 3 (and later edits): title, category, condition, price, attributes, description, ZIP.
+ * `inReview`: the listing is held for review; the database decides (listing_update_details runs
+ * the prohibited-item check on published and scheduled listings). `version`: the new updated_at
+ * text, for publish.
+ */
 export async function saveDetails(
   input: unknown,
-): Promise<{ status: 'saved'; inReview: boolean } | SellError> {
+): Promise<{ status: 'saved'; inReview: boolean; version: string } | SellError> {
   const userId = await verifiedUserId();
   if (typeof userId !== 'string') return userId;
   const parsed = ListingDetailsInput.safeParse(input);
@@ -182,11 +181,7 @@ export async function saveDetails(
   const supabase = await sessionClient();
   const before = await loadOwnListing(supabase, details.listingId);
   if (before === null) return { status: 'error', message: NOT_FOUND };
-  // Published and scheduled ("Publish when ready") listings are re-checked on every edit: the ready
-  // webhook publishes a scheduled draft without another check. Other drafts are checked at publish.
-  const recheck = before.status !== 'draft' || before.publishWhenReady;
-  const flagged = recheck && prohibitedMatches(details.title, details.description).length > 0;
-  const { error } = await supabase.rpc('listing_update_details', {
+  const saved = await supabase.rpc('listing_update_details', {
     p_id: details.listingId,
     p_title: details.title,
     p_category_slug: details.categorySlug,
@@ -195,8 +190,8 @@ export async function saveDetails(
     p_attributes: attributes.data,
     p_description: details.description,
     p_pickup_zip: details.pickupZip,
-    p_needs_review: flagged,
   });
+  const { error } = saved;
   if (error !== null) {
     if (error.code === '23503') {
       return {
@@ -209,6 +204,10 @@ export async function saveDetails(
       return { status: 'error', message: 'Sold listings can’t be edited.' };
     return { status: 'error', message: GENERIC_ERROR };
   }
+  const reviewState = z.enum(['ok', 'needs_review']).safeParse(saved.data as unknown);
+  const after = await supabase.from('listings').select('updated_at').eq('id', before.id).single();
+  const version = z.object({ updated_at: z.string() }).safeParse(after.data);
+  if (!reviewState.success || !version.success) return { status: 'error', message: GENERIC_ERROR };
   if (before.status !== 'draft' && before.priceCents !== null && before.priceCents !== priceCents) {
     await recordEvent(
       { name: 'listing_price_changed', direction: priceCents < before.priceCents ? 'down' : 'up' },
@@ -219,12 +218,19 @@ export async function saveDetails(
     revalidatePath(`/l/${before.id}`);
     revalidatePath('/u/[handle]', 'page');
   }
-  return { status: 'saved', inReview: flagged || before.reviewState === 'needs_review' };
+  return {
+    status: 'saved',
+    inReview: reviewState.data === 'needs_review',
+    version: version.data.updated_at,
+  };
 }
 
-export type PublishOutcome = 'published' | 'in_review' | 'scheduled' | 'not_ready';
+export type PublishOutcome = 'published' | 'in_review' | 'scheduled' | 'not_ready' | 'changed';
 
-/** Step 4. The prohibited-item check holds matches for review (visible to the owner and admins). */
+/**
+ * Step 4. The database runs the prohibited-item check on the locked row and holds matches for
+ * review (visible to the owner and admins). 'changed': the draft was edited since `version`.
+ */
 export async function publishListing(
   input: unknown,
 ): Promise<{ status: 'ok'; outcome: PublishOutcome } | SellError> {
@@ -236,11 +242,10 @@ export async function publishListing(
   const own = await loadOwnListing(supabase, parsed.data.listingId);
   if (own === null) return { status: 'error', message: NOT_FOUND };
   if (own.status !== 'draft') return { status: 'ok', outcome: 'published' };
-  const needsReview = prohibitedMatches(own.title ?? '', own.description).length > 0;
   const published = await supabase.rpc('listing_publish', {
     p_id: own.id,
-    p_needs_review: needsReview,
     p_when_ready: parsed.data.whenReady,
+    p_version: parsed.data.version,
   });
   const { error } = published;
   const data: unknown = published.data;
@@ -250,7 +255,10 @@ export async function publishListing(
       message: error.code === '23514' ? 'Add the missing details first.' : GENERIC_ERROR,
     };
   }
-  const outcome = z.enum(['published', 'in_review', 'scheduled', 'not_ready']).parse(data);
+  const outcome = z
+    .enum(['published', 'in_review', 'scheduled', 'not_ready', 'changed'])
+    .parse(data);
+  if (outcome === 'changed') return { status: 'ok', outcome };
   if (outcome !== 'not_ready' && own.categorySlug !== null && own.departmentSlug !== null) {
     await recordEvent(
       {

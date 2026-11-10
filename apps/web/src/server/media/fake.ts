@@ -31,6 +31,19 @@ export function fakeUploadSignatureValid(mediaId: string, sig: string | null): b
   return timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(fakeUploadSignature(mediaId), 'hex'));
 }
 
+/**
+ * The "slow" outcome's ready URL carries an HMAC of the media id too (Brief 03C.1b H6), so only
+ * the uploader (it comes back on the last upload chunk as Hx-Fake-Ready) can finish processing.
+ */
+export function fakeReadySignature(mediaId: string): string {
+  return createHmac('sha256', fakeSecret()).update(`ready:${mediaId}`).digest('hex');
+}
+
+export function fakeReadySignatureValid(mediaId: string, sig: string | null): boolean {
+  if (sig === null || !/^[0-9a-f]{64}$/.test(sig)) return false;
+  return timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(fakeReadySignature(mediaId), 'hex'));
+}
+
 export const FAKE_IDS = {
   upload: (mediaId: string) => `fake-upload-${mediaId}`,
   asset: (mediaId: string) => `fake-asset-${mediaId}`,
@@ -90,7 +103,8 @@ export class FakeVideoProvider implements VideoProvider {
   playback(): Promise<PlaybackSource> {
     return Promise.resolve({
       kind: 'file',
-      src: '/api/dev/fake-video/file/sample.webm',
+      // The .mp4 extension is how Mux Player infers video/mp4 for a plain file source.
+      src: '/api/dev/fake-video/file/sample.mp4',
       poster: '/api/dev/fake-video/file/poster.svg',
     });
   }

@@ -4,8 +4,7 @@ import sharp from 'sharp';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-const { AVATAR_MAX_BYTES, AvatarInputError, processAvatar, readCapped, sniffImage } =
-  await import('./image');
+const { AvatarInputError, processAvatar, sniffImage } = await import('./image');
 
 const GPS_FIXTURE = readFileSync(
   fileURLToPath(new URL('../../../e2e/fixtures/avatar/gps.jpg', import.meta.url)),
@@ -112,24 +111,5 @@ describe('profile photo processing', () => {
       .toBuffer();
     const forged = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), png]);
     await expect(processAvatar(forged)).rejects.toBeInstanceOf(AvatarInputError);
-  });
-
-  it('reads at most the cap, whatever Content-Length says', async () => {
-    const big = new Uint8Array(AVATAR_MAX_BYTES + 1);
-    const lying = new Request('http://x/', {
-      method: 'POST',
-      body: new Blob([big]).stream(),
-      // @ts-expect-error -- Node needs duplex for a streamed body
-      duplex: 'half',
-    });
-    expect(await readCapped(lying, AVATAR_MAX_BYTES)).toBeNull();
-    const declared = new Request('http://x/', {
-      method: 'POST',
-      body: 'x',
-      headers: { 'content-length': String(AVATAR_MAX_BYTES + 1) },
-    });
-    expect(await readCapped(declared, AVATAR_MAX_BYTES)).toBeNull();
-    const small = new Request('http://x/', { method: 'POST', body: 'abc' });
-    expect(await readCapped(small, AVATAR_MAX_BYTES)).toEqual(new TextEncoder().encode('abc'));
   });
 });

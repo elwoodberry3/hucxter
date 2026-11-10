@@ -4,6 +4,7 @@ import { mediaConfig } from '@/lib/env';
 import { adminDb } from '@/server/admin-db';
 import { videoProvider } from './provider';
 import { verifyWebhook } from './webhook-signature';
+import { logError } from '@/server/log';
 
 /**
  * Mux webhook handling (hucxter-video-pipeline): verify the signature on the raw body before
@@ -105,9 +106,7 @@ export async function handleMuxWebhook(
   const { error } = result;
   const data: unknown = result.data;
   if (error !== null) {
-    console.error(
-      JSON.stringify({ event: 'mux_webhook_failed', type: event.type, code: error.code }),
-    );
+    logError('mux_webhook_failed', { status: result.status, code: error.code });
     return { status: 500, outcome: 'db_error' };
   }
   return { status: 200, outcome: typeof data === 'string' ? data : 'ok' };
