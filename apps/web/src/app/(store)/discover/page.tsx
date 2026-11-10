@@ -41,7 +41,7 @@ export default async function DiscoverPage({ searchParams }: PageProps<'/discove
                 <WidenRadiusButton
                   zip={location.zip}
                   radiusMi={location.radiusMi}
-                  className={homeStyles.secondaryButton}
+                  className={`${homeStyles.secondaryButton ?? ''} ${styles.widen ?? ''}`}
                 />
               )}
             </>

@@ -419,33 +419,35 @@ export function DiscoverFeed({
           That video isn’t in your feed. <Link href={`/l/${startMissingId}`}>View the listing</Link>
         </p>
       )}
-      <div ref={feedRef} className={styles.feed} role="feed" aria-label="Videos">
-        {cards.map((card, index) => (
-          <FeedCard
-            key={card.id}
-            card={card}
-            index={index}
-            setSize={nextCursor === null ? cards.length : -1}
-            active={index === active}
-            entry={entries[card.id]}
-            attempt={attempts[card.id] ?? 0}
-            mountPlayer={mounted.has(card.id)}
-            autoplay={!reduced && sheet === null}
-            reducedMotion={reduced}
-            soundOn={soundOn}
-            onToggleSound={toggleSound}
-            onRetry={retry}
-            verified={verified}
-            backToNewest={startedMidway && index === 0}
-            onDetails={() => {
-              openDetails(card.id);
-            }}
-            registerHandle={(handle) => {
-              if (handle === null) handles.current.delete(card.id);
-              else handles.current.set(card.id, handle);
-            }}
-          />
-        ))}
+      <div ref={feedRef} className={styles.feed}>
+        <div role="feed" aria-label="Videos">
+          {cards.map((card, index) => (
+            <FeedCard
+              key={card.id}
+              card={card}
+              index={index}
+              setSize={nextCursor === null ? cards.length : -1}
+              active={index === active}
+              entry={entries[card.id]}
+              attempt={attempts[card.id] ?? 0}
+              mountPlayer={mounted.has(card.id)}
+              autoplay={!reduced && sheet === null}
+              reducedMotion={reduced}
+              soundOn={soundOn}
+              onToggleSound={toggleSound}
+              onRetry={retry}
+              verified={verified}
+              backToNewest={startedMidway && index === 0}
+              onDetails={() => {
+                openDetails(card.id);
+              }}
+              registerHandle={(handle) => {
+                if (handle === null) handles.current.delete(card.id);
+                else handles.current.set(card.id, handle);
+              }}
+            />
+          ))}
+        </div>
         {nextCursor === null && cards.length > 0 ? (
           <p className={styles.end}>
             That’s everything near you for now. <Link href="/sell">Sell something</Link>

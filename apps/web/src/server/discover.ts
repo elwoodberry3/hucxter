@@ -12,6 +12,7 @@ import { attributeRows } from '@/lib/listing-attributes';
 import type { AttributeRow } from '@/lib/listing-attributes';
 import { searchListings } from '@/lib/listings';
 import { findDepartment, getTaxonomy } from '@/lib/taxonomy';
+import { loadMemberForDisplay } from '@/server/auth/member';
 import { codeOf, logError } from '@/server/log';
 import { loadListingView } from '@/server/listings/public';
 import { playbackSource } from '@/server/media/playback';
@@ -142,15 +143,17 @@ export async function discoverItem(
   const view = await loadListingView(db, id, viewerZip);
   if (view?.kind !== 'listing' || view.inReview || !view.mediaReady) return null;
   if (view.listing.status === 'sold') return null;
-  const [source, saved] = await Promise.all([
+  const [source, member] = await Promise.all([
     view.mediaId === null
       ? Promise.resolve(null)
       : playbackSource(view.mediaId).catch((error: unknown) => {
           logError('playback_unavailable', { code: codeOf(error) });
           return null;
         }),
-    view.isOwner ? Promise.resolve(new Set<string>()) : savedAmong(db, [id]),
+    loadMemberForDisplay(),
   ]);
+  // Saves are member-only (RLS): guests and the owner never query them.
+  const saved = member === null || view.isOwner ? new Set<string>() : await savedAmong(db, [id]);
   const department = findDepartment(await getTaxonomy(), view.listing.department_slug);
   const filters =
     department === undefined ? [] : filtersFor(department, view.listing.category_slug);

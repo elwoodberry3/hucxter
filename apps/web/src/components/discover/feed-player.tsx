@@ -2,7 +2,7 @@
 
 import MuxPlayer from '@mux/mux-player-react/lazy';
 import type { MuxPlayerRefAttributes } from '@mux/mux-player-react';
-import { useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import {
   PLAYER_DEFAULTS,
@@ -55,6 +55,9 @@ export function FeedPlayer({
   const ref = useRef<MuxPlayerRefAttributes | null>(null);
   const waitTimers = useRef<number[]>([]);
   const onStateRef = useRef(onState);
+  const reportRef = useRef<((state: PlaybackState) => void) | null>(null);
+  const activeRef = useRef(active);
+  const autoplayRef = useRef(autoplay);
   useSinglePlayer(ref);
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export function FeedPlayer({
   }, []);
 
   const startPlay = useCallback(
-    (fromGesture: boolean) => {
+    (fromGesture: boolean, report: (state: PlaybackState) => void) => {
       const player = ref.current;
       if (player === null) return;
       player.muted = muted;
@@ -77,11 +80,11 @@ export function FeedPlayer({
           // try muted before giving up.
           player.muted = true;
           player.play().catch(() => {
-            onStateRef.current('blocked');
+            report('blocked');
           });
           return;
         }
-        onStateRef.current('blocked');
+        report('blocked');
       });
     },
     [muted],
@@ -93,11 +96,11 @@ export function FeedPlayer({
       toggle: () => {
         const player = ref.current;
         if (player === null) return;
-        if (player.paused) startPlay(true);
+        if (player.paused) startPlay(true, reportRef.current ?? onStateRef.current);
         else player.pause();
       },
       play: () => {
-        startPlay(true);
+        startPlay(true, reportRef.current ?? onStateRef.current);
       },
       pause: () => {
         ref.current?.pause();
@@ -106,20 +109,101 @@ export function FeedPlayer({
     [startPlay],
   );
 
-  // Active: try to start (when allowed). Not active: pause, at once.
+  // The lazy player's element exists only once its code has loaded, and a short local video can
+  // be ready before React's props attach, so listen natively and start from its current state.
+  const [element, setElement] = useState<MuxPlayerRefAttributes | null>(null);
+  const attach = useCallback((node: MuxPlayerRefAttributes | null) => {
+    ref.current = node;
+    setElement(node);
+  }, []);
+
   useEffect(() => {
-    const player = ref.current;
-    if (player === null) return;
+    if (element === null) return;
+    element.setAttribute('disableremoteplayback', '');
+    let blocked = false;
+    const report = (state: PlaybackState) => {
+      // A refused autoplay stays "blocked" (media-chrome may pause after it) until it plays.
+      if (state === 'playing') blocked = false;
+      if (blocked && state === 'paused') return;
+      if (state === 'blocked') blocked = true;
+      onStateRef.current(state);
+    };
+    const onReady = () => {
+      if (activeRef.current && autoplayRef.current && !document.hidden) {
+        startPlay(false, report);
+      } else {
+        report('paused');
+      }
+    };
+    const onWaiting = () => {
+      if (waitTimers.current.length > 0) return;
+      waitTimers.current = [
+        window.setTimeout(() => {
+          report('buffering');
+        }, BUFFERING_MS),
+        window.setTimeout(() => {
+          report('slow');
+        }, SLOW_MS),
+      ];
+    };
+    const handlers: [string, () => void][] = [
+      ['loadedmetadata', onReady],
+      [
+        'play',
+        () => {
+          announcePlay(element);
+        },
+      ],
+      [
+        'playing',
+        () => {
+          clearWait();
+          report('playing');
+        },
+      ],
+      [
+        'pause',
+        () => {
+          clearWait();
+          report('paused');
+        },
+      ],
+      ['waiting', onWaiting],
+      ['stalled', onWaiting],
+      [
+        'error',
+        () => {
+          clearWait();
+          report('error');
+        },
+      ],
+    ];
+    for (const [name, handler] of handlers) element.addEventListener(name, handler);
+    reportRef.current = report;
+    if (element.readyState >= 1) onReady();
+    return () => {
+      for (const [name, handler] of handlers) element.removeEventListener(name, handler);
+      reportRef.current = null;
+    };
+  }, [element, clearWait, startPlay]);
+
+  // Becoming active: start (when allowed). No longer active: pause at once.
+  useEffect(() => {
+    activeRef.current = active;
+    autoplayRef.current = autoplay;
+    if (element === null) return;
     if (!active) {
-      player.pause();
+      element.pause();
       return;
     }
-    if (autoplay && player.readyState >= 1) startPlay(false);
-  }, [active, autoplay, startPlay]);
+    if (autoplay && element.readyState >= 1 && element.paused) {
+      startPlay(false, reportRef.current ?? onStateRef.current);
+    }
+  }, [active, autoplay, element, startPlay]);
 
   useEffect(() => {
     if (ref.current !== null) ref.current.muted = muted;
-  }, [muted]);
+  }, [element, muted]);
 
   // Hidden tab: pause. Coming back doesn't resume; the viewer taps to play.
   useEffect(() => {
@@ -135,50 +219,17 @@ export function FeedPlayer({
     };
   }, [clearWait]);
 
-  const onWaiting = () => {
-    if (waitTimers.current.length > 0) return;
-    waitTimers.current = [
-      window.setTimeout(() => {
-        onStateRef.current('buffering');
-      }, BUFFERING_MS),
-      window.setTimeout(() => {
-        onStateRef.current('slow');
-      }, SLOW_MS),
-    ];
-  };
-
   return (
     <MuxPlayer
       {...PLAYER_DEFAULTS}
       {...sourceProps(source)}
-      ref={ref}
+      ref={attach}
       className={styles.player ?? ''}
       title={title}
       nohotkeys
       noMutedPref
       preload={active ? 'auto' : 'metadata'}
       loading="page"
-      onLoadedMetadata={() => {
-        if (active && autoplay && !document.hidden) startPlay(false);
-        else onStateRef.current('paused');
-      }}
-      onPlay={() => {
-        announcePlay(ref.current);
-      }}
-      onPlaying={() => {
-        clearWait();
-        onStateRef.current('playing');
-      }}
-      onPause={() => {
-        clearWait();
-        onStateRef.current('paused');
-      }}
-      onWaiting={onWaiting}
-      onStalled={onWaiting}
-      onError={() => {
-        clearWait();
-        onStateRef.current('error');
-      }}
     />
   );
 }

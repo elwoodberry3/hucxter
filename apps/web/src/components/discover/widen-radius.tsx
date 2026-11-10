@@ -3,7 +3,7 @@
 import { RADIUS_OPTIONS_MI } from '@hucxter/contracts';
 import type { RadiusMi } from '@hucxter/contracts';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { setLocationByZip } from '@/app/actions/location';
 import { useToast } from '@/components/ui/toast';
 
@@ -25,7 +25,6 @@ export function WidenRadiusButton({
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState(false);
   const next = widerRadius(radiusMi);
   if (next === null) return null;
   return (
@@ -33,16 +32,13 @@ export function WidenRadiusButton({
       type="button"
       className={className}
       disabled={pending}
-      aria-describedby={error ? 'widen-error' : undefined}
       onClick={() => {
         startTransition(async () => {
           const result = await setLocationByZip({ zip, radiusMi: next }).catch(() => null);
           if (result?.ok === true) {
-            setError(false);
             toast(`Showing videos within ${String(next)} mi`);
             router.refresh();
           } else {
-            setError(true);
             toast('Couldn’t change your radius. Try again.');
           }
         });

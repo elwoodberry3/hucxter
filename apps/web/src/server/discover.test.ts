@@ -11,6 +11,8 @@ vi.mock('@/lib/listings', () => ({ searchListings }));
 vi.mock('@/server/listings/public', () => ({ loadListingView }));
 vi.mock('@/server/media/playback', () => ({ playbackSource }));
 vi.mock('@/server/saves', () => ({ savedAmong }));
+const loadMemberForDisplay = vi.fn();
+vi.mock('@/server/auth/member', () => ({ loadMemberForDisplay }));
 vi.mock('@/lib/taxonomy', () => ({
   getTaxonomy: () => Promise.resolve({ departments: [] }),
   findDepartment: () => undefined,
@@ -120,8 +122,17 @@ describe('discoverItem', () => {
     loadListingView.mockResolvedValue(view());
     playbackSource.mockResolvedValue({ kind: 'file', src: '/v.mp4', poster: '/p.svg' });
     savedAmong.mockResolvedValue(new Set([id(3)]));
+    loadMemberForDisplay.mockResolvedValue({ userId: 'u1' });
     const item = await discoverItem(id(3), '97205');
     expect(item).toMatchObject({ saved: true, own: false, source: { kind: 'file' } });
+  });
+
+  it('never queries saves for a guest', async () => {
+    loadListingView.mockResolvedValue(view());
+    playbackSource.mockResolvedValue(null);
+    loadMemberForDisplay.mockResolvedValue(null);
+    expect((await discoverItem(id(3), '97205'))?.saved).toBe(false);
+    expect(savedAmong).not.toHaveBeenCalled();
   });
 
   it('still returns the details when the video provider fails', async () => {

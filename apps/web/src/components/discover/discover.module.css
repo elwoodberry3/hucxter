@@ -5,10 +5,13 @@
   position: relative;
   /* Set from the feed's measured top (header, category bar, notices); a close default first. */
   --hx-feed-top: var(--hx-header-height);
+  --hx-feed-height: calc(
+    100dvh - var(--hx-feed-top) - var(--hx-bottom-chrome) - env(safe-area-inset-bottom)
+  );
 }
 
 .feed {
-  height: calc(100dvh - var(--hx-feed-top) - var(--hx-bottom-chrome) - env(safe-area-inset-bottom));
+  height: var(--hx-feed-height);
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
@@ -28,7 +31,7 @@
 .item {
   display: flex;
   justify-content: center;
-  height: 100%;
+  height: var(--hx-feed-height);
   padding: var(--hx-space-4) 0;
   outline: none;
 }
@@ -384,6 +387,7 @@
   .nav {
     top: var(--hx-space-3);
     right: var(--hx-space-3);
+    grid-auto-flow: column;
     translate: none;
   }
 
@@ -399,6 +403,17 @@
   }
 }
 
+/* Short viewports (landscape phones): a tighter rail without captions. */
+@media (height < 36rem) {
+  .rail {
+    gap: var(--hx-space-1);
+  }
+
+  .railLabel {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spin {
     animation: none;
@@ -407,4 +422,16 @@
   .smallState {
     transition: none;
   }
+}
+
+/* The shared secondary button style is written for links: reset the button defaults. */
+.widen {
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.widen:disabled {
+  cursor: progress;
 }
