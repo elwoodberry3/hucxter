@@ -194,6 +194,14 @@ test.describe('Discover feed (Brief 03 3D)', () => {
       `/l/${far.id}`,
     );
     await expect.poll(() => activeId(page)).toBe(local);
+
+    // A malformed id (here one that would break a CSS selector) is ignored, not an error page.
+    // (A throw in the feed's effects would replace it with the error boundary.)
+    await page.goto(`${LOCAL_URL}/discover?l=${encodeURIComponent('"]')}`);
+    await expect.poll(() => activeId(page)).toBe(local);
+    await page.waitForTimeout(500);
+    await expect(page.locator('[data-feed-region]')).toBeVisible();
+    await expect.poll(() => activeId(page)).toBe(local);
   });
 
   test('an item that leaves the feed mid-session shows "no longer available"; Next still works', async ({

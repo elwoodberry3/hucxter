@@ -72,8 +72,12 @@ interface SheetState {
   size: SheetSize;
 }
 
+const ITEM_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The item in `?l=`, only when it's a well-formed id (it's used in a selector). */
 function urlItem(): string | null {
-  return new URL(window.location.href).searchParams.get('l');
+  const id = new URL(window.location.href).searchParams.get('l');
+  return id !== null && ITEM_ID.test(id) ? id : null;
 }
 
 function readReturn(): SheetState | null {
