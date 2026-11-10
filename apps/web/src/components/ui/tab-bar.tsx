@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useViewer } from '@/components/auth/viewer-context';
+import { isEditable } from '@/lib/editable';
 import { authHref } from '@/lib/next-path';
 import { isProductPath } from '@/lib/routes';
 import styles from './tab-bar.module.css';
@@ -15,17 +16,6 @@ interface Tab {
   href: string;
   icon: LucideIcon;
   match: (pathname: string) => boolean;
-}
-
-function isEditable(element: Element | null): boolean {
-  if (!(element instanceof HTMLElement)) return false;
-  if (element.isContentEditable || element instanceof HTMLTextAreaElement) return true;
-  return (
-    element instanceof HTMLInputElement &&
-    !['button', 'checkbox', 'radio', 'submit', 'reset', 'range', 'color', 'file'].includes(
-      element.type,
-    )
-  );
 }
 
 /**

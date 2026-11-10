@@ -35,6 +35,10 @@
   /* Video stage behind a letterboxed player (both modes stay dark, like a viewer). */
   --hx-stage: #1c1b22;
   --hx-on-stage: #f4f3f8;
+  /* Over moving video (Discover overlay): a bottom scrim and round controls, same in both modes. */
+  --hx-stage-scrim: rgb(0 0 0 / 72%);
+  --hx-stage-control: rgb(0 0 0 / 45%);
+  --hx-stage-control-hover: rgb(0 0 0 / 62%);
   /* Text on --hx-brand (same in both modes). */
   --hx-on-brand: #ffffff;
   --hx-art-2: #dff3ea;
