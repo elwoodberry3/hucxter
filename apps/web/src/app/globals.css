@@ -35,6 +35,10 @@
   /* Video stage behind a letterboxed player (both modes stay dark, like a viewer). */
   --hx-stage: #1c1b22;
   --hx-on-stage: #f4f3f8;
+  /* Over moving video (Discover overlay): a bottom scrim and round controls, same in both modes. */
+  --hx-stage-scrim: rgb(0 0 0 / 72%);
+  --hx-stage-control: rgb(0 0 0 / 45%);
+  --hx-stage-control-hover: rgb(0 0 0 / 62%);
   /* Text on --hx-brand (same in both modes). */
   --hx-on-brand: #ffffff;
   --hx-art-2: #dff3ea;
@@ -197,6 +201,23 @@ html,
 body {
   margin: 0;
   height: 100%;
+}
+
+/* Discover (3D): the page is one viewport tall and the feed fills what's left under the header,
+   category bar and notices. Layout sets the height (no measuring), so nothing shifts on load. */
+body:has([data-feed-region]) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body:has([data-feed-region]) > main {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  /* Clear the phone tab bar (0 on desktop). */
+  padding-bottom: calc(var(--hx-bottom-chrome) + env(safe-area-inset-bottom));
 }
 
 body {

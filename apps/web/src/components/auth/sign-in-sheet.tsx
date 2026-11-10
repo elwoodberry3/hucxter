@@ -46,14 +46,21 @@ export function SignInSheetProvider({
   const router = useRouter();
   const toast = useToast();
 
-  const openSheet = useCallback((next: SheetRequest) => {
-    openerRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setRequest(next);
-    setOpenCount((count) => count + 1);
-    track({ name: 'sign_in_prompted', action: next.action, surface: 'listing' });
-    dialogRef.current?.showModal();
-  }, []);
+  const openSheet = useCallback(
+    (next: SheetRequest) => {
+      openerRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setRequest(next);
+      setOpenCount((count) => count + 1);
+      track({
+        name: 'sign_in_prompted',
+        action: next.action,
+        surface: pathname === '/discover' ? 'discover' : 'listing',
+      });
+      dialogRef.current?.showModal();
+    },
+    [pathname],
+  );
 
   const open = useCallback(
     (next: SheetRequest) => {

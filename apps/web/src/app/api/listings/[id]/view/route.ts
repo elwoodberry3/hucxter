@@ -1,17 +1,9 @@
-import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { serverConfig } from '@/lib/env';
-import { loadMemberForDisplay } from '@/server/auth/member';
 import { rejectCrossOrigin } from '@/server/auth/origin';
 import { recordEvent } from '@/server/events';
 import { loadListingView } from '@/server/listings/public';
-import {
-  VIEW_COOKIE,
-  countableView,
-  newViewId,
-  nextUtcMidnight,
-  validViewId,
-} from '@/server/listings/view-cookie';
+import { viewActor } from '@/server/listings/view-actor';
+import { countableView } from '@/server/listings/view-cookie';
 import { sessionClient } from '@/server/supabase-server';
 
 export const dynamic = 'force-dynamic';
@@ -34,28 +26,7 @@ export async function POST(request: Request, { params }: RouteContext<'/api/list
   if (view?.kind !== 'listing' || view.inReview) return new Response(null, { status: 404 });
   if (view.isOwner) return new Response(null, { status: 204 });
 
-  const member = await loadMemberForDisplay();
-  let actor: string;
-  if (member !== null) {
-    actor = `member:${member.userId}`;
-  } else {
-    const store = await cookies();
-    const existing = store.get(VIEW_COOKIE)?.value;
-    actor = validViewId(existing) ? existing : newViewId();
-    if (actor !== existing) {
-      store.set(VIEW_COOKIE, actor, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: serverConfig().appOrigin.protocol === 'https:',
-        path: '/',
-        expires: nextUtcMidnight(),
-      });
-    }
-    actor = `guest:${actor}`;
-  }
-  await recordEvent(
-    { name: 'listing_viewed' },
-    { listingId: view.listing.id, actor, viewerId: member?.userId ?? null },
-  );
+  const { actor, viewerId } = await viewActor();
+  await recordEvent({ name: 'listing_viewed' }, { listingId: view.listing.id, actor, viewerId });
   return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
 }

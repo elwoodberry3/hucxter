@@ -70,6 +70,18 @@ Table `events` (append-only) or a vendor SDK behind `track()` — ADR-0006. Rule
 - Saves themselves live in `saved_listings` and are private: only the member reads their own
   rows. Never show save counts publicly (D-43: no likes, favorites or public engagement counts).
 
+### Built in 3D: `discover_viewed` / `discover_item_viewed`
+- Same-origin beacon `POST /api/discover/view` (Origin + `Sec-Fetch-Site` checked, `hx_vid` actor,
+  strict body `{listingId?: uuid}`): `{}` once per feed load, `{listingId}` after an item has been
+  active for 1 s. Surface `discover`.
+- Dedupe: unique (actor_hash, day) for `discover_viewed`; (listing_id, actor_hash, day) for
+  `discover_item_viewed`. Owners' own item views are dropped in `events_insert`.
+- Caps: guest item views 200 per listing per day (`listing_event_counts.guest_discover_views`),
+  shared 1,000 per listing per day; listing-less events 20,000 per name per day
+  (`event_day_counts`).
+- The feed API (`GET /api/discover`) returns the typed `FeedItem` envelope (`type: 'listing'`), so ad
+  slots can be added later without a client change.
+
 ## 4. Consent & preferences record (build now)
 `user_consents` (user_id, purpose, granted, version, timestamp). Purposes: `analytics`,
 `personalization`, later `ads_contextual`. Default for anything ads-related is off until the

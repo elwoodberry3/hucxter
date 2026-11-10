@@ -132,6 +132,15 @@ member per day. `POST /api/listings/[id]/view` counts only when the browser send
 `Sec-Fetch-Site: same-origin`; scripts can forge that header, so the caps are the real bound. No
 IP address is read or stored. Counter rows from before yesterday (UTC) are deleted as new events arrive.
 
+Discover (Brief 03 3D) adds two events through `POST /api/discover/view` (same Origin and
+`Sec-Fetch-Site` rules, body at most 256 bytes, no PII):
+- `discover_viewed` (no listing): once per viewer per UTC day. Listing-less events are capped at
+  **20,000 per event name per UTC day** in `event_day_counts`.
+- `discover_item_viewed`: once per viewer per listing per day, after an item has been on screen for
+  1 second. Sellers' views of their own items are dropped. Guest item views have their own cap
+  (**200 per listing per day**, `guest_discover_views`) so they never use up `listing_viewed`'s
+  budget, and both count toward the listing's 1,000.
+
 ## 7. Troubleshooting
 
 | Symptom | Check |

@@ -31,7 +31,18 @@ export const GatedAction = z.enum([
 export type GatedAction = z.infer<typeof GatedAction>;
 
 const slug = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-const surface = z.enum(['home', 'category', 'search', 'listing', 'header', 'footer', 'sign_in']);
+export const EventSurface = z.enum([
+  'home',
+  'category',
+  'search',
+  'listing',
+  'discover',
+  'header',
+  'footer',
+  'sign_in',
+]);
+export type EventSurface = z.infer<typeof EventSurface>;
+const surface = EventSurface;
 
 export const AnalyticsEvent = z.discriminatedUnion('name', [
   z.object({ name: z.literal('category_viewed'), department: slug, subcategory: slug.optional() }),
@@ -107,6 +118,10 @@ export const ServerEvent = z.discriminatedUnion('name', [
     .object({ name: z.literal('listing_price_changed'), direction: z.enum(['down', 'up']) })
     .strict(),
   z.object({ name: z.literal('listing_viewed') }).strict(),
+  // Discover feed (3D): deduplicated per actor per UTC day (per listing for items) and capped by
+  // events_insert. The item event is never recorded for the seller.
+  z.object({ name: z.literal('discover_viewed') }).strict(),
+  z.object({ name: z.literal('discover_item_viewed') }).strict(),
   // Saves (3C.2): private; never shown as a count anywhere.
   z.object({ name: z.literal('listing_saved') }).strict(),
   z.object({ name: z.literal('listing_unsaved') }).strict(),

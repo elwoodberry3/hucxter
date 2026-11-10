@@ -1,0 +1,438 @@
+/* Discover feed (Brief 03 Milestone 3D). Phones: full-bleed items that snap. Desktop: a centred
+   9:16 column with the actions rail beside it and free scrolling (no scroll-jacking). */
+
+.region {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.feed {
+  flex: 1;
+  min-height: 0;
+  /* Each item is exactly as tall as the feed (100cqh), whatever sits above it. */
+  container-type: size;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+
+@media (pointer: coarse) {
+  .feed {
+    scroll-snap-type: y mandatory;
+  }
+
+  .item {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
+.item {
+  display: flex;
+  justify-content: center;
+  height: 100cqh;
+  padding: var(--hx-space-4) 0;
+  outline: none;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--hx-space-4);
+  height: 100%;
+  max-width: 100%;
+}
+
+.video {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  max-width: calc(100vw - 2 * var(--hx-page-gutter) - var(--hx-target-min) - var(--hx-space-4));
+  overflow: hidden;
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-stage);
+  color: var(--hx-on-stage);
+}
+
+.item:focus-visible .video {
+  outline: 3px solid var(--hx-accent);
+  outline-offset: 3px;
+}
+
+.poster,
+.player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.poster {
+  object-fit: cover;
+}
+
+.video[data-gone='true'] .poster {
+  opacity: 0.35;
+}
+
+.player {
+  --controls: none;
+  --media-object-fit: cover;
+  --media-accent-color: var(--hx-accent);
+}
+
+.tapLayer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--hx-on-stage);
+  cursor: pointer;
+}
+
+.tapLayer:focus-visible {
+  outline-offset: -4px;
+}
+
+.bigPlay {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-2);
+  min-height: var(--hx-target-min);
+  padding: var(--hx-space-3) var(--hx-space-6);
+  border-radius: var(--hx-radius-pill);
+  background: var(--hx-stage-control);
+  font-weight: 600;
+}
+
+.smallState {
+  position: absolute;
+  top: var(--hx-space-3);
+  left: var(--hx-space-3);
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--hx-stage-control);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tapLayer:hover .smallState,
+.tapLayer:focus-visible .smallState,
+.smallState[data-state='paused'] {
+  opacity: 1;
+}
+
+.status,
+.message {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: var(--hx-space-2);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--hx-space-4));
+  padding: var(--hx-space-3) var(--hx-space-4);
+  border-radius: var(--hx-radius-card);
+  background: var(--hx-stage-control);
+  color: var(--hx-on-stage);
+  text-align: center;
+  translate: -50% -50%;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.retry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  min-height: var(--hx-target-min);
+  padding: 0 var(--hx-space-4);
+  border: 0;
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-on-stage);
+  color: var(--hx-stage);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scrim {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: var(--hx-space-1);
+  padding: var(--hx-space-12) var(--hx-space-4) var(--hx-space-4);
+  background: linear-gradient(to top, var(--hx-stage-scrim), transparent);
+  pointer-events: none;
+}
+
+.scrim a {
+  pointer-events: auto;
+}
+
+.price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hx-space-2);
+  font-size: var(--hx-text-title-2);
+  font-weight: 700;
+}
+
+.title {
+  font-size: var(--hx-text-headline);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.place {
+  font-size: var(--hx-text-subheadline);
+}
+
+.newest {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hx-target-min);
+  color: var(--hx-on-stage);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.rail {
+  display: grid;
+  gap: var(--hx-space-3);
+  justify-items: center;
+  padding-bottom: var(--hx-space-2);
+}
+
+.railItem {
+  display: grid;
+  gap: var(--hx-space-1);
+  justify-items: center;
+}
+
+.railButton {
+  display: inline-grid;
+  place-items: center;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hx-bg-elevated);
+  box-shadow: var(--hx-shadow-card);
+  color: var(--hx-label);
+  cursor: pointer;
+}
+
+.railButton:hover {
+  background: var(--hx-accent-subtle);
+}
+
+.railButton[aria-pressed='true'],
+.railButton[data-saved='true'] {
+  color: var(--hx-accent);
+}
+
+.railLabel {
+  font-size: var(--hx-text-caption);
+  color: var(--hx-label-secondary);
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  right: var(--hx-page-gutter);
+  display: grid;
+  gap: var(--hx-space-2);
+  translate: 0 -50%;
+}
+
+.navButton {
+  display: inline-grid;
+  place-items: center;
+  width: var(--hx-target-min);
+  height: var(--hx-target-min);
+  border: 1px solid var(--hx-separator);
+  border-radius: 50%;
+  background: var(--hx-bg-elevated);
+  color: var(--hx-label);
+  cursor: pointer;
+}
+
+.navButton:hover:not(:disabled) {
+  background: var(--hx-fill-hover);
+}
+
+.navButton:disabled {
+  color: var(--hx-label-tertiary);
+  cursor: default;
+}
+
+.note {
+  padding: var(--hx-space-2) var(--hx-page-gutter);
+  background: var(--hx-warning-bg);
+  color: var(--hx-warning-label);
+  text-align: center;
+}
+
+.note a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.end {
+  padding: var(--hx-space-6) var(--hx-page-gutter) var(--hx-space-8);
+  color: var(--hx-label-secondary);
+  text-align: center;
+}
+
+.sheetNote {
+  margin-bottom: var(--hx-space-3);
+  color: var(--hx-label-secondary);
+}
+
+.shortcuts {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.shortcuts div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--hx-space-4);
+}
+
+.shortcuts kbd {
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.empty {
+  max-width: 40rem;
+  margin: var(--hx-space-8) auto;
+  padding: 0 var(--hx-page-gutter);
+}
+
+/* Phones: full-bleed video, rail over it on the right, Previous/Next top right. */
+@media (width < 64rem) {
+  .item {
+    padding: 0;
+  }
+
+  .stage {
+    width: 100%;
+  }
+
+  .video {
+    flex: 1;
+    aspect-ratio: auto;
+    max-width: none;
+    border-radius: 0;
+  }
+
+  .scrim {
+    padding-right: calc(var(--hx-target-min) + var(--hx-space-6));
+  }
+
+  .rail {
+    position: absolute;
+    right: var(--hx-space-3);
+    bottom: var(--hx-space-6);
+  }
+
+  .railButton {
+    background: var(--hx-stage-control);
+    box-shadow: none;
+    color: var(--hx-on-stage);
+  }
+
+  .railButton:hover {
+    background: var(--hx-stage-control-hover);
+  }
+
+  .railButton[aria-pressed='true'],
+  .railButton[data-saved='true'] {
+    color: var(--hx-on-stage);
+  }
+
+  .railLabel {
+    color: var(--hx-on-stage);
+    text-shadow: 0 1px 2px var(--hx-stage-scrim);
+  }
+
+  .nav {
+    top: var(--hx-space-3);
+    right: var(--hx-space-3);
+    grid-auto-flow: column;
+    translate: none;
+  }
+
+  .navButton {
+    border: 0;
+    background: var(--hx-stage-control);
+    color: var(--hx-on-stage);
+  }
+
+  .navButton:disabled {
+    color: var(--hx-on-stage);
+    opacity: 0.4;
+  }
+}
+
+/* Short viewports (landscape phones): a tighter rail without captions. */
+@media (height < 36rem) {
+  .rail {
+    gap: var(--hx-space-1);
+  }
+
+  .railLabel {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+
+  .smallState {
+    transition: none;
+  }
+}
+
+/* The shared secondary button style is written for links: reset the button defaults. */
+.widen {
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.widen:disabled {
+  cursor: progress;
+}

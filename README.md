@@ -169,3 +169,26 @@ Never add fake listings, counts, ratings, or scale claims.
   removal and the photo pipeline: [`docs/runbooks/accounts.md` §7](docs/runbooks/accounts.md).
 - **Variables:** `AVATAR_UPLOADS` (`on` by default; `off` hides photo uploads and shows initials
   everywhere). Photos need local Storage, which `supabase start` runs.
+
+## Discover, the vertical video feed (Brief 03, Milestone 3D)
+
+- **Feed** (`/discover`): live listings within the viewer's radius, newest first, one full-height
+  video at a time. Phones snap; desktop is a centred 9:16 column with the actions beside it and
+  free scrolling. The URL keeps the current item (`/discover?l=<id>`), so reload and shared links
+  return to it; an item outside the viewer's feed shows a note and a link to the listing instead.
+- **Playback:** muted autoplay where the browser allows it (never with reduced motion), one video
+  playing, at most two holding a source (current and next), paused off-screen and in a hidden tab.
+  States: poster, Tap to play, Loading video, Slow connection, error with Retry, and "This item is
+  no longer available" for listings that sold or left the feed mid-session.
+- **Actions:** Details (bottom sheet: price, condition, pickup area, seller, the disabled message
+  action; Expand adds attributes and the description; "View full listing" and Back restores the
+  sheet), Save, Share (sends `/l/[id]`), Report and Sound. No likes, comments or counts.
+- **Keyboard:** ↑/↓ and the Previous/Next buttons everywhere; J, K, Space, M, S and ? only while
+  focus is inside the feed and never while typing or in a sheet (WCAG 2.2 SC 2.1.4).
+- **Events:** `discover_viewed` and `discover_item_viewed`, deduped and capped (see
+  [`docs/runbooks/video.md` §6](docs/runbooks/video.md)).
+- **Lab perf baseline** (writes `test-results/perf/discover-*.json`), from `apps/web`:
+
+  ```sh
+  PERF=1 pnpm exec playwright test perf-discover --project=desktop-1440 --project=mobile-chromium
+  ```

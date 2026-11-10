@@ -1,0 +1,119 @@
+/* Discover details sheet (3D): peek facts, seller, then attributes and description expanded. */
+
+/* Peek shows price, facts, seller and the message action, so it needs more than the default. */
+.sheet {
+  --hx-sheet-peek: 60dvh;
+}
+
+.body {
+  display: grid;
+  gap: var(--hx-space-4);
+}
+
+.body p,
+.body dl,
+.body dd {
+  margin: 0;
+}
+
+.loading {
+  display: grid;
+  gap: var(--hx-space-3);
+}
+
+.gone {
+  color: var(--hx-label-secondary);
+}
+
+.price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hx-space-2);
+  font-size: var(--hx-text-title-1);
+  font-weight: 700;
+}
+
+.facts,
+.attributes {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.facts div,
+.attributes div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--hx-space-4);
+}
+
+.facts dt,
+.attributes dt {
+  color: var(--hx-label-secondary);
+}
+
+.facts dd,
+.attributes dd {
+  text-align: right;
+}
+
+.seller {
+  display: flex;
+  align-items: center;
+  gap: var(--hx-space-3);
+}
+
+.sellerName {
+  font-weight: 600;
+}
+
+.sellerName a {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--hx-space-1) var(--hx-space-2);
+  min-height: var(--hx-target-min);
+  align-content: center;
+  color: var(--hx-label);
+}
+
+.handle {
+  color: var(--hx-label-secondary);
+  font-weight: 400;
+}
+
+.verified {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hx-space-1);
+  color: var(--hx-success-label);
+  font-size: var(--hx-text-subheadline);
+}
+
+.message {
+  display: grid;
+  gap: var(--hx-space-2);
+}
+
+.heading {
+  margin-bottom: var(--hx-space-2);
+  font-size: var(--hx-text-headline);
+  font-weight: 600;
+}
+
+.full {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--hx-target-min);
+  border-radius: var(--hx-radius-control);
+  background: var(--hx-accent);
+  color: var(--hx-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.full:hover {
+  filter: brightness(1.05);
+}

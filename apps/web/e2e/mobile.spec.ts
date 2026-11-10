@@ -66,7 +66,8 @@ test.describe('mobile web', () => {
     ]);
     await expect(tabs.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
     await tabs.getByRole('link', { name: 'Discover' }).click();
-    await expect(page).toHaveURL('/discover');
+    // The feed keeps its current item in the URL once a video is in view (3D).
+    await expect(page).toHaveURL(/\/discover(\?l=[0-9a-f-]{36})?$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Discover');
     await tabs.getByRole('link', { name: 'Sell' }).click();
     await expect(page).toHaveURL('/sign-in?next=%2Fsell');

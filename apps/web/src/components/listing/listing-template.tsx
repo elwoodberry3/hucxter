@@ -1,13 +1,15 @@
 import type { AttributeFilter, Department, ListingDetail, PriceDrop } from '@hucxter/contracts';
-import { CONDITION_LABELS, formatPrice } from '@hucxter/contracts';
-import { BadgeCheck, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
+import { formatPrice } from '@hucxter/contracts';
+import { BadgeCheck, MapPin, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Breadcrumb, SubcategoryRow } from '@/components/results/results-layout';
 import { Avatar } from '@/components/ui/avatar';
 import { ListingPlayer } from '@/components/video/listing-player';
 import type { PlayerSource } from '@/components/video/listing-player';
 import { cx } from '@/lib/cx';
+import { attributeRows } from '@/lib/listing-attributes';
 import { ListingDescription } from './description';
+import { MessagePlaceholder } from './message-placeholder';
 import { OwnerControls } from './owner-panel';
 import { ReportButton } from './report-button';
 import { SaveButton } from './save-button';
@@ -70,20 +72,7 @@ export function ListingTemplate({
   saved?: boolean;
 }) {
   const subcategory = department.subcategories.find((sub) => sub.slug === listing.category_slug);
-  const attributeRows = [
-    { label: 'Condition', value: CONDITION_LABELS[listing.condition] },
-    ...filters.flatMap((filter) => {
-      const value = listing.attributes[filter.key];
-      if (value === undefined) return [];
-      const shown =
-        typeof value === 'boolean'
-          ? value
-            ? 'Yes'
-            : 'No'
-          : `${String(value)}${filter.type === 'enum' && filter.unit !== undefined ? ` ${filter.unit}` : ''}`;
-      return [{ label: filter.label, value: shown }];
-    }),
-  ];
+  const rows = attributeRows(listing, filters);
   const sold = listing.status === 'sold';
   const isOwner = owner !== null;
 
@@ -180,20 +169,7 @@ export function ListingTemplate({
               {sold ? (
                 <p className={styles.soldNote}>This item has sold.</p>
               ) : (
-                <>
-                  <button
-                    type="button"
-                    className={styles.primary}
-                    disabled
-                    aria-describedby="messaging-soon"
-                  >
-                    <MessageCircle size={18} aria-hidden="true" />
-                    Is this still available?
-                  </button>
-                  <p id="messaging-soon" className={styles.primaryNote}>
-                    Messaging arrives in the next QA build
-                  </p>
-                </>
+                <MessagePlaceholder />
               )}
               {canSave ? (
                 <SaveButton
@@ -222,7 +198,7 @@ export function ListingTemplate({
               Details
             </h2>
             <dl className={styles.attributes}>
-              {attributeRows.map((row) => (
+              {rows.map((row) => (
                 <div key={row.label} className={styles.attributeRow}>
                   <dt>{row.label}</dt>
                   <dd>{row.value}</dd>

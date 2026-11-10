@@ -109,7 +109,8 @@ test.describe('security headers', () => {
       const sources = await page
         .locator('img')
         .evaluateAll((images) => images.map((image) => (image as HTMLImageElement).currentSrc));
-      for (const source of sources)
+      // Lazy images further down (Discover's later posters) have no source until they're near.
+      for (const source of sources.filter((value) => value !== ''))
         expect(new URL(source).origin, path).toBe('http://localhost:3100');
     }
   });

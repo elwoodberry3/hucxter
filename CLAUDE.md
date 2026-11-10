@@ -75,6 +75,14 @@ Roadmap and gates: `docs/strategy/phased-roadmap.md`.
   `Sec-Fetch-Site: same-origin`), stale sessions fall back to guest (`readOrGuest`,
   `/api/session/stale`), logs via `server/log.ts` (status + code only), fake video is MP4 with a
   signed ready URL, narrower name/bio blocked terms, `audit_log.details`. D-48 decided.
+- **3D (branch `brief-03d-discover`):** `/discover` vertical feed from `listings_nearby` via
+  `server/discover.ts` (`GET /api/discover`, `GET /api/discover/items/[id]` mints playback for
+  the active + next item only, 404 = gone for the session), `?l=<id>` in the URL, details
+  `BottomSheet` with Back-restore (`hx:discover:return`), `FeedPlayer` + shared
+  `components/video/player-common.ts`, feed-only single-key shortcuts, CSP inline styles on
+  `/l/*` and `/discover` only (`needsInlineStyles`), `discover_viewed` / `discover_item_viewed`
+  capped via `event_day_counts` and `guest_discover_views`. Lab perf: `PERF=1` spec
+  `e2e/perf-discover.spec.ts`.
 - Specs to build from: `docs/specs/storefront-ia.md`, `docs/specs/category-taxonomy.md`.
 - `assets/docs/drafts/` is superseded by this file and `.claude/`.
 - Design references: `assets/images/ui/` are concept mockups (D-04): reference for which pages
