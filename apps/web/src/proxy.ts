@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { contentSecurityPolicy, createNonce } from '@/lib/csp';
 import { authConfig, mediaConfig, profileConfig, serverConfig, supabaseConfig } from '@/lib/env';
-import { isProductPath } from '@/lib/routes';
+import { needsInlineStyles } from '@/lib/routes';
 import { authCookieOptions, hardenCookie } from '@/server/auth/cookies';
 import { AUTH_COOKIE, isStaleAuthError } from '@/server/auth/stale-session';
 import { logError } from '@/server/log';
@@ -17,8 +17,8 @@ export async function proxy(request: NextRequest) {
     upgradeInsecure: isHttpsOrigin(process.env.APP_ORIGIN),
     turnstile: captcha.provider === 'turnstile',
     mux: mediaConfig().provider === 'mux',
-    // Mux Player needs inline shadow-DOM styles; only listing pages load it.
-    inlineStyles: isProductPath(request.nextUrl.pathname),
+    // Mux Player needs inline shadow-DOM styles; only listing pages and Discover load it.
+    inlineStyles: needsInlineStyles(request.nextUrl.pathname),
     avatarOrigin: profileConfig().avatarOrigin,
   });
 

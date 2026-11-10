@@ -6,7 +6,7 @@ import type { ViewerSummary } from '@/components/auth/viewer-context';
 import { TabBar } from '@/components/ui/tab-bar';
 import { ToastProvider } from '@/components/ui/toast';
 import { CategoryBar } from './category-bar';
-import { HideOnProduct } from './hide-on-product';
+import { HideOnFeed, HideOnProduct } from './hide-on-product';
 import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
 import styles from './layout.module.css';
@@ -49,7 +49,9 @@ export function StoreShell({
           <main id="main" tabIndex={-1} className={styles.main}>
             {children}
           </main>
-          <SiteFooter taxonomy={taxonomy} locationLabel={locationLabel} />
+          <HideOnFeed>
+            <SiteFooter taxonomy={taxonomy} locationLabel={locationLabel} />
+          </HideOnFeed>
           <TabBar />
         </SignInSheetProvider>
       </ToastProvider>

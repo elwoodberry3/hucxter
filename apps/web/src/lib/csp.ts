@@ -24,8 +24,8 @@ export function contentSecurityPolicy({
    */
   mux?: boolean;
   /**
-   * Listing pages only (Founder decision 2026-11-06): Mux Player's shadow-DOM <style> elements
-   * have no nonce support, so these pages allow inline styles. The style nonce is dropped there,
+   * Listing pages and Discover only (Founder decisions 2026-11-06 and 2026-11-09): Mux Player's
+   * shadow-DOM <style> elements have no nonce support, so these pages allow inline styles. The style nonce is dropped there,
    * because browsers ignore 'unsafe-inline' next to a nonce. Scripts are unaffected.
    */
   inlineStyles?: boolean;
