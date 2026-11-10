@@ -126,6 +126,12 @@ offset shadows.
 - Respect `prefers-reduced-motion` (no autoplay; show a poster and a play button) and
   `prefers-reduced-transparency`.
 - Captions and overlays never carry information that only the audio carries.
+- Built in 3D (`components/discover/`): only the active and next items mount a `FeedPlayer`;
+  the single-player rule and shared props live in `components/video/player-common.ts`. The feed
+  page is one viewport tall by layout (`body:has([data-feed-region])`, items `100cqh`): don't
+  measure heights in JS (it caused layout shift). Single-character shortcuts work only while focus
+  is in the feed region (WCAG 2.2 SC 2.1.4); arrows and visible Previous/Next always work.
+  `BottomSheet` peek height is `--hx-sheet-peek` (default 45dvh).
 
 ## Accessibility (non-negotiable)
 Semantic HTML first, ARIA only when needed. Every control has an accessible name. Video items
