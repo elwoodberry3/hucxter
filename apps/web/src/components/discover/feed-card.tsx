@@ -2,7 +2,7 @@
 
 import { formatPrice } from '@hucxter/contracts';
 import type { ListingCard } from '@hucxter/contracts';
-import { LoaderCircle, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import { Info, LoaderCircle, Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
 import { ReportButton } from '@/components/listing/report-button';
@@ -35,6 +35,7 @@ export function FeedCard({
   verified,
   backToNewest,
   registerHandle,
+  onDetails,
 }: {
   card: ListingCard;
   index: number;
@@ -53,6 +54,8 @@ export function FeedCard({
   verified: boolean;
   backToNewest: boolean;
   registerHandle: (handle: FeedPlayerHandle | null) => void;
+  /** Opens the details sheet for this item. */
+  onDetails: () => void;
 }) {
   const [playback, setPlayback] = useState<PlaybackState>('loading');
   const [handle, setHandle] = useState<FeedPlayerHandle | null>(null);
@@ -194,6 +197,23 @@ export function FeedCard({
         </div>
 
         <div className={styles.rail} role="group" aria-label={`Actions for ${card.title}`}>
+          {gone ? null : (
+            <span className={styles.railItem}>
+              <button
+                type="button"
+                className={styles.railButton}
+                aria-label={`Details for ${card.title}`}
+                aria-haspopup="dialog"
+                data-feed-details
+                onClick={onDetails}
+              >
+                <Info size={20} aria-hidden="true" />
+              </button>
+              <span className={styles.railLabel} aria-hidden="true">
+                Details
+              </span>
+            </span>
+          )}
           {own || gone ? null : (
             <span data-feed-save className={styles.railItem}>
               <SaveButton

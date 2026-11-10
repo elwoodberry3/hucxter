@@ -20,6 +20,7 @@ export interface FeedPlayerHandle {
   /** Play or pause from a user gesture (tap, Space). */
   toggle: () => void;
   play: () => void;
+  pause: () => void;
 }
 
 /** Waiting longer than this shows the buffering state; much longer, the poor-network state. */
@@ -97,6 +98,9 @@ export function FeedPlayer({
       },
       play: () => {
         startPlay(true);
+      },
+      pause: () => {
+        ref.current?.pause();
       },
     }),
     [startPlay],

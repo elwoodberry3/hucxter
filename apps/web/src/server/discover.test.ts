@@ -11,6 +11,10 @@ vi.mock('@/lib/listings', () => ({ searchListings }));
 vi.mock('@/server/listings/public', () => ({ loadListingView }));
 vi.mock('@/server/media/playback', () => ({ playbackSource }));
 vi.mock('@/server/saves', () => ({ savedAmong }));
+vi.mock('@/lib/taxonomy', () => ({
+  getTaxonomy: () => Promise.resolve({ departments: [] }),
+  findDepartment: () => undefined,
+}));
 vi.mock('@/server/supabase-server', () => ({ sessionClient: () => Promise.resolve({}) }));
 vi.mock('@/server/log', () => ({ logError: vi.fn(), codeOf: () => 'x' }));
 const { discoverItem, discoverPage, startCursor } = await import('./discover');

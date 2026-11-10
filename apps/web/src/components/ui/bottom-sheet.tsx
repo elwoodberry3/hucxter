@@ -36,6 +36,7 @@ export function BottomSheet({
   size: initialSize = 'expanded',
   expandable = false,
   onNavigate,
+  onSizeChange,
   className,
 }: {
   open: boolean;
@@ -48,6 +49,8 @@ export function BottomSheet({
   expandable?: boolean;
   /** Called with the destination before a link/form inside the sheet navigates. */
   onNavigate?: (href: string, kind: 'link' | 'form') => void;
+  /** Called when the viewer switches between peek and expanded. */
+  onSizeChange?: (size: SheetSize) => void;
   className?: string;
 }) {
   const router = useRouter();
@@ -57,7 +60,11 @@ export function BottomSheet({
   const openerRef = useRef<HTMLElement | null>(null);
   const afterPopRef = useRef<(() => void) | null>(null);
   const onCloseRef = useRef(onClose);
-  const [size, setSize] = useState<SheetSize>(initialSize);
+  const [size, setSizeState] = useState<SheetSize>(initialSize);
+  const setSize = (next: SheetSize) => {
+    setSizeState(next);
+    onSizeChange?.(next);
+  };
   // True only on the client (portals need document.body).
   const mounted = useSyncExternalStore(
     subscribeNothing,
@@ -242,7 +249,7 @@ export function BottomSheet({
               className={styles.textButton}
               aria-expanded={size === 'expanded'}
               onClick={() => {
-                setSize((value) => (value === 'expanded' ? 'peek' : 'expanded'));
+                setSize(size === 'expanded' ? 'peek' : 'expanded');
               }}
             >
               {size === 'expanded' ? 'Collapse' : 'Expand'}

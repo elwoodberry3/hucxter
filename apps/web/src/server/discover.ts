@@ -2,12 +2,16 @@ import 'server-only';
 import {
   DEFAULT_RADIUS_MI,
   encodeCursor,
+  filtersFor,
   parseFeedItems,
   parseListingQuery,
 } from '@hucxter/contracts';
 import type { FeedItem, ListingDetail, RadiusMi } from '@hucxter/contracts';
 import { z } from 'zod';
+import { attributeRows } from '@/lib/listing-attributes';
+import type { AttributeRow } from '@/lib/listing-attributes';
 import { searchListings } from '@/lib/listings';
+import { findDepartment, getTaxonomy } from '@/lib/taxonomy';
 import { codeOf, logError } from '@/server/log';
 import { loadListingView } from '@/server/listings/public';
 import { playbackSource } from '@/server/media/playback';
@@ -116,6 +120,8 @@ export async function discoverPage(
 
 export interface DiscoverItem {
   detail: ListingDetail;
+  /** Labelled attributes for the details sheet (Condition first). */
+  rows: AttributeRow[];
   saved: boolean;
   own: boolean;
   /** Signed playback for this item, or null when the video provider is unavailable. */
@@ -145,5 +151,14 @@ export async function discoverItem(
         }),
     view.isOwner ? Promise.resolve(new Set<string>()) : savedAmong(db, [id]),
   ]);
-  return { detail: view.listing, saved: saved.has(id), own: view.isOwner, source };
+  const department = findDepartment(await getTaxonomy(), view.listing.department_slug);
+  const filters =
+    department === undefined ? [] : filtersFor(department, view.listing.category_slug);
+  return {
+    detail: view.listing,
+    rows: attributeRows(view.listing, filters),
+    saved: saved.has(id),
+    own: view.isOwner,
+    source,
+  };
 }

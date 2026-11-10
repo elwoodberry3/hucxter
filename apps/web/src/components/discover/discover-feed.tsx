@@ -4,6 +4,7 @@ import { parseFeedItems } from '@hucxter/contracts';
 import type { FeedItem, ListingCard } from '@hucxter/contracts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useCallback,
   useEffect,
@@ -16,7 +17,9 @@ import {
 import type { KeyboardEvent } from 'react';
 import { useViewer } from '@/components/auth/viewer-context';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import type { SheetSize } from '@/components/ui/bottom-sheet';
 import { isEditable } from '@/lib/editable';
+import { DetailsSheet } from './details-sheet';
 import { FeedCard } from './feed-card';
 import type { FeedPlayerHandle } from './feed-player';
 import { fetchItem } from './item-data';
@@ -59,6 +62,49 @@ function subscribeSound(listener: () => void): () => void {
 }
 
 const subscribeNothing = () => () => undefined;
+
+// Back from /l/[id] reopens the details sheet at the size it had (sessionStorage, 30 minutes).
+const RETURN_KEY = 'hx:discover:return';
+const RETURN_TTL_MS = 30 * 60 * 1000;
+
+interface SheetState {
+  id: string;
+  size: SheetSize;
+}
+
+function urlItem(): string | null {
+  return new URL(window.location.href).searchParams.get('l');
+}
+
+function readReturn(): SheetState | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(RETURN_KEY);
+    if (raw === null) return null;
+    const value = JSON.parse(raw) as { id?: unknown; size?: unknown; at?: unknown };
+    const fresh = typeof value.at === 'number' && Date.now() - value.at < RETURN_TTL_MS;
+    if (!fresh || typeof value.id !== 'string' || value.id !== urlItem()) return null;
+    return { id: value.id, size: value.size === 'expanded' ? 'expanded' : 'peek' };
+  } catch {
+    return null;
+  }
+}
+
+function writeReturn(sheet: SheetState): void {
+  try {
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ ...sheet, at: Date.now() }));
+  } catch {
+    // Storage blocked: Back still returns to the item, with the sheet closed.
+  }
+}
+
+function clearReturn(): void {
+  try {
+    window.sessionStorage.removeItem(RETURN_KEY);
+  } catch {
+    // Nothing stored.
+  }
+}
 
 function beacon(body: Record<string, string>): void {
   void fetch('/api/discover/view', {
@@ -141,7 +187,12 @@ export function DiscoverFeed({
   const soundOn = useSyncExternalStore(subscribeSound, readSound, () => false);
   const lowData = useSyncExternalStore(subscribeNothing, savesData, () => false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  // Safe to read during hydration: BottomSheet renders nothing until mounted on the client.
+  const [sheet, setSheet] = useState<SheetState | null>(readReturn);
   const reduced = useReducedMotion();
+  const router = useRouter();
+  /** While set, the URL keeps this item (restoring a position) instead of following `active`. */
+  const restoring = useRef<string | null>(null);
   const regionRef = useRef<HTMLElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const handles = useRef(new Map<string, FeedPlayerHandle>());
@@ -152,6 +203,27 @@ export function DiscoverFeed({
   useEffect(() => {
     beacon({});
   }, []);
+
+  // Restore the item in the URL. A Back navigation can render the feed from an earlier visit's
+  // data: scroll to the item when it is loaded, else fetch the feed again starting there.
+  useEffect(() => {
+    const target = urlItem();
+    if (target === null || target === cards[0]?.id || startMissingId !== null) return;
+    restoring.current = target;
+    const element = feedRef.current?.querySelector<HTMLElement>(`[data-id="${target}"]`);
+    if (element === null || element === undefined) {
+      router.refresh();
+      return;
+    }
+    element.scrollIntoView({ block: 'start', behavior: 'auto' });
+    // Mount-only: later URL changes come from this feed itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The restored sheet has been shown; forget it.
+  useEffect(() => {
+    if (sheet !== null) clearReturn();
+  }, [sheet]);
 
   // The feed fills the viewport below whatever sits above it (header, category bar, notices).
   useEffect(() => {
@@ -194,6 +266,10 @@ export function DiscoverFeed({
   // URL holds the active item; replace, so Back leaves Discover instead of stepping through items.
   useEffect(() => {
     if (activeCard === undefined) return;
+    if (restoring.current !== null) {
+      if (activeCard.id !== restoring.current) return;
+      restoring.current = null;
+    }
     const url = new URL(window.location.href);
     if (url.searchParams.get('l') === activeCard.id) return;
     url.searchParams.set('l', activeCard.id);
@@ -309,6 +385,13 @@ export function DiscoverFeed({
     event.preventDefault();
   };
 
+  const openDetails = useCallback((id: string) => {
+    handles.current.get(id)?.pause();
+    setSheet({ id, size: 'peek' });
+  }, []);
+
+  const sheetCard = sheet === null ? undefined : cards.find((card) => card.id === sheet.id);
+
   const mounted = useMemo(() => {
     const ids = new Set<string>();
     const current = cards[active];
@@ -347,13 +430,16 @@ export function DiscoverFeed({
             entry={entries[card.id]}
             attempt={attempts[card.id] ?? 0}
             mountPlayer={mounted.has(card.id)}
-            autoplay={!reduced}
+            autoplay={!reduced && sheet === null}
             reducedMotion={reduced}
             soundOn={soundOn}
             onToggleSound={toggleSound}
             onRetry={retry}
             verified={verified}
             backToNewest={startedMidway && index === 0}
+            onDetails={() => {
+              openDetails(card.id);
+            }}
             registerHandle={(handle) => {
               if (handle === null) handles.current.delete(card.id);
               else handles.current.set(card.id, handle);
@@ -393,6 +479,25 @@ export function DiscoverFeed({
       <p className="visually-hidden" aria-live="polite">
         {activeCard === undefined ? '' : `Item ${String(active + 1)}: ${activeCard.title}`}
       </p>
+      {sheet === null || sheetCard === undefined ? null : (
+        <DetailsSheet
+          card={sheetCard}
+          entry={entries[sheetCard.id]}
+          size={sheet.size}
+          onSizeChange={(size) => {
+            setSheet({ id: sheetCard.id, size });
+          }}
+          onClose={() => {
+            setSheet(null);
+          }}
+          onRetry={() => {
+            retry(sheetCard.id);
+          }}
+          onNavigate={(href) => {
+            if (href === `/l/${sheetCard.id}`) writeReturn(sheet);
+          }}
+        />
+      )}
       <BottomSheet
         open={shortcutsOpen}
         onClose={() => {
